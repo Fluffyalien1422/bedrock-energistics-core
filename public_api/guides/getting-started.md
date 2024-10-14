@@ -332,16 +332,15 @@ world.afterEvents.worldInitialize.subscribe(() => {
       // But, we don't need it for this machine.
       updateUi() {
         return {
-          storageBars: [
-            {
-              // Referencing the element we defined in `description.ui.elements`
-              element: "energyBar",
+          storageBars: {
+            // Referencing the element we defined in `description.ui.elements`
+            energyBar: {
               // Setting it's storage type to `energy`.
               type: "energy",
               // This is how much it is changing per tick, this value can be negative or zero.
               change: ENERGY_GENERATION_PER_TICK,
             },
-          ],
+          },
         };
       },
     },
