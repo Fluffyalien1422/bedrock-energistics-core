@@ -148,19 +148,21 @@ export function registerStorageTypeScriptEventListener(
 }
 
 /**
- * 
+ *
  * @throws If its registered as a machine, but not found in the registry
  */
-export function getMachineRegistration(block: Block): InternalRegisteredMachine {
-  const registered = machineRegistry[block.typeId];
+export function getMachineRegistration(
+  block: Block,
+): InternalRegisteredMachine {
+  const registered = machineRegistry[block.typeId] as
+    | InternalRegisteredMachine
+    | undefined;
 
-  if (registered === undefined) {
-    throw new Error(`expected block '${block.typeId}' to be in the machine registry, but it was not found!`);
+  if (!registered) {
+    throw new Error(
+      `expected block '${block.typeId}' to be in the machine registry, but it was not found!`,
+    );
   }
 
   return registered;
-}
-
-export function getMaxStorage(block: Block) {
-  return getMachineRegistration(block).maxStorage;
 }
