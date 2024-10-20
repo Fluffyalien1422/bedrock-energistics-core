@@ -8,7 +8,7 @@ import {
 } from "@minecraft/server";
 import { Vector3Utils } from "@minecraft/math";
 import { DestroyableObject } from "./utils/destroyable";
-import { makeErrorString } from "./utils/log";
+import { logWarn, makeErrorString } from "./utils/log";
 import { getMachineStorage, setMachineStorage } from "./data";
 import {
   DIRECTION_VECTORS,
@@ -93,7 +93,7 @@ export class MachineNetwork extends DestroyableObject {
    * automatically sets each generator's storage to the amount it sent that was not received.
    * returns automatically if the object is not valid.
    */
-  private *send(): Generator<undefined, void, unknown> {
+  private *send(): Generator<void, void, void> {
     if (!this.isValid) return;
 
     // Calculate the amount of each type that is avaliable to send around.
@@ -130,7 +130,7 @@ export class MachineNetwork extends DestroyableObject {
       );
 
       // Check machine tags and sort into appropriate groups.
-      Object.keys(consumers).forEach((consumerType) => {
+      typesToDistribute.forEach((consumerType) => {
         const allowsType =
           allowsAny ||
           machineTags.includes(
@@ -168,19 +168,21 @@ export class MachineNetwork extends DestroyableObject {
         let waiting = true;
 
         this.sendMachineAllocation(machine, machineDef, type, amountToAllocate)
-          .then((v) => {
-            amountToAllocate = v;
+          .then((v) => amountToAllocate = v)
+          .catch((e: unknown) => {
+            logWarn(`Error in sendMachineAllocation to id: ${machineDef.id}, error: ${JSON.stringify(e)}`);
+            amountToAllocate = 0;
+          })
+          .finally(() => {
             waiting = false;
           })
-          .catch((e: unknown) => {
-            throw e;
-          });
 
         while (waiting as boolean) yield;
 
         // finally give the machine its allocated share
         budget -= amountToAllocate;
         setMachineStorage(machine, type, currentStored + amountToAllocate);
+        if (budget <= 0) break;
         yield;
       }
 
@@ -199,25 +201,22 @@ export class MachineNetwork extends DestroyableObject {
 
           let waiting = true;
 
-          this.sendMachineAllocation(
-            machine,
-            machineDef,
-            type,
-            amountToAllocate,
-          )
-            .then((v) => {
-              amountToAllocate = v;
-              waiting = false;
-            })
-            .catch((e: unknown) => {
-              throw e;
-            });
+          this.sendMachineAllocation(machine, machineDef, type, amountToAllocate)
+          .then((v) => amountToAllocate = v)
+          .catch((e: unknown) => {
+            logWarn(`Error in sendMachineAllocation to id: ${machineDef.id}, error: ${JSON.stringify(e)}`);
+            amountToAllocate = 0;
+          })
+          .finally(() => {
+            waiting = false;
+          })
 
           while (waiting as boolean) yield;
 
           // finally give the machine its allocated share
           budget -= amountToAllocate;
           setMachineStorage(machine, type, currentStored + amountToAllocate);
+          if (budget <= 0) break;
           yield;
         }
       }
@@ -234,7 +233,7 @@ export class MachineNetwork extends DestroyableObject {
   ): Promise<number> {
     // Allow the machine to change how much of its allocation it chooses to take
     if (machineDef.recieveHandlerEvent) {
-      return await machineDef.invokeRecieveHandler(machine, type, amount);
+      return machineDef.invokeRecieveHandler(machine, type, amount);
     }
 
     // if no handler, give it everything in its allocation
