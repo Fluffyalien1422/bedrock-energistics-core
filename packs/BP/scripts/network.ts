@@ -13,9 +13,8 @@ import { getMachineStorage, setMachineStorage } from "./data";
 import {
   DIRECTION_VECTORS,
   forEachNeighbor,
-  getBlockInDirection,
-  reverseDirection,
-  StrDirection,
+reverseDirection,
+
 } from "./utils/direction";
 import {
   getMachineRegistration,
@@ -320,7 +319,6 @@ export class MachineNetwork extends DestroyableObject {
       networkLinks: [],
     };
 
-    const stack: Block[] = [];
     const visitedLocations: Vector3[] = [];
 
     function handleNetworkLink(block: Block): void {
@@ -342,17 +340,23 @@ export class MachineNetwork extends DestroyableObject {
     }
 
     function handleBlock(block: Block): void {
-      stack.push(block);
       visitedLocations.push(block.location);
       const tags = block.getTags();
   
-      // Get the block IO for this category and see which (if any sides) that this block allows
       const io = machineIO.getAllMachineIO(tags, category);
       const selfIsConduit = tags.includes(`fluffyalien_energisticscore:conduit`);
-
+      const selfIsMachine = tags.includes(`fluffyalien_energisticscore:machine`);
+      
+      // Get the block IO for this category and see which (if any sides) that this block allows
       forEachNeighbor(block, (dir, neighbor) => {
         // Block doesn't exist, or there is no IO on this side
         if (neighbor === undefined || !io[dir]) return;
+
+        // Check if the block has alrady been visited.
+        if (visitedLocations.some((l) =>
+          Vector3Utils.equals(l, neighbor.location),
+        )) return;
+
         const neighborTags = neighbor.getTags();
 
         // Check if either of them have the capability to transmit power
@@ -364,7 +368,7 @@ export class MachineNetwork extends DestroyableObject {
         const connectsBack = machineIO.blockHasIoOnSide(neighborTags, category, invDir);
         if (!connectsBack) return;
 
-        console.log("hi", neighbor.location, neighbor.typeId);
+        handleBlock(neighbor);
       });
 
       // Handle network link branches
@@ -372,38 +376,12 @@ export class MachineNetwork extends DestroyableObject {
         handleNetworkLink(block);
       }  
 
-      connections.machines.push(block);
+      if (selfIsConduit) connections.conduits.push(block);
+      if (selfIsMachine) connections.machines.push(block);
       return;
     }
 
-    function next(currentBlock: Block, direction: StrDirection): void {
-      const nextBlock = getBlockInDirection(currentBlock, direction);
-      if (!nextBlock) return;
-
-      const isHandled = visitedLocations.some((l) =>
-        Vector3Utils.equals(l, nextBlock.location),
-      );
-      if (isHandled) return;
-
-      const isSameCategory = nextBlock.hasTag(
-        `fluffyalien_energisticscore:io.${category}`,
-      );
-      const allowsAny = nextBlock.hasTag("fluffyalien_energisticscore:io._any");
-
-      if (isSameCategory || allowsAny) handleBlock(nextBlock);
-    }
-
     handleBlock(origin);
-
-    while (stack.length) {
-      const block = stack.pop()!;
-      next(block, "north");
-      next(block, "east");
-      next(block, "south");
-      next(block, "west");
-      next(block, "up");
-      next(block, "down");
-    }
 
     return connections;
   }

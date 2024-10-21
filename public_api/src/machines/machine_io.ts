@@ -19,7 +19,7 @@ export function getAllMachineIO(
       .map((t) => t.replace(`fluffyalien_energisticscore:io._any`, "")),
   );
 
-  const all = directives.includes("");
+  const all = directives.includes(".all");
 
   return {
     [Direction.Down]: all || directives.includes(".down"),
@@ -44,5 +44,5 @@ export function blockHasIoOnSide(blockTags: string[], category: string, directio
       .map((t) => t.replace(`fluffyalien_energisticscore:io._any`, "")),
   );
 
-  return directives.includes("") || direction.includes(direction.toLowerCase()); 
+  return directives.includes(".all") || direction.includes(direction.toLowerCase()); 
 }
