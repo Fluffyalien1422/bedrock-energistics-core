@@ -12,8 +12,8 @@ import { logWarn, makeErrorString } from "./utils/log";
 import { getMachineStorage, setMachineStorage } from "./data";
 import {
   DIRECTION_VECTORS,
-  getBlockInDirection,
-  StrDirection,
+  forEachNeighbor,
+  reverseDirection,
 } from "./utils/direction";
 import {
   getMachineRegistration,
@@ -21,6 +21,7 @@ import {
   machineRegistry,
 } from "./registry";
 import { InternalNetworkLinkNode } from "./network_links/network_link_internal";
+import { machineIO } from "@/public_api/src";
 
 interface SendQueueItem {
   block: Block;
@@ -317,74 +318,86 @@ export class MachineNetwork extends DestroyableObject {
       networkLinks: [],
     };
 
-    const stack: Block[] = [];
     const visitedLocations: Vector3[] = [];
 
+    function handleNetworkLink(block: Block): void {
+      connections.networkLinks.push(block);
+
+      const netLink = InternalNetworkLinkNode.tryGetAt(
+        block.dimension,
+        block.location,
+      );
+      if (!netLink) return;
+
+      for (const pos of netLink.getConnections()) {
+        const linkedBlock = block.dimension.getBlock(pos);
+
+        if (
+          linkedBlock === undefined ||
+          visitedLocations.some((v) => Vector3Utils.equals(v, pos))
+        )
+          continue;
+
+        handleBlock(linkedBlock);
+      }
+    }
+
     function handleBlock(block: Block): void {
-      stack.push(block);
       visitedLocations.push(block.location);
+      const tags = block.getTags();
 
-      if (block.hasTag("fluffyalien_energisticscore:conduit")) {
-        connections.conduits.push(block);
-        return;
-      }
+      const io = machineIO.getAllMachineIO(tags, category);
+      const selfIsConduit = tags.includes(
+        `fluffyalien_energisticscore:conduit`,
+      );
+      const selfIsMachine = tags.includes(
+        `fluffyalien_energisticscore:machine`,
+      );
 
-      if (block.hasTag("fluffyalien_energisticscore:network_link")) {
-        connections.networkLinks.push(block);
+      // Get the block IO for this category and see which (if any sides) that this block allows
+      forEachNeighbor(block, (dir, neighbor) => {
+        // Block doesn't exist, or there is no IO on this side
+        if (neighbor === undefined || !io[dir]) return;
 
-        const netLink = InternalNetworkLinkNode.tryGetAt(
-          block.dimension,
-          block.location,
-        );
-        if (!netLink) return;
-
-        const linkedPositions = netLink.getConnections();
-
-        for (const pos of linkedPositions) {
-          const linkedBlock = block.dimension.getBlock(pos);
-          if (
-            linkedBlock === undefined ||
-            visitedLocations.some((v) => Vector3Utils.equals(v, pos))
+        // Check if the block has alrady been visited.
+        if (
+          visitedLocations.some((l) =>
+            Vector3Utils.equals(l, neighbor.location),
           )
-            continue;
-          handleBlock(linkedBlock);
-        }
+        )
+          return;
 
-        return;
+        const neighborTags = neighbor.getTags();
+
+        // Check if either of them have the capability to transmit power
+        const otherIsConduit = neighborTags.includes(
+          `fluffyalien_energisticscore:conduit`,
+        );
+        if (!(selfIsConduit || otherIsConduit)) return;
+
+        // Check if the neighbor also has IO of the same type on the connecting face
+        const invDir = reverseDirection(dir);
+        const connectsBack = machineIO.getMachineSideIO(
+          neighborTags,
+          category,
+          invDir,
+        );
+        if (!connectsBack) return;
+
+        handleBlock(neighbor);
+      });
+
+      // Handle network link branches
+      if (tags.includes("fluffyalien_energisticscore:network_link")) {
+        handleNetworkLink(block);
       }
 
-      connections.machines.push(block);
+      if (selfIsConduit) connections.conduits.push(block);
+      if (selfIsMachine) connections.machines.push(block);
       return;
     }
 
-    function next(currentBlock: Block, direction: StrDirection): void {
-      const nextBlock = getBlockInDirection(currentBlock, direction);
-      if (!nextBlock) return;
-
-      const isHandled = visitedLocations.some((l) =>
-        Vector3Utils.equals(l, nextBlock.location),
-      );
-      if (isHandled) return;
-
-      const isSameCategory = nextBlock.hasTag(
-        `fluffyalien_energisticscore:io.${category}`,
-      );
-      const allowsAny = nextBlock.hasTag("fluffyalien_energisticscore:io._any");
-
-      if (isSameCategory || allowsAny) handleBlock(nextBlock);
-    }
-
     handleBlock(origin);
-
-    while (stack.length) {
-      const block = stack.pop()!;
-      next(block, "north");
-      next(block, "east");
-      next(block, "south");
-      next(block, "west");
-      next(block, "up");
-      next(block, "down");
-    }
 
     return connections;
   }
