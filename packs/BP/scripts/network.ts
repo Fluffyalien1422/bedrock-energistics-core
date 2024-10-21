@@ -12,7 +12,9 @@ import { logWarn, makeErrorString } from "./utils/log";
 import { getMachineStorage, setMachineStorage } from "./data";
 import {
   DIRECTION_VECTORS,
+  forEachNeighbor,
   getBlockInDirection,
+  reverseDirection,
   StrDirection,
 } from "./utils/direction";
 import {
@@ -343,19 +345,32 @@ export class MachineNetwork extends DestroyableObject {
       stack.push(block);
       visitedLocations.push(block.location);
       const tags = block.getTags();
-      
-      // if (block.hasTag("fluffyalien_energisticscore:conduit")) {
-        //   connections.conduits.push(block);
-        //   return;
-        // }
+  
+      // Get the block IO for this category and see which (if any sides) that this block allows
+      const io = machineIO.getAllMachineIO(tags, category);
+      const selfIsConduit = tags.includes(`fluffyalien_energisticscore:conduit`);
 
+      forEachNeighbor(block, (dir, neighbor) => {
+        // Block doesn't exist, or there is no IO on this side
+        if (neighbor === undefined || !io[dir]) return;
+        const neighborTags = neighbor.getTags();
+
+        // Check if either of them have the capability to transmit power
+        const otherIsConduit = neighborTags.includes(`fluffyalien_energisticscore:conduit`);
+        if (!(selfIsConduit || otherIsConduit)) return;
+        
+        // Check if the neighbor also has IO of the same type on the connecting face
+        const invDir = reverseDirection(dir);
+        const connectsBack = machineIO.blockHasIoOnSide(neighborTags, category, invDir);
+        if (!connectsBack) return;
+
+        console.log("hi", neighbor.location, neighbor.typeId);
+      });
+
+      // Handle network link branches
       if (tags.includes("fluffyalien_energisticscore:network_link")) {
         handleNetworkLink(block);
-      }
-
-      // Get the block IO for this category and see which (if any sides) that this block allows
-      const io = machineIO.getMachineIO(tags, category);
-      console.log(io);
+      }  
 
       connections.machines.push(block);
       return;

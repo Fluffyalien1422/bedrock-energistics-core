@@ -131,3 +131,19 @@ export function reverseDirection(
 export function isCardinalDirection(direction: string): boolean {
   return (STR_CARDINAL_DIRECTIONS as readonly string[]).includes(direction);
 }
+
+const ALL_DIRECTIONS = [
+  Direction.North,
+  Direction.East,
+  Direction.South,
+  Direction.West,
+  Direction.Up,
+  Direction.Down
+];
+
+export function forEachNeighbor(block: Block, callback: (direction: Direction, block: Block | undefined) => void): void {
+  ALL_DIRECTIONS.forEach(dir => {
+    const neighbor = getBlockInDirection(block, dir);
+    callback(dir, neighbor);
+  })
+} 
