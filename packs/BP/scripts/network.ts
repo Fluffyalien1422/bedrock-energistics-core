@@ -169,14 +169,16 @@ export class MachineNetwork extends DestroyableObject {
         let waiting = true;
 
         this.sendMachineAllocation(machine, machineDef, type, amountToAllocate)
-          .then((v) => amountToAllocate = v)
+          .then((v) => (amountToAllocate = v))
           .catch((e: unknown) => {
-            logWarn(`Error in sendMachineAllocation to id: ${machineDef.id}, error: ${JSON.stringify(e)}`);
+            logWarn(
+              `Error in sendMachineAllocation to id: ${machineDef.id}, error: ${JSON.stringify(e)}`,
+            );
             amountToAllocate = 0;
           })
           .finally(() => {
             waiting = false;
-          })
+          });
 
         while (waiting as boolean) yield;
 
@@ -202,15 +204,22 @@ export class MachineNetwork extends DestroyableObject {
 
           let waiting = true;
 
-          this.sendMachineAllocation(machine, machineDef, type, amountToAllocate)
-          .then((v) => amountToAllocate = v)
-          .catch((e: unknown) => {
-            logWarn(`Error in sendMachineAllocation to id: ${machineDef.id}, error: ${JSON.stringify(e)}`);
-            amountToAllocate = 0;
-          })
-          .finally(() => {
-            waiting = false;
-          })
+          this.sendMachineAllocation(
+            machine,
+            machineDef,
+            type,
+            amountToAllocate,
+          )
+            .then((v) => (amountToAllocate = v))
+            .catch((e: unknown) => {
+              logWarn(
+                `Error in sendMachineAllocation to id: ${machineDef.id}, error: ${JSON.stringify(e)}`,
+              );
+              amountToAllocate = 0;
+            })
+            .finally(() => {
+              waiting = false;
+            });
 
           while (waiting as boolean) yield;
 
