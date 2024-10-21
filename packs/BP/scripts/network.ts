@@ -13,8 +13,7 @@ import { getMachineStorage, setMachineStorage } from "./data";
 import {
   DIRECTION_VECTORS,
   forEachNeighbor,
-reverseDirection,
-
+  reverseDirection,
 } from "./utils/direction";
 import {
   getMachineRegistration,
@@ -324,7 +323,10 @@ export class MachineNetwork extends DestroyableObject {
     function handleNetworkLink(block: Block): void {
       connections.networkLinks.push(block);
 
-      const netLink = InternalNetworkLinkNode.tryGetAt(block.dimension, block.location);
+      const netLink = InternalNetworkLinkNode.tryGetAt(
+        block.dimension,
+        block.location,
+      );
       if (!netLink) return;
 
       for (const pos of netLink.getConnections()) {
@@ -333,7 +335,8 @@ export class MachineNetwork extends DestroyableObject {
         if (
           linkedBlock === undefined ||
           visitedLocations.some((v) => Vector3Utils.equals(v, pos))
-        ) continue;
+        )
+          continue;
 
         handleBlock(linkedBlock);
       }
@@ -342,30 +345,43 @@ export class MachineNetwork extends DestroyableObject {
     function handleBlock(block: Block): void {
       visitedLocations.push(block.location);
       const tags = block.getTags();
-  
+
       const io = machineIO.getAllMachineIO(tags, category);
-      const selfIsConduit = tags.includes(`fluffyalien_energisticscore:conduit`);
-      const selfIsMachine = tags.includes(`fluffyalien_energisticscore:machine`);
-      
+      const selfIsConduit = tags.includes(
+        `fluffyalien_energisticscore:conduit`,
+      );
+      const selfIsMachine = tags.includes(
+        `fluffyalien_energisticscore:machine`,
+      );
+
       // Get the block IO for this category and see which (if any sides) that this block allows
       forEachNeighbor(block, (dir, neighbor) => {
         // Block doesn't exist, or there is no IO on this side
         if (neighbor === undefined || !io[dir]) return;
 
         // Check if the block has alrady been visited.
-        if (visitedLocations.some((l) =>
-          Vector3Utils.equals(l, neighbor.location),
-        )) return;
+        if (
+          visitedLocations.some((l) =>
+            Vector3Utils.equals(l, neighbor.location),
+          )
+        )
+          return;
 
         const neighborTags = neighbor.getTags();
 
         // Check if either of them have the capability to transmit power
-        const otherIsConduit = neighborTags.includes(`fluffyalien_energisticscore:conduit`);
+        const otherIsConduit = neighborTags.includes(
+          `fluffyalien_energisticscore:conduit`,
+        );
         if (!(selfIsConduit || otherIsConduit)) return;
-        
+
         // Check if the neighbor also has IO of the same type on the connecting face
         const invDir = reverseDirection(dir);
-        const connectsBack = machineIO.blockHasIoOnSide(neighborTags, category, invDir);
+        const connectsBack = machineIO.getMachineSideIO(
+          neighborTags,
+          category,
+          invDir,
+        );
         if (!connectsBack) return;
 
         handleBlock(neighbor);
@@ -374,7 +390,7 @@ export class MachineNetwork extends DestroyableObject {
       // Handle network link branches
       if (tags.includes("fluffyalien_energisticscore:network_link")) {
         handleNetworkLink(block);
-      }  
+      }
 
       if (selfIsConduit) connections.conduits.push(block);
       if (selfIsMachine) connections.machines.push(block);

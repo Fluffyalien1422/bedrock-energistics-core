@@ -138,12 +138,15 @@ const ALL_DIRECTIONS = [
   Direction.South,
   Direction.West,
   Direction.Up,
-  Direction.Down
+  Direction.Down,
 ];
 
-export function forEachNeighbor(block: Block, callback: (direction: Direction, block: Block | undefined) => void): void {
-  ALL_DIRECTIONS.forEach(dir => {
+export function forEachNeighbor(
+  block: Block,
+  callback: (direction: Direction, block: Block | undefined) => void,
+): void {
+  ALL_DIRECTIONS.forEach((dir) => {
     const neighbor = getBlockInDirection(block, dir);
     callback(dir, neighbor);
-  })
-} 
+  });
+}

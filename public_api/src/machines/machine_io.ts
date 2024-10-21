@@ -31,9 +31,16 @@ export function getAllMachineIO(
   };
 }
 
-export function blockHasIoOnSide(blockTags: string[], category: string, direction: Direction): boolean {
-    // filter for the tags specific to this block
-    const directives = blockTags
+/*
+ * Checks a single side of a block to see if it allows IO connections of a specific category
+ */
+export function getMachineSideIO(
+  blockTags: string[],
+  category: string,
+  direction: Direction,
+): boolean {
+  // filter for the tags specific to this block
+  const directives = blockTags
     .filter((t) => t.startsWith(`fluffyalien_energisticscore:io.${category}`))
     .map((t) => t.replace(`fluffyalien_energisticscore:io.${category}`, ""));
 
@@ -44,5 +51,7 @@ export function blockHasIoOnSide(blockTags: string[], category: string, directio
       .map((t) => t.replace(`fluffyalien_energisticscore:io._any`, "")),
   );
 
-  return directives.includes(".all") || direction.includes(direction.toLowerCase()); 
+  return (
+    directives.includes(".all") || direction.includes(direction.toLowerCase())
+  );
 }
