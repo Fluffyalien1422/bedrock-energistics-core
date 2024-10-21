@@ -21,6 +21,7 @@ import {
   machineRegistry,
 } from "./registry";
 import { InternalNetworkLinkNode } from "./network_links/network_link_internal";
+import { machineIO } from "@/public_api/src";
 
 interface SendQueueItem {
   block: Block;
@@ -311,38 +312,41 @@ export class MachineNetwork extends DestroyableObject {
     const stack: Block[] = [];
     const visitedLocations: Vector3[] = [];
 
+    function handleNetworkLink(block: Block): void {
+      connections.networkLinks.push(block);
+
+      const netLink = InternalNetworkLinkNode.tryGetAt(block.dimension, block.location);
+      if (!netLink) return;
+
+      for (const pos of netLink.getConnections()) {
+        const linkedBlock = block.dimension.getBlock(pos);
+
+        if (
+          linkedBlock === undefined ||
+          visitedLocations.some((v) => Vector3Utils.equals(v, pos))
+        ) continue;
+
+        handleBlock(linkedBlock);
+      }
+    }
+
     function handleBlock(block: Block): void {
       stack.push(block);
       visitedLocations.push(block.location);
+      const tags = block.getTags();
+      
+      // if (block.hasTag("fluffyalien_energisticscore:conduit")) {
+        //   connections.conduits.push(block);
+        //   return;
+        // }
 
-      if (block.hasTag("fluffyalien_energisticscore:conduit")) {
-        connections.conduits.push(block);
-        return;
+      if (tags.includes("fluffyalien_energisticscore:network_link")) {
+        handleNetworkLink(block);
       }
 
-      if (block.hasTag("fluffyalien_energisticscore:network_link")) {
-        connections.networkLinks.push(block);
-
-        const netLink = InternalNetworkLinkNode.tryGetAt(
-          block.dimension,
-          block.location,
-        );
-        if (!netLink) return;
-
-        const linkedPositions = netLink.getConnections();
-
-        for (const pos of linkedPositions) {
-          const linkedBlock = block.dimension.getBlock(pos);
-          if (
-            linkedBlock === undefined ||
-            visitedLocations.some((v) => Vector3Utils.equals(v, pos))
-          )
-            continue;
-          handleBlock(linkedBlock);
-        }
-
-        return;
-      }
+      // Get the block IO for this category and see which (if any sides) that this block allows
+      const io = machineIO.getMachineIO(tags, category);
+      console.log(io);
 
       connections.machines.push(block);
       return;

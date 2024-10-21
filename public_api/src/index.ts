@@ -37,6 +37,7 @@ import { ensureInitialized, getInitNamespace } from "./init.js";
 export { init, InitOptions } from "./init.js";
 export * from "./registry_types.js";
 export * from "./network_links/network_link_node.js";
+export * as machineIO from "./machines/machine_io.js"
 
 const UPDATE_UI_HANDLER_SUFFIX = "__h0";
 const RECIEVE_HANDLER_SUFFIX = "__h1";
