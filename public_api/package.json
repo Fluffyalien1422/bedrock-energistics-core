@@ -1,7 +1,7 @@
 {
   "name": "bedrock-energistics-core-api",
   "description": "Bedrock Energistics Core public API",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "Fluffyalien",
   "repository": {
     "type": "git",
