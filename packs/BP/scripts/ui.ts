@@ -27,6 +27,7 @@ import {
 } from "./data";
 import { stringifyDimensionLocation, truncateNumber } from "./utils/string";
 import { logWarn, makeErrorString } from "./utils/log";
+import { getEntityComponent } from "./polyfills/component_type_map";
 
 export const PROGRESS_INDICATOR_MAX_VALUES: Record<
   UiProgressIndicatorElementType,
@@ -68,13 +69,13 @@ function isUiItem(item: ItemStack): boolean {
 function clearUiItemsFromPlayer(player: Player): boolean {
   let anythingCleared = false;
 
-  const playerCursorInventory = player.getComponent("cursor_inventory")!;
+  const playerCursorInventory = getEntityComponent(player, "cursor_inventory")!;
   if (playerCursorInventory.item && isUiItem(playerCursorInventory.item)) {
     playerCursorInventory.clear();
     anythingCleared = true;
   }
 
-  const playerInventory = player.getComponent("inventory")!.container!;
+  const playerInventory = getEntityComponent(player, "inventory")!.container!;
   for (let i = 0; i < playerInventory.size; i++) {
     const item = playerInventory.getItem(i);
 
@@ -376,7 +377,7 @@ async function updateEntityUi(
   const buttons = updateUiResult?.buttons ?? {};
   const storageBars = updateUiResult?.storageBars ?? {};
 
-  const inventory = entity.getComponent("inventory")!.container!;
+  const inventory = getEntityComponent(entity, "inventory")!.container!;
 
   for (const [id, options] of Object.entries(definition.uiElements)) {
     switch (options.type) {
@@ -468,7 +469,7 @@ world.afterEvents.playerInteractWithEntity.subscribe((e) => {
 world.afterEvents.entitySpawn.subscribe((e) => {
   if (e.entity.typeId !== "minecraft:item") return;
 
-  const itemStack = e.entity.getComponent("item")!.itemStack;
+  const itemStack = getEntityComponent(e.entity, "item")!.itemStack;
 
   if (isUiItem(itemStack)) {
     e.entity.remove();
