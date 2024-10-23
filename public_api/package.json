@@ -21,6 +21,9 @@
   "devDependencies": {
     "@minecraft/server": "^1.15.0"
   },
+  "peerDependencies": {
+    "@minecraft/server": "^1.15.0"
+  },
   "dependencies": {
     "mcbe-addon-ipc": "^0.2.0"
   }
