@@ -93,6 +93,8 @@ export function registerMachine(
         blockLocation: deserializeDimensionLocation(data.a),
         networkData: data.b
       })
+
+      return null;
     })
   }
 
@@ -105,7 +107,7 @@ export function registerMachine(
     f: receiveHandlerEvent,
     g: definition.description.maxStorage,
     h: onButtonPressedEvent,
-    i: undefined
+    i: networkStatEvent
   };
 
   ipcSend("fluffyalien_energisticscore:ipc.registerMachine", payload);
