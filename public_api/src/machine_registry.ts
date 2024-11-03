@@ -1,5 +1,9 @@
 import * as ipc from "mcbe-addon-ipc";
-import { MachineDefinition, NetworkStorageTypeData, UiElement } from "./registry_types.js";
+import {
+  MachineDefinition,
+  NetworkStorageTypeData,
+  UiElement,
+} from "./registry_types.js";
 import {
   MangledOnButtonPressedPayload,
   MangledRecieveHandlerPayload,
@@ -87,13 +91,13 @@ export function registerMachine(
 
     ipc.registerListener(networkStatEvent, (payload) => {
       const data = payload as {
-        blockLocation: SerializableDimensionLocation,
+        blockLocation: SerializableDimensionLocation;
         networkData: Record<string, NetworkStorageTypeData>;
-      }
+      };
 
       callback({
         blockLocation: deserializeDimensionLocation(data.blockLocation),
-        networkData: data.networkData
+        networkData: data.networkData,
       });
 
       return null;
@@ -109,7 +113,7 @@ export function registerMachine(
     f: receiveHandlerEvent,
     g: definition.description.maxStorage,
     h: onButtonPressedEvent,
-    i: networkStatEvent
+    i: networkStatEvent,
   };
 
   ipcSend("fluffyalien_energisticscore:ipc.registerMachine", payload);

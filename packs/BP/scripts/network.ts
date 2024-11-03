@@ -145,7 +145,9 @@ export class MachineNetwork extends DestroyableObject {
       });
 
       // Check if the machine is listening for network stat events.
-      const machineDef = InternalRegisteredMachine.forceGetInternal(machine.typeId);
+      const machineDef = InternalRegisteredMachine.forceGetInternal(
+        machine.typeId,
+      );
       if (machineDef.networkStatEvent) {
         networkStatListeners.push([machine, machineDef]);
       }
@@ -156,7 +158,8 @@ export class MachineNetwork extends DestroyableObject {
     // send each machine its share of the pool.
     for (const type of typesToDistribute) {
       const machines = consumers[type];
-      const numMachines = machines.lowPriority.length + machines.normalPriority.length;
+      const numMachines =
+        machines.lowPriority.length + machines.normalPriority.length;
       if (numMachines === 0) continue;
 
       const originalBudget = distribution[type];
@@ -246,14 +249,14 @@ export class MachineNetwork extends DestroyableObject {
 
       networkStats[type] = {
         before: originalBudget,
-        after: budget
+        after: budget,
       };
     }
 
-    networkStatListeners.forEach(l => {
+    networkStatListeners.forEach((l) => {
       const [block, machineDef] = l;
       machineDef.invokeNetworkStatsHandler(block, networkStats);
-    })
+    });
 
     this.sendJobRunning = false;
   }
@@ -336,7 +339,7 @@ export class MachineNetwork extends DestroyableObject {
     const connections: NetworkConnections = {
       conduits: [],
       machines: [],
-      networkLinks: []
+      networkLinks: [],
     };
 
     const stack: Block[] = [];

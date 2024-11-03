@@ -212,15 +212,15 @@ export interface UpdateUiHandlerResponse {
  * @beta
  */
 export interface NetworkStorageTypeData {
- /**
- * The amount of this storage type that was avaliable on this network *before* distribution
- */
-  before: number,
+  /**
+   * The amount of this storage type that was avaliable on this network *before* distribution
+   */
+  before: number;
 
   /**
    * The amount of this storage type that was avaliable on this network *after* distribution
    */
-  after: number
+  after: number;
 }
 
 /**
