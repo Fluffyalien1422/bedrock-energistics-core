@@ -55,18 +55,6 @@ export interface MangledRecieveHandlerPayload {
   c: number;
 }
 
-export interface MangledNetworkStatEventPayload {
-  /**
-   * blockLocation
-   */
-  a: SerializableDimensionLocation;
-
-  /** 
-   * networkData
-   */
-  b: Record<string, [number, number]>;
-}
-
 export interface MangledOnButtonPressedPayload {
   /**
    * blockLocation

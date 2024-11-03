@@ -208,10 +208,29 @@ export interface UpdateUiHandlerResponse {
   buttons?: Record<string, UiButtonElementUpdateOptions>;
 }
 
+/**
+ * @beta
+ */
+export interface NetworkStorageTypeData {
+ /**
+ * The amount of this storage type that was avaliable on this network *before* distribution
+ */
+  before: number,
 
+  /**
+   * The amount of this storage type that was avaliable on this network *after* distribution
+   */
+  after: number
+}
 
-export interface NetworkStatHandlerArg extends MachineCallbackArg {
-  networkData: Record<string, [number, number]>;
+/**
+ * @beta
+ */
+export interface NetworkStatArg extends MachineCallbackArg {
+  /**
+   * Contains an object where each key is a storage type ID and the value contains the amount that was avaliable on this network
+   */
+  networkData: Record<string, NetworkStorageTypeData>;
 }
 
 /**
@@ -231,7 +250,7 @@ export interface MachineDefinitionHandlers {
    * Called each time after a Network has finished distributing power
    * contains information on each category sent in that pass with the starting and remaining budget.
    */
-  networkStatEvent?: MachineCallback<NetworkStatHandlerArg, undefined>;
+  networkStatEvent?: MachineCallback<NetworkStatArg, undefined>;
 }
 
 // registered machine

@@ -1,7 +1,7 @@
 import * as ipc from "mcbe-addon-ipc";
 import { DimensionLocation } from "@minecraft/server";
 import { logInfo, makeErrorString, raise } from "./utils/log";
-import { RegisteredMachine, UpdateUiHandlerResponse } from "@/public_api/src";
+import { NetworkStorageTypeData, RegisteredMachine, UpdateUiHandlerResponse } from "@/public_api/src";
 import {
   MangledOnButtonPressedPayload,
   MangledRecieveHandlerPayload,
@@ -73,17 +73,17 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     return ipcInvoke(this.recieveHandlerEvent, payload) as Promise<number>;
   }
 
-  invokeNetworkStatsHandler(loc: DimensionLocation, data: Record<string, [number, number]>): void {
+  invokeNetworkStatsHandler(dimensionLocation: DimensionLocation, data: Record<string, NetworkStorageTypeData>): void {
     if (!this.networkStatEvent) 
       raise(`trying to call the 'networkStatEvent' handler but it is not defined.`);
 
     ipcSend(this.networkStatEvent, 
       {
-        ...makeSerializableDimensionLocation(loc),
-        data: data
-      }
+        blockLocation: makeSerializableDimensionLocation(dimensionLocation),
+        networkData: data
+      }  
     )
-  }
+  } 
 
   callOnButtonPressedEvent(
     blockLocation: DimensionLocation,

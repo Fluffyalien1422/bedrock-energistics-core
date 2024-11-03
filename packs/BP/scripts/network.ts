@@ -18,6 +18,7 @@ import { InternalNetworkLinkNode } from "./network_links/network_link_internal";
 import {
   getBlockNetworkConnectionType,
   NetworkConnectionType,
+  NetworkStorageTypeData,
 } from "@/public_api/src";
 import { InternalRegisteredMachine } from "./machine_registry";
 
@@ -32,7 +33,6 @@ interface NetworkConnections {
   conduits: Block[];
   machines: Block[];
   networkLinks: Block[];
-  networkStatListeners: Block[];
 }
 
 let totalNetworkCount = 0; // used to create a unique id
@@ -115,6 +115,7 @@ export class MachineNetwork extends DestroyableObject {
 
     // initialize consumers keys.
     const consumers: Record<string, ConsumerGroups> = {};
+    const networkStatListeners: [Block, InternalRegisteredMachine][] = [];
 
     for (const key of typesToDistribute) {
       consumers[key] = { lowPriority: [], normalPriority: [] };
@@ -142,9 +143,15 @@ export class MachineNetwork extends DestroyableObject {
         if (isLowPriority) consumers[consumerType].lowPriority.push(machine);
         else consumers[consumerType].normalPriority.push(machine);
       });
+
+      // Check if the machine is listening for network stat events.
+      const machineDef = InternalRegisteredMachine.forceGetInternal(machine.typeId);
+      if (machineDef.networkStatEvent) {
+        networkStatListeners.push([machine, machineDef]);
+      }
     });
 
-    const networkStats: Record<string, [number, number]> = {};
+    const networkStats: Record<string, NetworkStorageTypeData> = {};
 
     // send each machine its share of the pool.
     for (const type of typesToDistribute) {
@@ -237,10 +244,16 @@ export class MachineNetwork extends DestroyableObject {
         }
       }
 
-      networkStats[type] = [originalBudget, budget];
+      networkStats[type] = {
+        before: originalBudget,
+        after: budget
+      };
     }
 
-    console.warn(JSON.stringify(networkStats));
+    networkStatListeners.forEach(l => {
+      const [block, machineDef] = l;
+      machineDef.invokeNetworkStatsHandler(block, networkStats);
+    })
 
     this.sendJobRunning = false;
   }
@@ -323,8 +336,7 @@ export class MachineNetwork extends DestroyableObject {
     const connections: NetworkConnections = {
       conduits: [],
       machines: [],
-      networkLinks: [],
-      networkStatListeners: []
+      networkLinks: []
     };
 
     const stack: Block[] = [];
@@ -336,11 +348,6 @@ export class MachineNetwork extends DestroyableObject {
 
       if (block.hasTag("fluffyalien_energisticscore:conduit")) {
         connections.conduits.push(block);
-        return;
-      }
-
-      if (block.hasTag("fluffyalien_energisticscore:network_stat_listener")) {
-        connections.networkStatListeners.push(block);
         return;
       }
 
