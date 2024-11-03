@@ -26,6 +26,10 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     return this.internal.f;
   }
 
+  get networkStatEvent(): string | undefined {
+    return this.internal.i;
+  }
+
   get onButtonPressedEvent(): string | undefined {
     return this.internal.h;
   }
@@ -67,6 +71,18 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     };
 
     return ipcInvoke(this.recieveHandlerEvent, payload) as Promise<number>;
+  }
+
+  invokeNetworkStatsHandler(loc: DimensionLocation, data: Record<string, [number, number]>): void {
+    if (!this.networkStatEvent) 
+      raise(`trying to call the 'networkStatEvent' handler but it is not defined.`);
+
+    ipcSend(this.networkStatEvent, 
+      {
+        ...makeSerializableDimensionLocation(loc),
+        data
+      }
+    )
   }
 
   callOnButtonPressedEvent(

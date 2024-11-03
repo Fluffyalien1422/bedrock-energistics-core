@@ -32,6 +32,7 @@ interface NetworkConnections {
   conduits: Block[];
   machines: Block[];
   networkLinks: Block[];
+  networkStatListeners: Block[];
 }
 
 let totalNetworkCount = 0; // used to create a unique id
@@ -114,6 +115,7 @@ export class MachineNetwork extends DestroyableObject {
 
     // initialize consumers keys.
     const consumers: Record<string, ConsumerGroups> = {};
+
     for (const key of typesToDistribute) {
       consumers[key] = { lowPriority: [], normalPriority: [] };
     }
@@ -142,14 +144,16 @@ export class MachineNetwork extends DestroyableObject {
       });
     });
 
+    const networkStats: Record<string, [number, number]> = {};
+
     // send each machine its share of the pool.
     for (const type of typesToDistribute) {
       const machines = consumers[type];
-      const numMachines =
-        machines.lowPriority.length + machines.normalPriority.length;
+      const numMachines = machines.lowPriority.length + machines.normalPriority.length;
       if (numMachines === 0) continue;
 
-      let budget = distribution[type];
+      const originalBudget = distribution[type];
+      let budget = originalBudget;
 
       // Give each machine in the normal priority an equal split of the budget
       // Machines can consume less than they're offered in which case the savings are given to further machines.
@@ -232,7 +236,11 @@ export class MachineNetwork extends DestroyableObject {
           yield;
         }
       }
+
+      networkStats[type] = [originalBudget, budget];
     }
+
+    console.warn(JSON.stringify(networkStats));
 
     this.sendJobRunning = false;
   }
@@ -316,6 +324,7 @@ export class MachineNetwork extends DestroyableObject {
       conduits: [],
       machines: [],
       networkLinks: [],
+      networkStatListeners: []
     };
 
     const stack: Block[] = [];
@@ -327,6 +336,11 @@ export class MachineNetwork extends DestroyableObject {
 
       if (block.hasTag("fluffyalien_energisticscore:conduit")) {
         connections.conduits.push(block);
+        return;
+      }
+
+      if (block.hasTag("fluffyalien_energisticscore:network_stat_listener")) {
+        connections.networkStatListeners.push(block);
         return;
       }
 

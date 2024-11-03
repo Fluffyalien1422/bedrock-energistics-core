@@ -34,6 +34,10 @@ export interface MangledRegisteredMachine {
    * onButtonPressedEvent
    */
   h?: string;
+  /**
+   * networkStatEvent
+   */
+  i?: string;
 }
 
 export interface MangledRecieveHandlerPayload {
