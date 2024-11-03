@@ -80,7 +80,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     ipcSend(this.networkStatEvent, 
       {
         ...makeSerializableDimensionLocation(loc),
-        data
+        data: data
       }
     )
   }

@@ -208,6 +208,12 @@ export interface UpdateUiHandlerResponse {
   buttons?: Record<string, UiButtonElementUpdateOptions>;
 }
 
+
+
+export interface NetworkStatHandlerArg extends MachineCallbackArg {
+  networkData: Record<string, [number, number]>;
+}
+
 /**
  * @beta
  */
@@ -220,6 +226,12 @@ export interface MachineDefinitionHandlers {
    * or `undefined` to not change anything.
    */
   receive?: MachineCallback<MachineRecieveHandlerArg, number | undefined>;
+
+  /**
+   * Called each time after a Network has finished distributing power
+   * contains information on each category sent in that pass with the starting and remaining budget.
+   */
+  networkStatEvent?: MachineCallback<NetworkStatHandlerArg, undefined>;
 }
 
 // registered machine
