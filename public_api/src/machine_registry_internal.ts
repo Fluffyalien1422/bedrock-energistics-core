@@ -1,4 +1,4 @@
-import { UiElement } from "./registry_types.js";
+import { NetworkStorageTypeData, UiElement } from "./registry_types.js";
 import { SerializableDimensionLocation } from "./serialize_utils.js";
 
 export interface MangledRegisteredMachine {
@@ -72,4 +72,9 @@ export interface MangledOnButtonPressedPayload {
    * elementId
    */
   d: string;
+}
+
+export interface MangledNetworkStatsEventArg {
+  networkData: Record<string, NetworkStorageTypeData>;
+  blockLocation: SerializableDimensionLocation;
 }

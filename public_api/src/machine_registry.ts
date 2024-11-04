@@ -1,10 +1,7 @@
 import * as ipc from "mcbe-addon-ipc";
+import { MachineDefinition, UiElement } from "./registry_types.js";
 import {
-  MachineDefinition,
-  NetworkStorageTypeData,
-  UiElement,
-} from "./registry_types.js";
-import {
+  MangledNetworkStatsEventArg,
   MangledOnButtonPressedPayload,
   MangledRecieveHandlerPayload,
   MangledRegisteredMachine,
@@ -18,7 +15,7 @@ import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 const UPDATE_UI_HANDLER_SUFFIX = "__h0";
 const RECIEVE_HANDLER_SUFFIX = "__h1";
 const ON_BUTTON_PRESSED_EVENT_SUFFIX = "__e0";
-const NETWORK_STAT_EVENT_SUFFIX = "__i0";
+const NETWORK_STAT_EVENT_SUFFIX = "__e1";
 
 /**
  * Registers a machine. This function should be called in the `worldInitialize` after event.
@@ -84,16 +81,13 @@ export function registerMachine(
   }
 
   let networkStatEvent: string | undefined;
-  if (definition.handlers?.networkStatEvent) {
+  if (definition.events?.onNetworkStatsRecieved) {
     networkStatEvent = eventIdPrefix + NETWORK_STAT_EVENT_SUFFIX;
 
-    const callback = definition.handlers.networkStatEvent.bind(null);
+    const callback = definition.events.onNetworkStatsRecieved.bind(null);
 
     ipc.registerListener(networkStatEvent, (payload) => {
-      const data = payload as {
-        blockLocation: SerializableDimensionLocation;
-        networkData: Record<string, NetworkStorageTypeData>;
-      };
+      const data = payload as MangledNetworkStatsEventArg;
 
       callback({
         blockLocation: deserializeDimensionLocation(data.blockLocation),

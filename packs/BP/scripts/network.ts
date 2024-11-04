@@ -148,7 +148,8 @@ export class MachineNetwork extends DestroyableObject {
       const machineDef = InternalRegisteredMachine.forceGetInternal(
         machine.typeId,
       );
-      if (machineDef.networkStatEvent) {
+
+      if (machineDef.onNetworkStatsRecievedEvent) {
         networkStatListeners.push([machine, machineDef]);
       }
     });
@@ -253,9 +254,8 @@ export class MachineNetwork extends DestroyableObject {
       };
     }
 
-    networkStatListeners.forEach((l) => {
-      const [block, machineDef] = l;
-      machineDef.invokeNetworkStatsHandler(block, networkStats);
+    networkStatListeners.forEach(([block, machineDef]) => {
+      machineDef.callOnNetworkStatsRecievedEvent(block, networkStats);
     });
 
     this.sendJobRunning = false;

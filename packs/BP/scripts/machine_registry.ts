@@ -7,6 +7,7 @@ import {
   UpdateUiHandlerResponse,
 } from "@/public_api/src";
 import {
+  MangledNetworkStatsEventArg,
   MangledOnButtonPressedPayload,
   MangledRecieveHandlerPayload,
   MangledRegisteredMachine,
@@ -30,7 +31,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     return this.internal.f;
   }
 
-  get networkStatEvent(): string | undefined {
+  get onNetworkStatsRecievedEvent(): string | undefined {
     return this.internal.i;
   }
 
@@ -77,19 +78,21 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     return ipcInvoke(this.recieveHandlerEvent, payload) as Promise<number>;
   }
 
-  invokeNetworkStatsHandler(
+  callOnNetworkStatsRecievedEvent(
     dimensionLocation: DimensionLocation,
     data: Record<string, NetworkStorageTypeData>,
   ): void {
-    if (!this.networkStatEvent)
+    if (!this.onNetworkStatsRecievedEvent)
       raise(
-        `trying to call the 'networkStatEvent' handler but it is not defined.`,
+        `trying to call the 'onNetworkStatsRecievedEvent' handler but it is not defined.`,
       );
 
-    ipcSend(this.networkStatEvent, {
+    const payload: MangledNetworkStatsEventArg = {
       blockLocation: makeSerializableDimensionLocation(dimensionLocation),
       networkData: data,
-    });
+    };
+
+    ipcSend(this.onNetworkStatsRecievedEvent, payload);
   }
 
   callOnButtonPressedEvent(

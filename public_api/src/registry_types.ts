@@ -187,6 +187,12 @@ export interface MachineOnButtonPressedEventArg extends MachineCallbackArg {
  */
 export interface MachineDefinitionEvents {
   onButtonPressed?: MachineEventCallback<MachineOnButtonPressedEventArg>;
+
+  /**
+   * Called each time after a Network has finished distributing power
+   * contains information on each category sent in that pass with the starting and remaining budget.
+   */
+  onNetworkStatsRecieved: MachineEventCallback<NetworkStatsEventArg>;
 }
 
 // handlers
@@ -226,7 +232,7 @@ export interface NetworkStorageTypeData {
 /**
  * @beta
  */
-export interface NetworkStatArg extends MachineCallbackArg {
+export interface NetworkStatsEventArg extends MachineCallbackArg {
   /**
    * Contains an object where each key is a storage type ID and the value contains the amount that was avaliable on this network
    */
@@ -245,12 +251,6 @@ export interface MachineDefinitionHandlers {
    * or `undefined` to not change anything.
    */
   receive?: MachineCallback<MachineRecieveHandlerArg, number | undefined>;
-
-  /**
-   * Called each time after a Network has finished distributing power
-   * contains information on each category sent in that pass with the starting and remaining budget.
-   */
-  networkStatEvent?: MachineCallback<NetworkStatArg, undefined>;
 }
 
 // registered machine
