@@ -74,7 +74,7 @@ export interface MangledOnButtonPressedPayload {
   d: string;
 }
 
-export interface MangledNetworkStatsEventArg {
+export interface IpcNetworkStatsEventArg {
   networkData: Record<string, NetworkStorageTypeData>;
   blockLocation: SerializableDimensionLocation;
 }
