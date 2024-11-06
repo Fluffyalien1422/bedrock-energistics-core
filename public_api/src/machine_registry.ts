@@ -1,7 +1,7 @@
 import * as ipc from "mcbe-addon-ipc";
 import { MachineDefinition, UiElement } from "./registry_types.js";
 import {
-  MangledNetworkStatsEventArg,
+  IpcNetworkStatsEventArg,
   MangledOnButtonPressedPayload,
   MangledRecieveHandlerPayload,
   MangledRegisteredMachine,
@@ -87,7 +87,7 @@ export function registerMachine(
     const callback = definition.events.onNetworkStatsRecieved.bind(null);
 
     ipc.registerListener(networkStatEvent, (payload) => {
-      const data = payload as MangledNetworkStatsEventArg;
+      const data = payload as IpcNetworkStatsEventArg;
 
       callback({
         blockLocation: deserializeDimensionLocation(data.blockLocation),

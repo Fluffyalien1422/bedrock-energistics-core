@@ -7,7 +7,7 @@ import {
   UpdateUiHandlerResponse,
 } from "@/public_api/src";
 import {
-  MangledNetworkStatsEventArg,
+  IpcNetworkStatsEventArg,
   MangledOnButtonPressedPayload,
   MangledRecieveHandlerPayload,
   MangledRegisteredMachine,
@@ -87,7 +87,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
         `trying to call the 'onNetworkStatsRecievedEvent' handler but it is not defined.`,
       );
 
-    const payload: MangledNetworkStatsEventArg = {
+    const payload: IpcNetworkStatsEventArg = {
       blockLocation: makeSerializableDimensionLocation(dimensionLocation),
       networkData: data,
     };
