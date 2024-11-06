@@ -159,9 +159,6 @@ export class MachineNetwork extends DestroyableObject {
     // send each machine its share of the pool.
     for (const type of typesToDistribute) {
       const machines = consumers[type];
-      const numMachines =
-        machines.lowPriority.length + machines.normalPriority.length;
-      if (numMachines === 0) continue;
 
       const originalBudget = distribution[type];
       let budget = originalBudget;
