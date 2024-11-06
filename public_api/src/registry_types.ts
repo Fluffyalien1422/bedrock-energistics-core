@@ -189,7 +189,7 @@ export interface MachineDefinitionEvents {
   onButtonPressed?: MachineEventCallback<MachineOnButtonPressedEventArg>;
 
   /**
-   * Called each time after a Network has finished distributing power
+   * Called after a network has completed sending machine storage allocations
    * contains information on each category sent in that pass with the starting and remaining budget.
    */
   onNetworkStatsRecieved: MachineEventCallback<NetworkStatsEventArg>;
