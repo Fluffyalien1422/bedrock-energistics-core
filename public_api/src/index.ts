@@ -13,4 +13,5 @@ export * from "./misc.js";
 export * from "./network_utils.js";
 export * from "./network.js";
 export * from "./registry_types.js";
+export * from "./standard_storage_types.js";
 export * from "./storage_type_registry.js";

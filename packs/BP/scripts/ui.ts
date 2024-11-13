@@ -46,6 +46,8 @@ const STORAGE_TYPE_COLOR_TO_FORMATTING_CODE: Record<StorageTypeColor, string> =
     purple: "u",
     red: "4",
     yellow: "e",
+    blue: "9",
+    white: "f",
   };
 
 /**

@@ -8,29 +8,32 @@ A storage type is something that a machine can consume or generate. All storage 
 
 Energy is registered by default. It's ID is `energy` and it's category is `energy`.
 
-To register a new storage type, use [registerStorageType](https://fluffyalien1422.github.io/bedrock-energistics-core/functions/API.registerStorageType.html).
+To register a new storage type, use [registerStorageType](https://fluffyalien1422.github.io/bedrock-energistics-core/functions/API.registerStorageType.html). However, you should always **prefer using [standard storage types](#standard-storage-types)** instead of registering your own.
 
-## Conventions
+If you are registering your own storage type, it should be namespaced to avoid conflicts with standard storage types as well as storage types from other add-ons.
 
-We recommend avoiding namespaces in storage type IDs and categories unless you need the storage type to be specific to your add-on. This is so other add-ons using the same thing will be compatible with each other.
+## Standard Storage Types
 
-For example, if add-on A defines `addon_a:water` and add-on B defines `addon_b:water`, then the two water types will not be compatible with each other. However, if add-on A defines `water` and add-on B defines `water`, then the two water types will be compatible because they have the same ID (this also applies to categories).
+Bedrock Energistics Core API contains many storage type definitions that you can use instead of registering your own.
 
-Following are some common storage type categories and some storage types that they should contain.
+These are not registered by default (except `energy`). Use [useStandardStorageType](https://fluffyalien1422.github.io/bedrock-energistics-core/functions/API.useStandardStorageType.html) to register a standard storage type
+for use in your add-on.
 
-- Energy: `energy`
-  - Energy: `energy` - Note: `energy` is defined by default in Bedrock Energistics Core but it can be overriden if necessary.
-- Liquid: `fluid`
-  - Lava: `lava`
-  - Liquid Ammonia: `liquid_ammonia`
-  - Petroleum: `oil`
-  - Water: `water`
-- Gas: `gas`
-  - Ammonia: `ammonia`
-  - Carbon Dioxide: `carbon`
-  - Carbon Monoxide: `carbon_monoxide`
-  - Hydrogen: `hydrogen`
-  - Nitrogen: `nitrogen`
-  - Oxygen: `oxygen`
-  - Propane: `propane`
-  - Water Vapor: `steam`
+```ts
+useStandardStorageType(StandardStorageType.Water);
+```
+
+## Standard Storage Categories
+
+There are three standard storage categories: energy, gas, and fluid. If you are registering a custom storage type, you should use the [StandardStorageCategory](https://fluffyalien1422.github.io/bedrock-energistics-core/enumerations/API.StandardStorageCategory.html) enum if possible.
+
+```ts
+registerStorageType({
+  category: StandardStorageCategory.Fluid,
+  color: "blue",
+  id: "example:custom_fluid",
+  name: "custom fluid",
+});
+```
+
+If you are using a custom storage category, it should be namespaced to avoid conflicts with standard storage categories as well as storage categories from other add-ons.

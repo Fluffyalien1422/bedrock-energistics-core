@@ -1,7 +1,11 @@
 import * as ipc from "mcbe-addon-ipc";
 import { world } from "@minecraft/server";
 import { logInfo, raise } from "./utils/log";
-import { RegisteredStorageType, StorageTypeDefinition } from "@/public_api/src";
+import {
+  RegisteredStorageType,
+  STANDARD_STORAGE_TYPE_DEFINITIONS,
+  StorageTypeDefinition,
+} from "@/public_api/src";
 import { MangledStorageTypeDefinition } from "@/public_api/src/storage_type_registry_internal";
 
 export class InternalRegisteredStorageType extends RegisteredStorageType {
@@ -28,12 +32,9 @@ const storageTypeRegistry: Record<string, InternalRegisteredStorageType> = {};
 
 // register energy by default
 registerStorageType(
-  makeRegisteredStorageTypeFromDefinition({
-    id: "energy",
-    category: "energy",
-    color: "yellow",
-    name: "energy",
-  }),
+  makeRegisteredStorageTypeFromDefinition(
+    STANDARD_STORAGE_TYPE_DEFINITIONS.energy,
+  ),
 );
 
 function makeRegisteredStorageTypeFromDefinition(
