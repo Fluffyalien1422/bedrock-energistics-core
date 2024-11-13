@@ -19,7 +19,7 @@ import {
   InternalRegisteredMachine,
 } from "./machine_registry";
 
-export const machineComponent: BlockCustomComponent = {
+export const machineComponentNoInteract: BlockCustomComponent = {
   onPlace(e) {
     if (e.block.typeId === e.previousBlock.type.id) return;
     MachineNetwork.updateAdjacent(e.block);
@@ -44,6 +44,10 @@ export const machineComponent: BlockCustomComponent = {
       entity.setDynamicProperty("block_location", e.block.location);
     }
   },
+}
+
+export const machineComponent: BlockCustomComponent = {
+  ...machineComponentNoInteract,
   onPlayerInteract(e) {
     const definition = InternalRegisteredMachine.getInternal(e.block.typeId);
     if (!definition) {
