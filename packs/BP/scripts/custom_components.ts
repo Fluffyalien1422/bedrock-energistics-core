@@ -1,5 +1,5 @@
 import { world } from "@minecraft/server";
-import { machineComponent, machineComponentNoInteract } from "./machine";
+import { machineComponent, machineNoInteractComponent } from "./machine";
 import { conduitComponent } from "./conduit";
 import { networkLinkComponent } from "./network_links/network_link_component";
 
@@ -11,7 +11,7 @@ world.beforeEvents.worldInitialize.subscribe((e) => {
 
   e.blockComponentRegistry.registerCustomComponent(
     "fluffyalien_energisticscore:machine_no_interact",
-    machineComponentNoInteract,
+    machineNoInteractComponent,
   );
 
   e.blockComponentRegistry.registerCustomComponent(
