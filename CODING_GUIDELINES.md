@@ -34,6 +34,10 @@ This style guide uses elements from the [Google TypeScript Style Guide](https://
 
 - Prefer using `undefined` instead of `null` in most cases.
 
+## `for..of` and `forEach`
+
+- Prefer using `for..of` instead of `Array.prototype.forEach` in most cases.
+
 ## Private Fields
 
 - Do not use private fields (`#myProperty`). Use the `private` keyword instead (`private myProperty`).
@@ -55,8 +59,8 @@ This style guide uses elements from the [Google TypeScript Style Guide](https://
 
 ## Diagnostic Messsages
 
-- Use `logInfo`, `logWarn`, and `makeErrorString` (eg. `throw new Error(makeErrorString(...));`) from `packs/BP/scripts/utils/log.ts` for all logging purposes within the Bedrock Energistics Core add-on (not the public API).
-- Use `logInfo`, `logWarn`, and `makeErrorString` from `public_api/src/internal.ts` for all logging purposes within the Bedrock Energistics Core public API (not the add-on).
+- Use `logInfo`, `logWarn`, and `raise` from `packs/BP/scripts/utils/log.ts` for all logging purposes within the Bedrock Energistics Core add-on (not the public API).
+- Use `logInfo`, `logWarn`, and `raise` from `public_api/src/log.ts` for all logging purposes within the Bedrock Energistics Core public API (not the add-on).
 
 ## Other
 
