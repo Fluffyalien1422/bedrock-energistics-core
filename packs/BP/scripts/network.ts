@@ -356,6 +356,27 @@ export class MachineNetwork extends DestroyableObject {
     const stack: Block[] = [];
     const visitedLocations: Vector3[] = [];
 
+    function handleNetworkLink(block: Block): void {
+      connections.networkLinks.push(block);
+
+      const netLink = InternalNetworkLinkNode.tryGetAt(
+        block.dimension,
+        block.location,
+      );
+      if (!netLink) return;
+
+      const linkedPositions = netLink.getConnections();
+
+      for (const pos of linkedPositions) {
+        const linkedBlock = block.dimension.getBlock(pos);
+        if (
+          linkedBlock === undefined ||
+          visitedLocations.some((v) => Vector3Utils.equals(v, pos))
+        ) continue;
+        handleBlock(linkedBlock);
+      }
+    }
+
     function handleBlock(block: Block): void {
       stack.push(block);
       visitedLocations.push(block.location);
@@ -366,30 +387,12 @@ export class MachineNetwork extends DestroyableObject {
       }
 
       if (block.hasTag("fluffyalien_energisticscore:network_link")) {
-        connections.networkLinks.push(block);
-
-        const netLink = InternalNetworkLinkNode.tryGetAt(
-          block.dimension,
-          block.location,
-        );
-        if (!netLink) return;
-
-        const linkedPositions = netLink.getConnections();
-
-        for (const pos of linkedPositions) {
-          const linkedBlock = block.dimension.getBlock(pos);
-          if (
-            linkedBlock === undefined ||
-            visitedLocations.some((v) => Vector3Utils.equals(v, pos))
-          )
-            continue;
-          handleBlock(linkedBlock);
-        }
-
-        return;
+        handleNetworkLink(block);
       }
 
-      connections.machines.push(block);
+      if (block.hasTag("fluffyalien_energisticscore:machine")) {
+        connections.machines.push(block);
+      }
       return;
     }
 
