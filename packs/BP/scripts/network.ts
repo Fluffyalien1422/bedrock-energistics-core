@@ -273,30 +273,30 @@ export class MachineNetwork extends DestroyableObject {
       };
 
       // return unused storage to generators
-      for (let i = 0; i < distributionData.queueItems.length; i++) {
-        const sendData = distributionData.queueItems[i];
+      // for (let i = 0; i < distributionData.queueItems.length; i++) {
+      //   const sendData = distributionData.queueItems[i];
 
-        const machine = sendData.block;
-        const budgetAllocation = Math.floor(
-          budget / (distributionData.queueItems.length - i),
-        );
+      //   const machine = sendData.block;
+      //   const budgetAllocation = Math.floor(
+      //     budget / (distributionData.queueItems.length - i),
+      //   );
 
-        const machineDef = InternalRegisteredMachine.forceGetInternal(
-          machine.typeId,
-        );
+      //   const machineDef = InternalRegisteredMachine.forceGetInternal(
+      //     machine.typeId,
+      //   );
 
-        const newAmount = Math.min(
-          budgetAllocation,
-          machineDef.maxStorage,
-          sendData.amount,
-        );
+      //   const newAmount = Math.min(
+      //     budgetAllocation,
+      //     machineDef.maxStorage,
+      //     sendData.amount,
+      //   );
 
-        // finally give the machine its allocated share
-        budget -= newAmount;
-        setMachineStorage(machine, type, newAmount);
-        if (budget <= 0) break;
-        yield;
-      }
+      //   // finally give the machine its allocated share
+      //   budget -= newAmount;
+      //   setMachineStorage(machine, type, newAmount);
+      //   if (budget <= 0) break;
+      //   yield;
+      // }
     }
 
     for (const [block, machineDef] of networkStatListeners) {
