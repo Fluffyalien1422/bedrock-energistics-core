@@ -7,7 +7,7 @@ import {
 } from "@minecraft/server";
 import { Vector3Utils } from "@minecraft/math";
 import { DestroyableObject } from "./utils/destroyable";
-import { logWarn, makeErrorString } from "./utils/log";
+import { logWarn } from "./utils/log";
 import { getMachineStorage, setMachineStorage } from "./data";
 import {
   DIRECTION_VECTORS,
@@ -26,7 +26,6 @@ interface SendQueueItem {
   block: Block;
   amount: number;
   type: string;
-  definition: InternalRegisteredMachine;
 }
 
 interface NetworkConnections {
@@ -96,16 +95,30 @@ export class MachineNetwork extends DestroyableObject {
   private *send(): Generator<void, void, void> {
     if (!this.isValid) return;
 
+    interface DistributionData {
+      total: number;
+      queueItems: SendQueueItem[];
+    }
+
     // Calculate the amount of each type that is available to send around.
-    const distribution: Record<string, number> = {};
+    const distribution: Record<string, DistributionData> = {};
 
-    this.sendQueue.forEach((send) => {
-      const newValue = distribution[send.type] ?? 0;
-      distribution[send.type] = newValue + send.amount;
-    });
+    for (const send of this.sendQueue) {
+      if (send.type in distribution) {
+        const data = distribution[send.type];
+        data.total += send.amount;
+        data.queueItems.push(send);
+        continue;
+      }
 
-    // Clear queue for next time.
+      distribution[send.type] = {
+        total: send.amount,
+        queueItems: [send],
+      };
+    }
+
     this.sendQueue = [];
+
     const typesToDistribute = Object.keys(distribution);
 
     interface ConsumerGroups {
@@ -122,27 +135,26 @@ export class MachineNetwork extends DestroyableObject {
     }
 
     // find and filter connections into their consumer groups.
-    this.connections.machines.forEach((machine) => {
-      const machineTags = machine.getTags();
-      const isLowPriority = machineTags.includes(
+    for (const machine of this.connections.machines) {
+      const isLowPriority = machine.hasTag(
         "fluffyalien_energisticscore:low_priority_consumer",
       );
-      const allowsAny = machineTags.includes(
+      const allowsAny = machine.hasTag(
         "fluffyalien_energisticscore:consumer._any",
       );
 
       // Check machine tags and sort into appropriate groups.
-      typesToDistribute.forEach((consumerType) => {
+      for (const consumerType of typesToDistribute) {
         const allowsType =
           allowsAny ||
-          machineTags.includes(
+          machine.hasTag(
             `fluffyalien_energisticscore:consumer.${consumerType}`,
           );
-        if (!allowsType) return;
+        if (!allowsType) continue;
 
         if (isLowPriority) consumers[consumerType].lowPriority.push(machine);
         else consumers[consumerType].normalPriority.push(machine);
-      });
+      }
 
       // Check if the machine is listening for network stat events.
       const machineDef = InternalRegisteredMachine.forceGetInternal(
@@ -152,7 +164,7 @@ export class MachineNetwork extends DestroyableObject {
       if (machineDef.onNetworkStatsRecievedEvent) {
         networkStatListeners.push([machine, machineDef]);
       }
-    });
+    }
 
     const networkStats: Record<string, NetworkStorageTypeData> = {};
 
@@ -160,7 +172,8 @@ export class MachineNetwork extends DestroyableObject {
     for (const type of typesToDistribute) {
       const machines = consumers[type];
 
-      const originalBudget = distribution[type];
+      const distributionData = distribution[type];
+      const originalBudget = distributionData.total;
       let budget = originalBudget;
 
       // Give each machine in the normal priority an equal split of the budget
@@ -258,11 +271,37 @@ export class MachineNetwork extends DestroyableObject {
         before: originalBudget,
         after: budget,
       };
+
+      // return unused storage to generators
+      for (let i = 0; i < distributionData.queueItems.length; i++) {
+        const sendData = distributionData.queueItems[i];
+
+        const machine = sendData.block;
+        const budgetAllocation = Math.floor(
+          budget / (distributionData.queueItems.length - i),
+        );
+
+        const machineDef = InternalRegisteredMachine.forceGetInternal(
+          machine.typeId,
+        );
+
+        const newAmount = Math.min(
+          budgetAllocation,
+          machineDef.maxStorage,
+          sendData.amount,
+        );
+
+        // finally give the machine its allocated share
+        budget -= newAmount;
+        setMachineStorage(machine, type, newAmount);
+        if (budget <= 0) break;
+        yield;
+      }
     }
 
-    networkStatListeners.forEach(([block, machineDef]) => {
+    for (const [block, machineDef] of networkStatListeners) {
       machineDef.callOnNetworkStatsRecievedEvent(block, networkStats);
-    });
+    }
 
     this.sendJobRunning = false;
   }
@@ -324,23 +363,8 @@ export class MachineNetwork extends DestroyableObject {
   }
 
   queueSend(block: Block, type: string, amount: number): void {
-    if (amount <= 0) {
-      throw new Error(
-        makeErrorString("can't send <= 0 (MachineNetwork#queueSend)"),
-      );
-    }
-
-    const definition = InternalRegisteredMachine.getInternal(block.typeId);
-
-    if (!definition) {
-      throw new Error(
-        makeErrorString(
-          `can't queue sending '${type}' from machine '${block.typeId}': the machine to send from could not be found in the machine registry`,
-        ),
-      );
-    }
-
-    this.sendQueue.push({ block, type, amount, definition });
+    if (amount <= 0) return;
+    this.sendQueue.push({ block, type, amount: Math.floor(amount) });
   }
 
   private static discoverConnections(
@@ -356,6 +380,27 @@ export class MachineNetwork extends DestroyableObject {
     const stack: Block[] = [];
     const visitedLocations: Vector3[] = [];
 
+    function handleNetworkLink(block: Block): void {
+      connections.networkLinks.push(block);
+
+      const netLink = InternalNetworkLinkNode.tryGetAt(
+        block.dimension,
+        block.location,
+      );
+      if (!netLink) return;
+
+      const linkedPositions = netLink.getConnections();
+
+      for (const pos of linkedPositions) {
+        const linkedBlock = block.dimension.getBlock(pos);
+        if (
+          linkedBlock === undefined ||
+          visitedLocations.some((v) => Vector3Utils.equals(v, pos))
+        ) continue;
+        handleBlock(linkedBlock);
+      }
+    }
+
     function handleBlock(block: Block): void {
       stack.push(block);
       visitedLocations.push(block.location);
@@ -366,30 +411,12 @@ export class MachineNetwork extends DestroyableObject {
       }
 
       if (block.hasTag("fluffyalien_energisticscore:network_link")) {
-        connections.networkLinks.push(block);
-
-        const netLink = InternalNetworkLinkNode.tryGetAt(
-          block.dimension,
-          block.location,
-        );
-        if (!netLink) return;
-
-        const linkedPositions = netLink.getConnections();
-
-        for (const pos of linkedPositions) {
-          const linkedBlock = block.dimension.getBlock(pos);
-          if (
-            linkedBlock === undefined ||
-            visitedLocations.some((v) => Vector3Utils.equals(v, pos))
-          )
-            continue;
-          handleBlock(linkedBlock);
-        }
-
-        return;
+        handleNetworkLink(block);
       }
 
-      connections.machines.push(block);
+      if (block.hasTag("fluffyalien_energisticscore:machine")) {
+        connections.machines.push(block);
+      }
       return;
     }
 

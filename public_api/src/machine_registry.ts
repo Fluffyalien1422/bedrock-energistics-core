@@ -19,15 +19,10 @@ const NETWORK_STAT_EVENT_SUFFIX = "__e1";
 
 /**
  * Registers a machine. This function should be called in the `worldInitialize` after event.
- * @param shortId If a handler event cannot be created because the block ID is too long, pass a string here to use it as the prefix instead of the block ID.
- * @throws If the block ID is too long and a handler is defined, this function will throw an error. Pass `shortId` to use that as the prefix for handler event IDs instead of the block ID.
  * @beta
  */
-export function registerMachine(
-  definition: MachineDefinition,
-  shortId?: string,
-): void {
-  const eventIdPrefix = shortId ?? definition.description.id;
+export function registerMachine(definition: MachineDefinition): void {
+  const eventIdPrefix = definition.description.id;
 
   let updateUiEvent: string | undefined;
   if (definition.handlers?.updateUi) {
