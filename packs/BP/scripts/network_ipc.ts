@@ -107,17 +107,19 @@ export function generateListener(payload: ipc.SerializableValue): null {
   const type = data.b;
   const amount = data.c;
   const useReserveStorage = data.d;
+  const consumeExisting = data.e;
 
   const block = location.dimension.getBlock(location);
   if (!block) return null;
 
-  const storageType = InternalRegisteredStorageType.forceGetInternal(type);
-
-  const newAmount = getMachineStorage(location, type) + amount;
+  // If consume existing is true, do not add new power, instead consume the existing storage
+  const newAmount =
+    getMachineStorage(location, type) + (consumeExisting ? 0 : amount);
 
   // Set the new amount, as *send will take it directly out of storage
   setMachineStorage(block, type, newAmount);
 
+  const storageType = InternalRegisteredStorageType.forceGetInternal(type);
   MachineNetwork.getOrEstablish(storageType.category, block)?.queueSend(
     block,
     type,
