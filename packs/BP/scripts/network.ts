@@ -115,6 +115,14 @@ export class MachineNetwork extends DestroyableObject {
         total: send.amount,
         queueItems: [send],
       };
+
+      // Take away the amount generated:
+      // default behaviour of generate is to send the amount to generate + the current in the machine
+      // Instead do it by send.amount allowing for machines to use an alternative function to only output 
+      // the amount generated, and not stored inside the machine always.
+      const currentStored = getMachineStorage(send.block, send.type);
+      console.log("currently stored", currentStored);
+      setMachineStorage(send.block, send.type, Math.max(0, currentStored - send.amount));
     }
 
     this.sendQueue = [];
@@ -176,70 +184,26 @@ export class MachineNetwork extends DestroyableObject {
       const originalBudget = distributionData.total;
       let budget = originalBudget;
 
-      // Give each machine in the normal priority an equal split of the budget
-      // Machines can consume less than they're offered in which case the savings are given to further machines.
-      for (let i = 0; i < machines.normalPriority.length; i++) {
-        const machine = machines.normalPriority[i];
-        const budgetAllocation = Math.floor(
-          budget / (machines.normalPriority.length - i),
-        );
-        const currentStored = getMachineStorage(machine, type);
-        const machineDef = InternalRegisteredMachine.forceGetInternal(
-          machine.typeId,
-        );
+      function *sendGroupAllocation(blocks: Block[]): Generator<void, void, void> {
+        if (budget <= 0) return;
 
-        let amountToAllocate: number = Math.min(
-          budgetAllocation,
-          machineDef.maxStorage - currentStored,
-        );
-
-        let waiting = true;
-
-        this.determineActualMachineAllocation(
-          machine,
-          machineDef,
-          type,
-          amountToAllocate,
-        )
-          .then((v) => (amountToAllocate = v))
-          .catch((e: unknown) => {
-            logWarn(
-              `Error in determineActualMachineAllocation for id: ${machineDef.id}, error: ${JSON.stringify(e)}`,
-            );
-            amountToAllocate = 0;
-          })
-          .finally(() => {
-            waiting = false;
-          });
-
-        while (waiting as boolean) yield;
-
-        // finally give the machine its allocated share
-        budget -= amountToAllocate;
-        setMachineStorage(machine, type, currentStored + amountToAllocate);
-        if (budget <= 0) break;
-        yield;
-      }
-
-      // Give each machine in the low priority a split of the leftover budget (if applicable)
-      if (budget >= 0) {
-        for (let i = 0; i < machines.lowPriority.length; i++) {
-          const machine = machines.lowPriority[i];
+        for (let i = 0; i < blocks.length; i++) {
+          const machine = blocks[i];
           const budgetAllocation = Math.floor(
-            budget / (machines.lowPriority.length - i),
+            budget / (blocks.length - i),
           );
           const currentStored = getMachineStorage(machine, type);
           const machineDef = InternalRegisteredMachine.forceGetInternal(
             machine.typeId,
           );
-
+  
           let amountToAllocate: number = Math.min(
             budgetAllocation,
             machineDef.maxStorage - currentStored,
           );
-
+  
           let waiting = true;
-
+  
           this.determineActualMachineAllocation(
             machine,
             machineDef,
@@ -256,9 +220,9 @@ export class MachineNetwork extends DestroyableObject {
             .finally(() => {
               waiting = false;
             });
-
+  
           while (waiting as boolean) yield;
-
+  
           // finally give the machine its allocated share
           budget -= amountToAllocate;
           setMachineStorage(machine, type, currentStored + amountToAllocate);
@@ -267,41 +231,22 @@ export class MachineNetwork extends DestroyableObject {
         }
       }
 
+      // Give each machine in the normal priority an equal split of the budget
+      // Machines can consume less than they're offered in which case the savings are given to further machines.
+      yield* sendGroupAllocation(machines.normalPriority);
+      yield* sendGroupAllocation(machines.lowPriority);
+
       networkStats[type] = {
         before: originalBudget,
         after: budget,
       };
-
-      // return unused storage to generators
-      for (let i = 0; i < distributionData.queueItems.length; i++) {
-        const sendData = distributionData.queueItems[i];
-
-        const machine = sendData.block;
-        const budgetAllocation = Math.floor(
-          budget / (distributionData.queueItems.length - i),
-        );
-
-        const machineDef = InternalRegisteredMachine.forceGetInternal(
-          machine.typeId,
-        );
-
-        const newAmount = Math.min(
-          budgetAllocation,
-          machineDef.maxStorage,
-          sendData.amount,
-        );
-
-        // finally give the machine its allocated share
-        budget -= newAmount;
-        setMachineStorage(machine, type, newAmount);
-        if (budget <= 0) break;
-        yield;
-      }
     }
 
     for (const [block, machineDef] of networkStatListeners) {
       machineDef.callOnNetworkStatsRecievedEvent(block, networkStats);
     }
+
+    console.log(JSON.stringify(consumers));
 
     this.sendJobRunning = false;
   }

@@ -10,7 +10,7 @@ import {
   MangledNetworkQueueSendPayload,
 } from "@/public_api/src/network_internal";
 import { MachineNetwork } from "./network";
-import { getMachineStorage } from "./data";
+import { getMachineStorage, setMachineStorage } from "./data";
 import { InternalRegisteredStorageType } from "./storage_type_registry";
 
 export function networkDestroyListener(payload: ipc.SerializableValue): null {
@@ -110,16 +110,20 @@ export function generateListener(payload: ipc.SerializableValue): null {
   const block = location.dimension.getBlock(location);
   if (!block) return null;
 
-  const fullAmount = amount + getMachineStorage(location, type);
-  if (!fullAmount) return null;
-
   const storageType = InternalRegisteredStorageType.forceGetInternal(type);
+
+  const newAmount = getMachineStorage(location, type) + amount;
+
+  // Set the new amount, as *send will take it directly out of storage
+  setMachineStorage(block, type, newAmount);
 
   MachineNetwork.getOrEstablish(storageType.category, block)?.queueSend(
     block,
     type,
-    fullAmount,
+    newAmount,
   );
+
+  console.log(`[listener] recieved instruction to generate ${String(newAmount)}`)
 
   return null;
 }
