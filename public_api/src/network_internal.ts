@@ -107,4 +107,8 @@ export interface MangledGeneratePayload {
    * amount
    */
   c: number;
+  /**
+   * useReserve
+   */
+  d: boolean;
 }

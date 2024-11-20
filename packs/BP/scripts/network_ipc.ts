@@ -106,6 +106,7 @@ export function generateListener(payload: ipc.SerializableValue): null {
   const location = deserializeDimensionLocation(data.a);
   const type = data.b;
   const amount = data.c;
+  const useReserveStorage = data.d;
 
   const block = location.dimension.getBlock(location);
   if (!block) return null;
@@ -120,11 +121,7 @@ export function generateListener(payload: ipc.SerializableValue): null {
   MachineNetwork.getOrEstablish(storageType.category, block)?.queueSend(
     block,
     type,
-    newAmount,
-  );
-
-  console.log(
-    `[listener] recieved instruction to generate ${String(newAmount)}`,
+    useReserveStorage ? newAmount : amount,
   );
 
   return null;

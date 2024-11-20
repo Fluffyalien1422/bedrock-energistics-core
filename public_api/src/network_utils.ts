@@ -22,26 +22,29 @@ export function getBlockNetworkConnectionType(
 }
 
 /**
- * Sends a storage type over a machine network. Includes reserve storage as well.
+ * Sends a storage type over a machine network. Includes reserve storage as well (if `useReserveStorage` is true).
  * @beta
  * @remarks
- * This function should be called every block tick for generators even if the generation is `0` because it sends reserve storage.
+ * This function should be called every block tick for generators even if the generation is `0` because it sends reserve storage (if `useReserveStorage` is true).
  * Automatically sets the machine's reserve storage to the amount that was not received.
  * This function is a wrapper around {@link MachineNetwork.queueSend}.
  * @param blockLocation The location of the machine that is generating.
  * @param type The storage type to generate.
  * @param amount The amount to generate.
+ * @param useReserveStorage Should the reserve storage be used?
  * @see {@link queueSend}
  */
 export function generate(
   blockLocation: DimensionLocation,
   type: string,
   amount: number,
+  useReserveStorage = true,
 ): void {
   const payload: MangledGeneratePayload = {
     a: makeSerializableDimensionLocation(blockLocation),
     b: type,
     c: amount,
+    d: useReserveStorage,
   };
 
   ipcSend("fluffyalien_energisticscore:ipc.generate", payload);
