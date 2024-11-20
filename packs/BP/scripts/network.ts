@@ -104,15 +104,19 @@ export class MachineNetwork extends DestroyableObject {
     const distribution: Record<string, DistributionData> = {};
 
     for (const send of this.sendQueue) {
+      // No race conditions! Verify we have the amount its trying to send still!
+      const currentStored = getMachineStorage(send.block, send.type);
+      const amountToSend = Math.min(currentStored, send.amount);
+
       if (send.type in distribution) {
         const data = distribution[send.type];
-        data.total += send.amount;
+        data.total += amountToSend;
         data.queueItems.push(send);
         continue;
       }
 
       distribution[send.type] = {
-        total: send.amount,
+        total: amountToSend,
         queueItems: [send],
       };
 
@@ -120,9 +124,8 @@ export class MachineNetwork extends DestroyableObject {
       // default behaviour of generate is to send the amount to generate + the current in the machine
       // Instead do it by send.amount allowing for machines to use an alternative function to only output 
       // the amount generated, and not stored inside the machine always.
-      const currentStored = getMachineStorage(send.block, send.type);
-      console.log("currently stored", currentStored);
-      setMachineStorage(send.block, send.type, Math.max(0, currentStored - send.amount));
+      console.log("currently stored", currentStored, "amount to really send", amountToSend);
+      setMachineStorage(send.block, send.type, Math.max(0, currentStored - amountToSend));
     }
 
     this.sendQueue = [];
