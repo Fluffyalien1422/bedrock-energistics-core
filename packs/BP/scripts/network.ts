@@ -102,6 +102,7 @@ export class MachineNetwork extends DestroyableObject {
 
     // Calculate the amount of each type that is available to send around.
     const distribution: Record<string, DistributionData> = {};
+    const generators: Block[] = [];
 
     for (const send of this.sendQueue) {
       // No race conditions! Verify we have the amount its trying to send still!
@@ -120,11 +121,12 @@ export class MachineNetwork extends DestroyableObject {
         queueItems: [send],
       };
 
+      generators.push(send.block);  
+
       // Take away the amount generated:
       // default behaviour of generate is to send the amount to generate + the current in the machine
       // Instead do it by send.amount allowing for machines to use an alternative function to only output 
       // the amount generated, and not stored inside the machine always.
-      console.log("currently stored", currentStored, "amount to really send", amountToSend);
       setMachineStorage(send.block, send.type, Math.max(0, currentStored - amountToSend));
     }
 
@@ -238,6 +240,7 @@ export class MachineNetwork extends DestroyableObject {
       // Machines can consume less than they're offered in which case the savings are given to further machines.
       yield* sendGroupAllocation(this, machines.normalPriority);
       yield* sendGroupAllocation(this, machines.lowPriority);
+      yield* sendGroupAllocation(this, generators);
 
       networkStats[type] = {
         before: originalBudget,
@@ -248,8 +251,6 @@ export class MachineNetwork extends DestroyableObject {
     for (const [block, machineDef] of networkStatListeners) {
       machineDef.callOnNetworkStatsRecievedEvent(block, networkStats);
     }
-
-    console.log(JSON.stringify(consumers));
 
     this.sendJobRunning = false;
   }
