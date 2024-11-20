@@ -184,7 +184,7 @@ export class MachineNetwork extends DestroyableObject {
       const originalBudget = distributionData.total;
       let budget = originalBudget;
 
-      function *sendGroupAllocation(blocks: Block[]): Generator<void, void, void> {
+      function *sendGroupAllocation(network: MachineNetwork, blocks: Block[]): Generator<void, void, void> {
         if (budget <= 0) return;
 
         for (let i = 0; i < blocks.length; i++) {
@@ -204,7 +204,7 @@ export class MachineNetwork extends DestroyableObject {
   
           let waiting = true;
   
-          this.determineActualMachineAllocation(
+          network.determineActualMachineAllocation(
             machine,
             machineDef,
             type,
@@ -233,8 +233,8 @@ export class MachineNetwork extends DestroyableObject {
 
       // Give each machine in the normal priority an equal split of the budget
       // Machines can consume less than they're offered in which case the savings are given to further machines.
-      yield* sendGroupAllocation(machines.normalPriority);
-      yield* sendGroupAllocation(machines.lowPriority);
+      yield* sendGroupAllocation(this, machines.normalPriority);
+      yield* sendGroupAllocation(this, machines.lowPriority);
 
       networkStats[type] = {
         before: originalBudget,
