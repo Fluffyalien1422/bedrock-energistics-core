@@ -121,13 +121,17 @@ export class MachineNetwork extends DestroyableObject {
         queueItems: [send],
       };
 
-      generators.push(send.block);  
+      generators.push(send.block);
 
       // Take away the amount generated:
       // default behaviour of generate is to send the amount to generate + the current in the machine
-      // Instead do it by send.amount allowing for machines to use an alternative function to only output 
+      // Instead do it by send.amount allowing for machines to use an alternative function to only output
       // the amount generated, and not stored inside the machine always.
-      setMachineStorage(send.block, send.type, Math.max(0, currentStored - amountToSend));
+      setMachineStorage(
+        send.block,
+        send.type,
+        Math.max(0, currentStored - amountToSend),
+      );
     }
 
     this.sendQueue = [];
@@ -189,32 +193,34 @@ export class MachineNetwork extends DestroyableObject {
       const originalBudget = distributionData.total;
       let budget = originalBudget;
 
-      function *sendGroupAllocation(network: MachineNetwork, blocks: Block[]): Generator<void, void, void> {
+      function* sendGroupAllocation(
+        network: MachineNetwork,
+        blocks: Block[],
+      ): Generator<void, void, void> {
         if (budget <= 0) return;
 
         for (let i = 0; i < blocks.length; i++) {
           const machine = blocks[i];
-          const budgetAllocation = Math.floor(
-            budget / (blocks.length - i),
-          );
+          const budgetAllocation = Math.floor(budget / (blocks.length - i));
           const currentStored = getMachineStorage(machine, type);
           const machineDef = InternalRegisteredMachine.forceGetInternal(
             machine.typeId,
           );
-  
+
           let amountToAllocate: number = Math.min(
             budgetAllocation,
             machineDef.maxStorage - currentStored,
           );
-  
+
           let waiting = true;
-  
-          network.determineActualMachineAllocation(
-            machine,
-            machineDef,
-            type,
-            amountToAllocate,
-          )
+
+          network
+            .determineActualMachineAllocation(
+              machine,
+              machineDef,
+              type,
+              amountToAllocate,
+            )
             .then((v) => (amountToAllocate = v))
             .catch((e: unknown) => {
               logWarn(
@@ -225,9 +231,9 @@ export class MachineNetwork extends DestroyableObject {
             .finally(() => {
               waiting = false;
             });
-  
+
           while (waiting as boolean) yield;
-  
+
           // finally give the machine its allocated share
           budget -= amountToAllocate;
           setMachineStorage(machine, type, currentStored + amountToAllocate);
@@ -345,7 +351,8 @@ export class MachineNetwork extends DestroyableObject {
         if (
           linkedBlock === undefined ||
           visitedLocations.some((v) => Vector3Utils.equals(v, pos))
-        ) continue;
+        )
+          continue;
         handleBlock(linkedBlock);
       }
     }

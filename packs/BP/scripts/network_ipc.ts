@@ -123,7 +123,9 @@ export function generateListener(payload: ipc.SerializableValue): null {
     newAmount,
   );
 
-  console.log(`[listener] recieved instruction to generate ${String(newAmount)}`)
+  console.log(
+    `[listener] recieved instruction to generate ${String(newAmount)}`,
+  );
 
   return null;
 }
