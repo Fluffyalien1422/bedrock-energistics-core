@@ -105,6 +105,13 @@ export class NetworkLinkNode {
   }
 
   /**
+   * @returns The internal entity that stores data associated with this node.
+   */
+  public getInternalEntity(): Entity {
+    return this.entity;
+  }
+
+  /**
    * Finds the `NetworkLinkNode` associated with this block, or creates it if it doesn't exist
    *
    * @param block Expected to have the `fluffyalien_energisticscore:network_link` block tag
