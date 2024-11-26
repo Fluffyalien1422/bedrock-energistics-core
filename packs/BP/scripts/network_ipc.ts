@@ -12,6 +12,7 @@ import {
 import { MachineNetwork } from "./network";
 import { getMachineStorage, setMachineStorage } from "./data";
 import { InternalRegisteredStorageType } from "./storage_type_registry";
+import { GenerateMode } from "@/public_api/src";
 
 export function networkDestroyListener(payload: ipc.SerializableValue): null {
   const data = payload as MangledNetworkInstanceMethodPayload;
@@ -106,24 +107,32 @@ export function generateListener(payload: ipc.SerializableValue): null {
   const location = deserializeDimensionLocation(data.a);
   const type = data.b;
   const amount = data.c;
-  const useReserveStorage = data.d;
-  const consumeExisting = data.e;
+  const mode = data.d;
 
   const block = location.dimension.getBlock(location);
   if (!block) return null;
 
-  // If consume existing is true, do not add new power, instead consume the existing storage
-  const newAmount =
-    getMachineStorage(location, type) + (consumeExisting ? 0 : amount);
+  const reserve = getMachineStorage(block, type);
+  let amountToSend = 0;
 
-  // Set the new amount, as *send will take it directly out of storage
-  setMachineStorage(block, type, newAmount);
+  switch (mode) {
+    case GenerateMode.Default: {
+      setMachineStorage(block, type, 0);
+      amountToSend = reserve + amount;
+      break;
+    }
+    case GenerateMode.TakeFromReserve: {
+      amountToSend = Math.min(amount, reserve);
+      setMachineStorage(block, type, reserve - amountToSend);
+      break;
+    }
+  }
 
   const storageType = InternalRegisteredStorageType.forceGetInternal(type);
   MachineNetwork.getOrEstablish(storageType.category, block)?.queueSend(
     block,
     type,
-    useReserveStorage ? newAmount : amount,
+    amountToSend
   );
 
   return null;

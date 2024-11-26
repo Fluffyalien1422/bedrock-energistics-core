@@ -21,6 +21,20 @@ export function getBlockNetworkConnectionType(
   return null;
 }
 
+export enum GenerateMode {
+  /**
+   * - Sends existing reserve storage
+   * - Adds the amount generated ontop of existing reserve
+   */
+  Default,
+
+  /**
+   * - Only sends the amount passed in generate, does not include reserve
+   * - Takes the amount away from existing reserve
+   */
+  TakeFromReserve
+}
+
 /**
  * Sends a storage type over a machine network. Includes reserve storage as well (if `sendReserveStorage` is true).
  * @beta
@@ -31,23 +45,20 @@ export function getBlockNetworkConnectionType(
  * @param blockLocation The location of the machine that is generating.
  * @param type The storage type to generate.
  * @param amount The amount to generate.
- * @param sendReserveStorage Should the amount in storage be included in the amount generated and sent to other machines on the network
- * @param consumeExisting When false the amount generated is added onto the machines current storage, when true, the amount generated is taken from existing storage
+ * @param mode What mode should generate use?
  * @see {@link queueSend}
  */
 export function generate(
   blockLocation: DimensionLocation,
   type: string,
   amount: number,
-  sendReserveStorage = true,
-  consumeExisting = false,
+  mode: GenerateMode = GenerateMode.Default
 ): void {
   const payload: MangledGeneratePayload = {
     a: makeSerializableDimensionLocation(blockLocation),
     b: type,
     c: amount,
-    d: sendReserveStorage,
-    e: consumeExisting,
+    d: mode
   };
 
   ipcSend("fluffyalien_energisticscore:ipc.generate", payload);

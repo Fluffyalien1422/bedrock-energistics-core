@@ -1,4 +1,4 @@
-import { NetworkConnectionType } from "./network_utils.js";
+import { GenerateMode, NetworkConnectionType } from "./network_utils.js";
 import { SerializableDimensionLocation } from "./serialize_utils.js";
 
 /**
@@ -108,11 +108,7 @@ export interface MangledGeneratePayload {
    */
   c: number;
   /**
-   * sendReserveStorage
+   * mode
    */
-  d: boolean;
-  /**
-   * consumeExisting
-   */
-  e: boolean;
+  d: GenerateMode;
 }
