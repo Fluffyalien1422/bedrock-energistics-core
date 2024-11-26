@@ -277,6 +277,11 @@ export class MachineNetwork extends DestroyableObject {
         const sendData = distributionData.queueItems[i];
 
         const machine = sendData.block;
+
+        if (budget <= 0) {
+          setMachineStorage(sendData.block, sendData.type, 0);
+        }
+
         const budgetAllocation = Math.floor(
           budget / (distributionData.queueItems.length - i),
         );
@@ -294,7 +299,6 @@ export class MachineNetwork extends DestroyableObject {
         // finally give the machine its allocated share
         budget -= newAmount;
         setMachineStorage(machine, type, newAmount);
-        if (budget <= 0) break;
         yield;
       }
     }
@@ -396,7 +400,8 @@ export class MachineNetwork extends DestroyableObject {
         if (
           linkedBlock === undefined ||
           visitedLocations.some((v) => Vector3Utils.equals(v, pos))
-        ) continue;
+        )
+          continue;
         handleBlock(linkedBlock);
       }
     }
