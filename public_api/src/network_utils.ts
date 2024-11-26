@@ -32,7 +32,7 @@ export enum GenerateMode {
    * - Only sends the amount passed in generate, does not include reserve
    * - Takes the amount away from existing reserve
    */
-  TakeFromReserve
+  TakeFromReserve,
 }
 
 /**
@@ -52,13 +52,13 @@ export function generate(
   blockLocation: DimensionLocation,
   type: string,
   amount: number,
-  mode: GenerateMode = GenerateMode.Default
+  mode: GenerateMode = GenerateMode.Default,
 ): void {
   const payload: MangledGeneratePayload = {
     a: makeSerializableDimensionLocation(blockLocation),
     b: type,
     c: amount,
-    d: mode
+    d: mode,
   };
 
   ipcSend("fluffyalien_energisticscore:ipc.generate", payload);

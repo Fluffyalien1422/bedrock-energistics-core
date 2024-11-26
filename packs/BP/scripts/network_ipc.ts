@@ -132,7 +132,7 @@ export function generateListener(payload: ipc.SerializableValue): null {
   MachineNetwork.getOrEstablish(storageType.category, block)?.queueSend(
     block,
     type,
-    amountToSend
+    amountToSend,
   );
 
   return null;
