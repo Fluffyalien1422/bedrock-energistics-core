@@ -105,6 +105,15 @@ export class NetworkLinkNode {
   }
 
   /**
+   * Returns the internal entity being used for this network link node
+   * - Can be used to stash additional data by other packs.
+   * @beta 
+   */
+  public getInternalEntity(): Entity {
+    return this.entity;
+  }
+
+  /**
    * Finds the `NetworkLinkNode` associated with this block, or creates it if it doesn't exist
    *
    * @param block Expected to have the `fluffyalien_energisticscore:network_link` block tag
@@ -150,4 +159,6 @@ export class NetworkLinkNode {
     if (dataStorageEntity === undefined) return undefined;
     return new NetworkLinkNode(dataStorageEntity, location);
   }
+
+
 }
