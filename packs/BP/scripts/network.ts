@@ -278,13 +278,38 @@ export class MachineNetwork extends DestroyableObject {
 
         const machine = sendData.block;
 
-        if (budget <= 0) {
-          setMachineStorage(sendData.block, sendData.type, 0);
+        const isConsumer =
+          machine.hasTag("fluffyalien_energisticscore:consumer._any") ||
+          machine.hasTag(`fluffyalien_energisticscore:consumer.${type}`);
+
+        if (budget <= 0 && !isConsumer) {
+          setMachineStorage(machine, sendData.type, 0);
+          yield;
+          continue;
         }
 
         const budgetAllocation = Math.floor(
           budget / (distributionData.queueItems.length - i),
         );
+
+        if (isConsumer) {
+          const actualBudgetAllocation = Math.min(
+            sendData.amount,
+            budgetAllocation,
+          );
+
+          setMachineStorage(
+            machine,
+            sendData.type,
+            getMachineStorage(machine, sendData.type) +
+              actualBudgetAllocation -
+              sendData.amount,
+          );
+
+          budget -= actualBudgetAllocation;
+          yield;
+          continue;
+        }
 
         const machineDef = InternalRegisteredMachine.forceGetInternal(
           machine.typeId,
