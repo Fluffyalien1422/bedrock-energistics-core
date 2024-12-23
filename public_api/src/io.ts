@@ -1,16 +1,27 @@
 import { Block } from "@minecraft/server";
 
-export function getBlockIoCategories(block: Block): string[] | "any" {
-  if (block.hasTag("fluffyalien_energisticscore:io._any")) return "any";
+const IO_TYPE_TAG_PREFIX = "fluffyalien_energisticscore:io.type.";
+const IO_CATEGORY_TAG_PREFIX = "fluffyalien_energisticscore:io.category.";
 
-  const tags = block.getTags();
-  const categories: string[] = [];
+export interface MachineIo {
+  types: string[];
+  categories: string[];
+}
 
-  for (const tag of tags) {
-    if (tag.startsWith("fluffyalien_energisticscore:io.")) {
-      categories.push(tag.slice("fluffyalien_energisticscore:io.".length));
-    }
-  }
+export function getMachineIo(machine: Block): MachineIo | "any" {
+  const tags = machine.getTags();
 
-  return categories;
+  if (tags.includes("fluffyalien_energisticscore:io.any")) return "any";
+
+  const types = tags.filter((tag) => tag.startsWith(IO_TYPE_TAG_PREFIX));
+  const categories = tags.filter((tag) =>
+    tag.startsWith(IO_CATEGORY_TAG_PREFIX),
+  );
+
+  return {
+    types: types.map((tag) => tag.slice(IO_TYPE_TAG_PREFIX.length)),
+    categories: categories.map((tag) =>
+      tag.slice(IO_CATEGORY_TAG_PREFIX.length),
+    ),
+  };
 }
