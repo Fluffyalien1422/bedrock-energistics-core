@@ -17,8 +17,10 @@ import {
 import { InternalNetworkLinkNode } from "./network_links/network_link_internal";
 import {
   getBlockNetworkConnectionType,
+  getMachineIo,
   NetworkConnectionType,
   NetworkStorageTypeData,
+  RegisteredStorageType,
 } from "@/public_api/src";
 import { InternalRegisteredMachine } from "./machine_registry";
 
@@ -38,7 +40,7 @@ let totalNetworkCount = 0; // used to create a unique id
 const networks = new Map<number, MachineNetwork>();
 
 /**
- * A network of machines with a certain I/O category.
+ * A network of machines with a certain I/O type.
  */
 export class MachineNetwork extends DestroyableObject {
   private sendJobRunning = false;
@@ -52,9 +54,9 @@ export class MachineNetwork extends DestroyableObject {
 
   constructor(
     /**
-     * The I/O category of this network.
+     * The I/O type of this network.
      */
-    readonly category: string,
+    readonly ioType: RegisteredStorageType,
     /**
      * This network's dimension.
      */
@@ -383,7 +385,7 @@ export class MachineNetwork extends DestroyableObject {
    */
   isPartOfNetwork(
     location: DimensionLocation,
-    type: NetworkConnectionType,
+    connectionType: NetworkConnectionType,
   ): boolean {
     this.ensureValidity();
 
@@ -392,11 +394,11 @@ export class MachineNetwork extends DestroyableObject {
     const condition = (other: Block): boolean =>
       Vector3Utils.equals(location, other.location);
 
-    if (type === NetworkConnectionType.Conduit) {
+    if (connectionType === NetworkConnectionType.Conduit) {
       return this.connections.conduits.some(condition);
     }
 
-    if (type === NetworkConnectionType.NetworkLink) {
+    if (connectionType === NetworkConnectionType.NetworkLink) {
       return this.connections.networkLinks.some(condition);
     }
 
@@ -420,7 +422,7 @@ export class MachineNetwork extends DestroyableObject {
 
   private static discoverConnections(
     origin: Block,
-    category: string,
+    ioType: RegisteredStorageType,
   ): NetworkConnections {
     const connections: NetworkConnections = {
       conduits: [],
@@ -481,12 +483,14 @@ export class MachineNetwork extends DestroyableObject {
       );
       if (isHandled) return;
 
-      const isSameCategory = nextBlock.hasTag(
-        `fluffyalien_energisticscore:io.${category}`,
-      );
-      const allowsAny = nextBlock.hasTag("fluffyalien_energisticscore:io._any");
+      const io = getMachineIo(nextBlock);
 
-      if (isSameCategory || allowsAny) handleBlock(nextBlock);
+      const allowsType =
+        io === "any" ||
+        io.types.includes(ioType.id) ||
+        io.categories.includes(ioType.category);
+
+      if (allowsType) handleBlock(nextBlock);
     }
 
     handleBlock(origin);
@@ -507,13 +511,16 @@ export class MachineNetwork extends DestroyableObject {
   /**
    * Establish a new network at `location`.
    */
-  static establish(category: string, block: Block): MachineNetwork | undefined {
-    const connections = MachineNetwork.discoverConnections(block, category);
+  static establish(
+    ioType: RegisteredStorageType,
+    block: Block,
+  ): MachineNetwork | undefined {
+    const connections = MachineNetwork.discoverConnections(block, ioType);
     if (!connections.machines.length) {
       return;
     }
 
-    return new MachineNetwork(category, block.dimension, connections);
+    return new MachineNetwork(ioType, block.dimension, connections);
   }
 
   static getFromId(id: number): MachineNetwork | undefined {
@@ -522,17 +529,17 @@ export class MachineNetwork extends DestroyableObject {
 
   /**
    * Get the {@link MachineNetwork} that contains a machine that matches the arguments.
-   * @param category the category of the network.
+   * @param type the I/O type of the network.
    */
   static getWith(
-    category: string,
+    ioType: RegisteredStorageType,
     location: DimensionLocation,
-    type: NetworkConnectionType,
+    connectionType: NetworkConnectionType,
   ): MachineNetwork | undefined {
     return [...networks.values()].find(
       (network) =>
-        network.category === category &&
-        network.isPartOfNetwork(location, type),
+        network.ioType.id === ioType.id &&
+        network.isPartOfNetwork(location, connectionType),
     );
   }
 
@@ -540,12 +547,12 @@ export class MachineNetwork extends DestroyableObject {
    * Get the {@link MachineNetwork} that contains a block.
    */
   static getWithBlock(
-    category: string,
+    ioType: RegisteredStorageType,
     block: Block,
   ): MachineNetwork | undefined {
     const type = getBlockNetworkConnectionType(block);
     if (!type) return;
-    return MachineNetwork.getWith(category, block, type);
+    return MachineNetwork.getWith(ioType, block, type);
   }
 
   /**
@@ -575,35 +582,24 @@ export class MachineNetwork extends DestroyableObject {
    * @see {@link MachineNetwork.getWithBlock}, {@link MachineNetwork.establish}
    */
   static getOrEstablish(
-    category: string,
+    ioType: RegisteredStorageType,
     block: Block,
   ): MachineNetwork | undefined {
     return (
-      MachineNetwork.getWithBlock(category, block) ??
-      MachineNetwork.establish(category, block)
+      MachineNetwork.getWithBlock(ioType, block) ??
+      MachineNetwork.establish(ioType, block)
     );
   }
 
   /**
    * Update all {@link MachineNetwork}s adjacent to a location.
-   * @param categories Only update networks of these I/O categories. If this is `undefined` then all adjacent networks will be updated.
    */
-  static updateAdjacent(
-    location: DimensionLocation,
-    categories?: string[],
-  ): void {
+  static updateAdjacent(location: DimensionLocation): void {
     for (const directionVector of DIRECTION_VECTORS) {
       const blockInDirection = location.dimension.getBlock(
         Vector3Utils.add(location, directionVector),
       );
       if (!blockInDirection) {
-        continue;
-      }
-
-      if (categories) {
-        for (const category of categories) {
-          MachineNetwork.getWithBlock(category, blockInDirection)?.destroy();
-        }
         continue;
       }
 

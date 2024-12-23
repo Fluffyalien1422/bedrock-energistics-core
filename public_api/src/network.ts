@@ -1,11 +1,11 @@
 import { Block, DimensionLocation } from "@minecraft/server";
 import {
-  MangledNetworkEstablishPayload,
   MangledNetworkGetAllWithPayload,
-  MangledNetworkGetWithPayload,
   MangledNetworkInstanceMethodPayload,
   MangledNetworkIsPartOfNetworkPayload,
   MangledNetworkQueueSendPayload,
+  NetworkEstablishPayload,
+  NetworkGetWithPayload,
 } from "./network_internal.js";
 import { DIRECTION_VECTORS } from "./misc_internal.js";
 import { Vector3Utils } from "@minecraft/math";
@@ -13,7 +13,6 @@ import {
   getBlockNetworkConnectionType,
   NetworkConnectionType,
 } from "./network_utils.js";
-import { getBlockIoCategories } from "./io.js";
 import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 
@@ -106,12 +105,12 @@ export class MachineNetwork {
    * @beta
    */
   static async establish(
-    category: string,
+    ioTypeId: string,
     location: DimensionLocation,
   ): Promise<MachineNetwork | undefined> {
-    const payload: MangledNetworkEstablishPayload = {
-      a: category,
-      b: makeSerializableDimensionLocation(location),
+    const payload: NetworkEstablishPayload = {
+      ioTypeId,
+      location: makeSerializableDimensionLocation(location),
     };
 
     const id = (await ipcInvoke(
@@ -130,14 +129,14 @@ export class MachineNetwork {
    * @beta
    */
   static async getWith(
-    category: string,
+    ioTypeId: string,
     location: DimensionLocation,
-    type: NetworkConnectionType,
+    connectionType: NetworkConnectionType,
   ): Promise<MachineNetwork | undefined> {
-    const payload: MangledNetworkGetWithPayload = {
-      a: category,
-      b: makeSerializableDimensionLocation(location),
-      c: type,
+    const payload: NetworkGetWithPayload = {
+      ioTypeId,
+      connectionType,
+      location: makeSerializableDimensionLocation(location),
     };
 
     const id = (await ipcInvoke(
@@ -201,15 +200,15 @@ export class MachineNetwork {
    * @beta
    */
   static async getOrEstablish(
-    category: string,
+    ioTypeId: string,
     location: DimensionLocation,
   ): Promise<MachineNetwork | undefined> {
     // this can be done without a dedicated script event handler,
     // but invoking one handler is faster than two
 
-    const payload: MangledNetworkEstablishPayload = {
-      a: category,
-      b: makeSerializableDimensionLocation(location),
+    const payload: NetworkEstablishPayload = {
+      ioTypeId,
+      location: makeSerializableDimensionLocation(location),
     };
 
     const id = (await ipcInvoke(
@@ -254,21 +253,6 @@ export class MachineNetwork {
         network.destroy();
       }
     }
-  }
-
-  /**
-   * Update all {@link MachineNetwork}s that can connect to a machine.
-   * @remarks
-   * "Connectable" means that the network is adjacent to the machine and shares an I/O category.
-   * @beta
-   */
-  static async updateConnectable(block: Block): Promise<void> {
-    const ioCategories = getBlockIoCategories(block);
-
-    return MachineNetwork.updateAdjacent(
-      block,
-      ioCategories === "any" ? undefined : ioCategories,
-    );
   }
 
   /**
