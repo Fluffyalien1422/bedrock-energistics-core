@@ -225,7 +225,6 @@ export class MachineNetwork {
 
   /**
    * Update all {@link MachineNetwork}s adjacent to a location.
-   * @param categories Only update networks of these I/O categories. If this is `undefined` then all adjacent networks will be updated.
    * @beta
    */
   static async updateAdjacent(location: DimensionLocation): Promise<void> {

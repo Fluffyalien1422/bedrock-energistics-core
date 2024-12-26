@@ -31,7 +31,7 @@ export function getBlockNetworkConnectionType(
  * @param blockLocation The location of the machine that is generating.
  * @param type The storage type to generate.
  * @param amount The amount to generate.
- * @see {@link queueSend}
+ * @see {@link MachineNetwork.queueSend}
  */
 export function generate(
   blockLocation: DimensionLocation,
