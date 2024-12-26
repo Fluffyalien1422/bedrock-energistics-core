@@ -2,12 +2,17 @@ import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import { StorageTypeColor, StorageTypeDefinition } from "./registry_types.js";
 import { MangledStorageTypeDefinition } from "./storage_type_registry_internal.js";
 
+export interface StorageTypeData {
+  id: string;
+  category: string;
+}
+
 /**
  * Representation of a storage type definition that has been registered.
  * @beta
  * @see {@link StorageTypeDefinition}, {@link registerStorageType}
  */
-export class RegisteredStorageType {
+export class RegisteredStorageType implements StorageTypeData {
   /**
    * @internal
    */
@@ -54,7 +59,7 @@ export class RegisteredStorageType {
    * Gets a registered storage type.
    * @beta
    * @param id The ID of the storage type.
-   * @returns The {@link RegisteredStorageType} with the specified `id` or `null` if it doesn't exist.
+   * @returns The {@link RegisteredStorageType} with the specified ID or `undefined` if it doesn't exist.
    * @throws if Bedrock Energistics Core takes too long to respond.
    */
   static async get(id: string): Promise<RegisteredStorageType | undefined> {

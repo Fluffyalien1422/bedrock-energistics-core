@@ -17,10 +17,10 @@ import {
 import { InternalNetworkLinkNode } from "./network_links/network_link_internal";
 import {
   getBlockNetworkConnectionType,
-  getMachineIo,
+  MachineIo,
   NetworkConnectionType,
   NetworkStorageTypeData,
-  RegisteredStorageType,
+  StorageTypeData,
 } from "@/public_api/src";
 import { InternalRegisteredMachine } from "./machine_registry";
 
@@ -56,7 +56,7 @@ export class MachineNetwork extends DestroyableObject {
     /**
      * The I/O type of this network.
      */
-    readonly ioType: RegisteredStorageType,
+    readonly ioType: StorageTypeData,
     /**
      * This network's dimension.
      */
@@ -422,7 +422,7 @@ export class MachineNetwork extends DestroyableObject {
 
   private static discoverConnections(
     origin: Block,
-    ioType: RegisteredStorageType,
+    ioType: StorageTypeData,
   ): NetworkConnections {
     const connections: NetworkConnections = {
       conduits: [],
@@ -483,14 +483,8 @@ export class MachineNetwork extends DestroyableObject {
       );
       if (isHandled) return;
 
-      const io = getMachineIo(nextBlock);
-
-      const allowsType =
-        io === "any" ||
-        io.types.includes(ioType.id) ||
-        io.categories.includes(ioType.category);
-
-      if (allowsType) handleBlock(nextBlock);
+      const io = MachineIo.fromMachine(nextBlock);
+      if (io.acceptsType(ioType)) handleBlock(nextBlock);
     }
 
     handleBlock(origin);
@@ -512,7 +506,7 @@ export class MachineNetwork extends DestroyableObject {
    * Establish a new network at `location`.
    */
   static establish(
-    ioType: RegisteredStorageType,
+    ioType: StorageTypeData,
     block: Block,
   ): MachineNetwork | undefined {
     const connections = MachineNetwork.discoverConnections(block, ioType);
@@ -530,9 +524,11 @@ export class MachineNetwork extends DestroyableObject {
   /**
    * Get the {@link MachineNetwork} that contains a machine that matches the arguments.
    * @param type the I/O type of the network.
+   * @param location The location of the machine.
+   * @param connectionType The connection type of the machine.
    */
   static getWith(
-    ioType: RegisteredStorageType,
+    ioType: StorageTypeData,
     location: DimensionLocation,
     connectionType: NetworkConnectionType,
   ): MachineNetwork | undefined {
@@ -547,7 +543,7 @@ export class MachineNetwork extends DestroyableObject {
    * Get the {@link MachineNetwork} that contains a block.
    */
   static getWithBlock(
-    ioType: RegisteredStorageType,
+    ioType: StorageTypeData,
     block: Block,
   ): MachineNetwork | undefined {
     const type = getBlockNetworkConnectionType(block);
@@ -582,7 +578,7 @@ export class MachineNetwork extends DestroyableObject {
    * @see {@link MachineNetwork.getWithBlock}, {@link MachineNetwork.establish}
    */
   static getOrEstablish(
-    ioType: RegisteredStorageType,
+    ioType: StorageTypeData,
     block: Block,
   ): MachineNetwork | undefined {
     return (

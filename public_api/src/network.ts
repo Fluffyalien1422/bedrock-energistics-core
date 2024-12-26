@@ -17,7 +17,7 @@ import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 
 /**
- * A network of machines with a certain I/O category.
+ * A network of machines with a certain I/O type.
  * @beta
  */
 export class MachineNetwork {
@@ -125,7 +125,9 @@ export class MachineNetwork {
 
   /**
    * Get the {@link MachineNetwork} that contains a machine that matches the arguments.
-   * @param category the category of the network.
+   * @param ioTypeId the I/O type of the network.
+   * @param location The location of the machine.
+   * @param connectionType The connection type of the machine.
    * @beta
    */
   static async getWith(
@@ -154,12 +156,12 @@ export class MachineNetwork {
    * @beta
    */
   static async getWithBlock(
-    category: string,
+    ioTypeId: string,
     block: Block,
   ): Promise<MachineNetwork | undefined> {
     const type = getBlockNetworkConnectionType(block);
     if (!type) return;
-    return MachineNetwork.getWith(category, block, type);
+    return MachineNetwork.getWith(ioTypeId, block, type);
   }
 
   /**
@@ -226,24 +228,12 @@ export class MachineNetwork {
    * @param categories Only update networks of these I/O categories. If this is `undefined` then all adjacent networks will be updated.
    * @beta
    */
-  static async updateAdjacent(
-    location: DimensionLocation,
-    categories?: string[],
-  ): Promise<void> {
+  static async updateAdjacent(location: DimensionLocation): Promise<void> {
     for (const directionVector of DIRECTION_VECTORS) {
       const blockInDirection = location.dimension.getBlock(
         Vector3Utils.add(location, directionVector),
       );
       if (!blockInDirection) {
-        continue;
-      }
-
-      if (categories) {
-        for (const category of categories) {
-          void MachineNetwork.getWithBlock(category, blockInDirection).then(
-            (network) => network?.destroy(),
-          );
-        }
         continue;
       }
 
