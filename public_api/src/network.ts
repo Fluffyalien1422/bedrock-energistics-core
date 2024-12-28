@@ -1,11 +1,11 @@
 import { Block, DimensionLocation } from "@minecraft/server";
 import {
-  MangledNetworkEstablishPayload,
   MangledNetworkGetAllWithPayload,
-  MangledNetworkGetWithPayload,
   MangledNetworkInstanceMethodPayload,
   MangledNetworkIsPartOfNetworkPayload,
   MangledNetworkQueueSendPayload,
+  NetworkEstablishPayload,
+  NetworkGetWithPayload,
 } from "./network_internal.js";
 import { DIRECTION_VECTORS } from "./misc_internal.js";
 import { Vector3Utils } from "@minecraft/math";
@@ -13,12 +13,11 @@ import {
   getBlockNetworkConnectionType,
   NetworkConnectionType,
 } from "./network_utils.js";
-import { getBlockIoCategories } from "./io.js";
 import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 
 /**
- * A network of machines with a certain I/O category.
+ * A network of machines with a certain I/O type.
  * @beta
  */
 export class MachineNetwork {
@@ -106,12 +105,12 @@ export class MachineNetwork {
    * @beta
    */
   static async establish(
-    category: string,
+    ioTypeId: string,
     location: DimensionLocation,
   ): Promise<MachineNetwork | undefined> {
-    const payload: MangledNetworkEstablishPayload = {
-      a: category,
-      b: makeSerializableDimensionLocation(location),
+    const payload: NetworkEstablishPayload = {
+      ioTypeId,
+      location: makeSerializableDimensionLocation(location),
     };
 
     const id = (await ipcInvoke(
@@ -126,18 +125,20 @@ export class MachineNetwork {
 
   /**
    * Get the {@link MachineNetwork} that contains a machine that matches the arguments.
-   * @param category the category of the network.
+   * @param ioTypeId the I/O type of the network.
+   * @param location The location of the machine.
+   * @param connectionType The connection type of the machine.
    * @beta
    */
   static async getWith(
-    category: string,
+    ioTypeId: string,
     location: DimensionLocation,
-    type: NetworkConnectionType,
+    connectionType: NetworkConnectionType,
   ): Promise<MachineNetwork | undefined> {
-    const payload: MangledNetworkGetWithPayload = {
-      a: category,
-      b: makeSerializableDimensionLocation(location),
-      c: type,
+    const payload: NetworkGetWithPayload = {
+      ioTypeId,
+      connectionType,
+      location: makeSerializableDimensionLocation(location),
     };
 
     const id = (await ipcInvoke(
@@ -155,12 +156,12 @@ export class MachineNetwork {
    * @beta
    */
   static async getWithBlock(
-    category: string,
+    ioTypeId: string,
     block: Block,
   ): Promise<MachineNetwork | undefined> {
     const type = getBlockNetworkConnectionType(block);
     if (!type) return;
-    return MachineNetwork.getWith(category, block, type);
+    return MachineNetwork.getWith(ioTypeId, block, type);
   }
 
   /**
@@ -201,15 +202,15 @@ export class MachineNetwork {
    * @beta
    */
   static async getOrEstablish(
-    category: string,
+    ioTypeId: string,
     location: DimensionLocation,
   ): Promise<MachineNetwork | undefined> {
     // this can be done without a dedicated script event handler,
     // but invoking one handler is faster than two
 
-    const payload: MangledNetworkEstablishPayload = {
-      a: category,
-      b: makeSerializableDimensionLocation(location),
+    const payload: NetworkEstablishPayload = {
+      ioTypeId,
+      location: makeSerializableDimensionLocation(location),
     };
 
     const id = (await ipcInvoke(
@@ -224,27 +225,14 @@ export class MachineNetwork {
 
   /**
    * Update all {@link MachineNetwork}s adjacent to a location.
-   * @param categories Only update networks of these I/O categories. If this is `undefined` then all adjacent networks will be updated.
    * @beta
    */
-  static async updateAdjacent(
-    location: DimensionLocation,
-    categories?: string[],
-  ): Promise<void> {
+  static async updateAdjacent(location: DimensionLocation): Promise<void> {
     for (const directionVector of DIRECTION_VECTORS) {
       const blockInDirection = location.dimension.getBlock(
         Vector3Utils.add(location, directionVector),
       );
       if (!blockInDirection) {
-        continue;
-      }
-
-      if (categories) {
-        for (const category of categories) {
-          void MachineNetwork.getWithBlock(category, blockInDirection).then(
-            (network) => network?.destroy(),
-          );
-        }
         continue;
       }
 
@@ -254,21 +242,6 @@ export class MachineNetwork {
         network.destroy();
       }
     }
-  }
-
-  /**
-   * Update all {@link MachineNetwork}s that can connect to a machine.
-   * @remarks
-   * "Connectable" means that the network is adjacent to the machine and shares an I/O category.
-   * @beta
-   */
-  static async updateConnectable(block: Block): Promise<void> {
-    const ioCategories = getBlockIoCategories(block);
-
-    return MachineNetwork.updateAdjacent(
-      block,
-      ioCategories === "any" ? undefined : ioCategories,
-    );
   }
 
   /**

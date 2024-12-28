@@ -10,39 +10,29 @@ import {
   IpcNetworkStatsEventArg,
   MangledOnButtonPressedPayload,
   MangledRecieveHandlerPayload,
-  MangledRegisteredMachine,
+  RegisteredMachineData,
 } from "@/public_api/src/machine_registry_internal";
 import { makeSerializableDimensionLocation } from "@/public_api/src/serialize_utils";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper";
 
-export const machineRegistry: Record<string, InternalRegisteredMachine> = {};
-export const machineEntityToBlockIdMap: Record<string, string> = {};
+const machineRegistry = new Map<string, InternalRegisteredMachine>();
+const machineEntityToBlockIdMap = new Map<string, string>();
 
+// @ts-expect-error extending private class for internal use
 export class InternalRegisteredMachine extends RegisteredMachine {
-  get mangled(): MangledRegisteredMachine {
-    return this.internal;
+  // override to make it public
+  public constructor(data: RegisteredMachineData) {
+    super(data);
   }
 
-  get updateUiEvent(): string | undefined {
-    return this.internal.d;
-  }
-
-  get recieveHandlerEvent(): string | undefined {
-    return this.internal.f;
-  }
-
-  get onNetworkStatsRecievedEvent(): string | undefined {
-    return this.internal.i;
-  }
-
-  get onButtonPressedEvent(): string | undefined {
-    return this.internal.h;
+  getData(): RegisteredMachineData {
+    return this.data;
   }
 
   invokeUpdateUiHandler(
     dimensionLocation: DimensionLocation,
   ): Promise<UpdateUiHandlerResponse> {
-    if (!this.updateUiEvent) {
+    if (!this.data.updateUiEvent) {
       throw new Error(
         makeErrorString(
           "trying to call the 'updateUi' handler but it is not defined",
@@ -51,7 +41,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     }
 
     return ipcInvoke(
-      this.updateUiEvent,
+      this.data.updateUiEvent,
       makeSerializableDimensionLocation(dimensionLocation),
     ) as Promise<UpdateUiHandlerResponse>;
   }
@@ -61,7 +51,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     recieveType: string,
     recieveAmount: number,
   ): Promise<number> {
-    if (!this.recieveHandlerEvent) {
+    if (!this.data.receiveHandlerEvent) {
       throw new Error(
         makeErrorString(
           "trying to call the 'recieve' handler but it is not defined",
@@ -75,14 +65,14 @@ export class InternalRegisteredMachine extends RegisteredMachine {
       c: recieveAmount,
     };
 
-    return ipcInvoke(this.recieveHandlerEvent, payload) as Promise<number>;
+    return ipcInvoke(this.data.receiveHandlerEvent, payload) as Promise<number>;
   }
 
   callOnNetworkStatsRecievedEvent(
     dimensionLocation: DimensionLocation,
     data: Record<string, NetworkStorageTypeData>,
   ): void {
-    if (!this.onNetworkStatsRecievedEvent)
+    if (!this.data.networkStatEvent)
       raise(
         `trying to call the 'onNetworkStatsRecievedEvent' handler but it is not defined.`,
       );
@@ -92,7 +82,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
       networkData: data,
     };
 
-    ipcSend(this.onNetworkStatsRecievedEvent, payload);
+    ipcSend(this.data.networkStatEvent, payload);
   }
 
   callOnButtonPressedEvent(
@@ -101,7 +91,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     playerId: string,
     buttonElementId: string,
   ): void {
-    if (!this.onButtonPressedEvent) {
+    if (!this.data.onButtonPressedEvent) {
       throw new Error(
         makeErrorString(
           "trying to call the 'onButtonPressed' event but it is not defined",
@@ -116,14 +106,14 @@ export class InternalRegisteredMachine extends RegisteredMachine {
       d: buttonElementId,
     };
 
-    ipcSend(this.onButtonPressedEvent, payload);
+    ipcSend(this.data.onButtonPressedEvent, payload);
   }
 
   /**
    * @returns the `InternalRegisteredMachine` if it exists, otherwise `undefined`.
    */
   static getInternal(id: string): InternalRegisteredMachine | undefined {
-    return machineRegistry[id];
+    return machineRegistry.get(id);
   }
 
   /**
@@ -143,15 +133,14 @@ export class InternalRegisteredMachine extends RegisteredMachine {
 }
 
 export function getMachineIdFromEntityId(entityId: string): string | undefined {
-  return machineEntityToBlockIdMap[entityId];
+  return machineEntityToBlockIdMap.get(entityId);
 }
 
 export function registerMachineListener(payload: ipc.SerializableValue): null {
-  const mData = payload as MangledRegisteredMachine;
-  const data = new InternalRegisteredMachine(mData);
+  const data = new InternalRegisteredMachine(payload as RegisteredMachineData);
 
-  const entityExistingAttachment = machineEntityToBlockIdMap[data.entityId];
-  if (entityExistingAttachment && entityExistingAttachment !== data.id) {
+  const entityExistingAttachment = machineEntityToBlockIdMap.get(data.entityId);
+  if (entityExistingAttachment && entityExistingAttachment !== data.entityId) {
     throw new Error(
       makeErrorString(
         `can't register machine '${data.id}': the machine entity '${data.entityId}' is already attached to the machine '${entityExistingAttachment}'`,
@@ -159,12 +148,12 @@ export function registerMachineListener(payload: ipc.SerializableValue): null {
     );
   }
 
-  if (data.id in machineRegistry) {
+  if (machineRegistry.has(data.id)) {
     logInfo(`overrode machine '${data.id}'`);
   }
 
-  machineRegistry[data.id] = data;
-  machineEntityToBlockIdMap[data.entityId] = data.id;
+  machineRegistry.set(data.id, data);
+  machineEntityToBlockIdMap.set(data.entityId, data.id);
 
   return null;
 }

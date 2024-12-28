@@ -104,14 +104,15 @@ ipc.registerListener(
 ipc.registerListener(
   "fluffyalien_energisticscore:ipc.registeredMachineGet",
   (payload) =>
-    InternalRegisteredMachine.getInternal(payload as string)?.mangled ?? null,
+    InternalRegisteredMachine.getInternal(payload as string)?.getData() ?? null,
 );
 
 ipc.registerListener(
   "fluffyalien_energisticscore:ipc.registeredStorageTypeGet",
   (payload) =>
-    InternalRegisteredStorageType.getInternal(payload as string)?.mangled ??
-    null,
+    InternalRegisteredStorageType.getInternal(
+      payload as string,
+    )?.getDefinition() ?? null,
 );
 
 ipc.registerListener(

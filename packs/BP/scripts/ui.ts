@@ -320,7 +320,7 @@ function handleButton(
       player.dimension.spawnItem(inventoryItem, player.location);
     }
 
-    if (machine.onButtonPressedEvent) {
+    if (machine.getData().onButtonPressedEvent) {
       machine.callOnButtonPressedEvent(
         dimensionLocation,
         entity.id,
@@ -360,7 +360,7 @@ async function updateEntityUi(
     dimension: entity.dimension,
   };
 
-  const updateUiResult = definition.updateUiEvent
+  const updateUiResult = definition.getData().updateUiEvent
     ? await definition.invokeUpdateUiHandler(dimensionLocation)
     : null;
 

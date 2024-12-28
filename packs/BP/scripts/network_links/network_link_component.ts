@@ -1,5 +1,4 @@
 import { BlockCustomComponent } from "@minecraft/server";
-import { getBlockIoCategories } from "@/public_api/src";
 import { MachineNetwork } from "../network";
 import {
   deserializeDimensionLocation,
@@ -10,11 +9,7 @@ import { raise } from "../utils/log";
 
 export const networkLinkComponent: BlockCustomComponent = {
   onPlace(ev) {
-    const ioCategories = getBlockIoCategories(ev.block);
-    MachineNetwork.updateAdjacent(
-      ev.block,
-      ioCategories === "any" ? undefined : ioCategories,
-    );
+    MachineNetwork.updateAdjacent(ev.block);
   },
 
   onPlayerDestroy(ev) {

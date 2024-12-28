@@ -33,33 +33,16 @@ export interface MangledNetworkQueueSendPayload
 /**
  * @internal
  */
-export interface MangledNetworkEstablishPayload {
-  /**
-   * category
-   */
-  a: string;
-  /**
-   * blockLocation
-   */
-  b: SerializableDimensionLocation;
+export interface NetworkEstablishPayload {
+  ioTypeId: string;
+  location: SerializableDimensionLocation;
 }
 
 /**
  * @internal
  */
-export interface MangledNetworkGetWithPayload {
-  /**
-   * category
-   */
-  a: string;
-  /**
-   * location
-   */
-  b: SerializableDimensionLocation;
-  /**
-   * type
-   */
-  c: NetworkConnectionType;
+export interface NetworkGetWithPayload extends NetworkEstablishPayload {
+  connectionType: NetworkConnectionType;
 }
 
 /**

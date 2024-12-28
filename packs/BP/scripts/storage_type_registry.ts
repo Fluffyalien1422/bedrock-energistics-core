@@ -6,15 +6,22 @@ import {
   STANDARD_STORAGE_TYPE_DEFINITIONS,
   StorageTypeDefinition,
 } from "@/public_api/src";
-import { MangledStorageTypeDefinition } from "@/public_api/src/storage_type_registry_internal";
 
+const storageTypeRegistry = new Map<string, InternalRegisteredStorageType>();
+
+// @ts-expect-error extending private class for internal use
 export class InternalRegisteredStorageType extends RegisteredStorageType {
-  get mangled(): MangledStorageTypeDefinition {
-    return this.internal;
+  // override to make it public
+  public constructor(definition: StorageTypeDefinition) {
+    super(definition);
+  }
+
+  getDefinition(): StorageTypeDefinition {
+    return this.definition;
   }
 
   static getInternal(id: string): InternalRegisteredStorageType | undefined {
-    return storageTypeRegistry[id];
+    return storageTypeRegistry.get(id);
   }
 
   static forceGetInternal(id: string): InternalRegisteredStorageType {
@@ -28,32 +35,16 @@ export class InternalRegisteredStorageType extends RegisteredStorageType {
   }
 }
 
-const storageTypeRegistry: Record<string, InternalRegisteredStorageType> = {};
-
 // register energy by default
-registerStorageType(
-  makeRegisteredStorageTypeFromDefinition(
-    STANDARD_STORAGE_TYPE_DEFINITIONS.energy,
-  ),
-);
+registerStorageType(STANDARD_STORAGE_TYPE_DEFINITIONS.energy);
 
-function makeRegisteredStorageTypeFromDefinition(
-  def: StorageTypeDefinition,
-): InternalRegisteredStorageType {
-  return new InternalRegisteredStorageType({
-    a: def.id,
-    b: def.category,
-    c: def.color,
-    d: def.name,
-  });
-}
-
-function registerStorageType(data: InternalRegisteredStorageType): void {
-  if (data.id in storageTypeRegistry) {
+function registerStorageType(data: StorageTypeDefinition): void {
+  if (storageTypeRegistry.has(data.id)) {
     logInfo(`overrode storage type '${data.id}'`);
   }
 
-  storageTypeRegistry[data.id] = data;
+  const registered = new InternalRegisteredStorageType(data);
+  storageTypeRegistry.set(data.id, registered);
 
   const objectiveId = `fluffyalien_energisticscore:storage${data.id}`;
 
@@ -65,8 +56,7 @@ function registerStorageType(data: InternalRegisteredStorageType): void {
 export function registerStorageTypeListener(
   payload: ipc.SerializableValue,
 ): null {
-  const mData = payload as MangledStorageTypeDefinition;
-  const data = new InternalRegisteredStorageType(mData);
+  const data = payload as StorageTypeDefinition;
   registerStorageType(data);
   return null;
 }

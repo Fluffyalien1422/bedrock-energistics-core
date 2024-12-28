@@ -31,7 +31,7 @@ export interface MachineItemStack {
  * @beta
  * @param loc The location of the machine.
  * @param type The type of storage to get.
- * @throws Throws {@link Error} if the storage type does not exist
+ * @throws Throws if the storage type does not exist
  */
 export function getMachineStorage(
   loc: DimensionLocation,

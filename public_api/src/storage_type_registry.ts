@@ -1,21 +1,32 @@
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
+import { raise } from "./log.js";
+import { isRegistrationAllowed } from "./registration_allowed.js";
 import { StorageTypeColor, StorageTypeDefinition } from "./registry_types.js";
-import { MangledStorageTypeDefinition } from "./storage_type_registry_internal.js";
+
+/**
+ * value should be `undefined` if the storage type does not exist
+ */
+const storageTypeCache = new Map<string, RegisteredStorageType | undefined>();
+
+/**
+ * @beta
+ */
+export interface StorageTypeData {
+  id: string;
+  category: string;
+}
 
 /**
  * Representation of a storage type definition that has been registered.
  * @beta
  * @see {@link StorageTypeDefinition}, {@link registerStorageType}
  */
-export class RegisteredStorageType {
-  /**
-   * @internal
-   */
-  constructor(
+export class RegisteredStorageType implements StorageTypeData {
+  private constructor(
     /**
      * @internal
      */
-    protected readonly internal: MangledStorageTypeDefinition,
+    protected readonly definition: StorageTypeDefinition,
   ) {}
 
   /**
@@ -23,7 +34,7 @@ export class RegisteredStorageType {
    * @beta
    */
   get id(): string {
-    return this.internal.a;
+    return this.definition.id;
   }
 
   /**
@@ -31,7 +42,7 @@ export class RegisteredStorageType {
    * @beta
    */
   get category(): string {
-    return this.internal.b;
+    return this.definition.category;
   }
 
   /**
@@ -39,7 +50,7 @@ export class RegisteredStorageType {
    * @beta
    */
   get color(): StorageTypeColor {
-    return this.internal.c;
+    return this.definition.color;
   }
 
   /**
@@ -47,33 +58,48 @@ export class RegisteredStorageType {
    * @beta
    */
   get name(): string {
-    return this.internal.d;
+    return this.definition.name;
   }
 
   /**
-   * Gets a registered storage type.
+   * Get a registered storage type by its ID.
    * @beta
-   * @param id The ID of the storage type.
-   * @returns The {@link RegisteredStorageType} with the specified `id` or `null` if it doesn't exist.
-   * @throws if Bedrock Energistics Core takes too long to respond.
+   * @param id The ID of the storage type to get.
+   * @returns The registered storage type, or `undefined` if it does not exist.
    */
   static async get(id: string): Promise<RegisteredStorageType | undefined> {
-    const mangled = (await ipcInvoke(
+    if (storageTypeCache.has(id)) {
+      return storageTypeCache.get(id);
+    }
+
+    const def = (await ipcInvoke(
       "fluffyalien_energisticscore:ipc.registeredStorageTypeGet",
       id,
-    )) as MangledStorageTypeDefinition | null;
+    )) as StorageTypeDefinition | null;
 
-    if (!mangled) return;
+    const result = def ? new RegisteredStorageType(def) : undefined;
 
-    return new RegisteredStorageType(mangled);
+    if (!isRegistrationAllowed()) {
+      storageTypeCache.set(id, result);
+    }
+
+    return result;
   }
 }
 
 /**
  * Registers a storage type. This function should be called in the `worldInitialize` after event.
  * @beta
+ * @throws Throws if registration has been closed.
+ * @throws Throws if the definition ID or category is invalid.
  */
 export function registerStorageType(definition: StorageTypeDefinition): void {
+  if (!isRegistrationAllowed()) {
+    raise(
+      `Attempted to register storage type '${definition.id}' after registration was closed.`,
+    );
+  }
+
   if (definition.id.startsWith("_") || definition.category.startsWith("_")) {
     throw new Error(
       `can't register storage type '${definition.id}' (category: '${definition.category}'): storage type IDs and categories cannot start with '_'`,
@@ -81,11 +107,11 @@ export function registerStorageType(definition: StorageTypeDefinition): void {
   }
 
   // reconstruct the definition in case the passed `definition` contains unnecessary keys
-  const payload: MangledStorageTypeDefinition = {
-    a: definition.id,
-    b: definition.category,
-    c: definition.color,
-    d: definition.name,
+  const payload: StorageTypeDefinition = {
+    id: definition.id,
+    category: definition.category,
+    color: definition.color,
+    name: definition.name,
   };
 
   ipcSend("fluffyalien_energisticscore:ipc.registerStorageType", payload);

@@ -2,12 +2,12 @@ import * as ipc from "mcbe-addon-ipc";
 import { deserializeDimensionLocation } from "@/public_api/src/serialize_utils";
 import {
   MangledGeneratePayload,
-  MangledNetworkEstablishPayload,
   MangledNetworkGetAllWithPayload,
-  MangledNetworkGetWithPayload,
   MangledNetworkInstanceMethodPayload,
   MangledNetworkIsPartOfNetworkPayload,
   MangledNetworkQueueSendPayload,
+  NetworkEstablishPayload,
+  NetworkGetWithPayload,
 } from "@/public_api/src/network_internal";
 import { MachineNetwork } from "./network";
 import { getMachineStorage } from "./data";
@@ -38,25 +38,29 @@ export function networkQueueSendListener(payload: ipc.SerializableValue): null {
 export function networkEstablishHandler(
   payload: ipc.SerializableValue,
 ): number | null {
-  const data = payload as MangledNetworkEstablishPayload;
-  const category = data.a;
-  const blockLocation = deserializeDimensionLocation(data.b);
+  const data = payload as NetworkEstablishPayload;
+  const ioTypeId = data.ioTypeId;
+  const location = deserializeDimensionLocation(data.location);
 
-  const block = blockLocation.dimension.getBlock(blockLocation);
+  const block = location.dimension.getBlock(location);
   if (!block) return null;
 
-  return MachineNetwork.establish(category, block)?.id ?? null;
+  const ioType = InternalRegisteredStorageType.forceGetInternal(ioTypeId);
+
+  return MachineNetwork.establish(ioType, block)?.id ?? null;
 }
 
 export function networkGetWithHandler(
   payload: ipc.SerializableValue,
 ): number | null {
-  const data = payload as MangledNetworkGetWithPayload;
-  const category = data.a;
-  const location = deserializeDimensionLocation(data.b);
-  const type = data.c;
+  const data = payload as NetworkGetWithPayload;
+  const ioTypeId = data.ioTypeId;
+  const location = deserializeDimensionLocation(data.location);
+  const connectionType = data.connectionType;
 
-  return MachineNetwork.getWith(category, location, type)?.id ?? null;
+  const ioType = InternalRegisteredStorageType.forceGetInternal(ioTypeId);
+
+  return MachineNetwork.getWith(ioType, location, connectionType)?.id ?? null;
 }
 
 export function networkGetAllWithHandler(
@@ -72,17 +76,19 @@ export function networkGetAllWithHandler(
 export function networkGetOrEstablishHandler(
   payload: ipc.SerializableValue,
 ): number | null {
-  const data = payload as MangledNetworkEstablishPayload;
-  const category = data.a;
-  const blockLocation = deserializeDimensionLocation(data.b);
+  const data = payload as NetworkEstablishPayload;
+  const ioTypeId = data.ioTypeId;
+  const location = deserializeDimensionLocation(data.location);
 
-  const block = blockLocation.dimension.getBlock(blockLocation);
+  const block = location.dimension.getBlock(location);
   if (!block) return null;
+
+  const ioType = InternalRegisteredStorageType.forceGetInternal(ioTypeId);
 
   return (
     (
-      MachineNetwork.getWithBlock(category, block) ??
-      MachineNetwork.establish(category, block)
+      MachineNetwork.getWithBlock(ioType, block) ??
+      MachineNetwork.establish(ioType, block)
     )?.id ?? null
   );
 }
@@ -115,7 +121,7 @@ export function generateListener(payload: ipc.SerializableValue): null {
 
   const storageType = InternalRegisteredStorageType.forceGetInternal(type);
 
-  MachineNetwork.getOrEstablish(storageType.category, block)?.queueSend(
+  MachineNetwork.getOrEstablish(storageType, block)?.queueSend(
     block,
     type,
     fullAmount,

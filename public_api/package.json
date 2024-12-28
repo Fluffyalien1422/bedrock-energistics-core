@@ -4,7 +4,7 @@
   ],
   "name": "bedrock-energistics-core-api",
   "description": "Bedrock Energistics Core public API",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "Fluffyalien",
   "repository": {
     "type": "git",
@@ -22,7 +22,7 @@
     "build": "tsc"
   },
   "devDependencies": {
-    "@minecraft/server": "^1.15.0"
+    "@minecraft/server": "=1.15.0"
   },
   "peerDependencies": {
     "@minecraft/server": "^1.15.0"
