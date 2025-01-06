@@ -12,12 +12,10 @@ import { raise } from "../log.js";
 import { ipcInvoke } from "../ipc_wrapper.js";
 
 /**
- * A NetworkLinkNode represents a single node in the machine network
- *
- * - NetworkLinkNodes can be used to combine two seperate networks without any physcical connection between them.
- * - An example use case is to create wireless power transmission.
- * - To get an instance of a `NetworkLinkNode` use `NetworkLinks.getNetworkLink`
+ * A network link node in a machine network.
  * @beta
+ * @remarks
+ * NetworkLinkNodes can be used to combine two seperate networks without any physcical connection between them.
  */
 export class NetworkLinkNode {
   private readonly entity: Entity;
@@ -107,7 +105,7 @@ export class NetworkLinkNode {
   /**
    * Returns the internal entity being used for this network link node
    * - Can be used to stash additional data by other packs.
-   * @beta 
+   * @beta
    */
   public getInternalEntity(): Entity {
     return this.entity;
@@ -159,6 +157,4 @@ export class NetworkLinkNode {
     if (dataStorageEntity === undefined) return undefined;
     return new NetworkLinkNode(dataStorageEntity, location);
   }
-
-
 }
