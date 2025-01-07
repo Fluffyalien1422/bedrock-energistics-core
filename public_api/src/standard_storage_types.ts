@@ -1,4 +1,4 @@
-import { StorageTypeDefinition } from "./registry_types.js";
+import { StorageTypeDefinition } from "./storage_type_registry_types.js";
 import { registerStorageType } from "./storage_type_registry.js";
 
 /**

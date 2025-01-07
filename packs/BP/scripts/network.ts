@@ -471,7 +471,6 @@ export class MachineNetwork extends DestroyableObject {
       if (block.hasTag("fluffyalien_energisticscore:machine")) {
         connections.machines.push(block);
       }
-      return;
     }
 
     function next(currentBlock: Block, direction: StrDirection): void {

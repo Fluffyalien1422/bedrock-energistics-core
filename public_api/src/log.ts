@@ -1,7 +1,8 @@
 import { VERSION } from "./constants.js";
+import { tryGetNamespace } from "./init.js";
 
 function makeLogString(logLevel: string, message: string): string {
-  return `[Bedrock Energistics Core API v${VERSION}] ${logLevel} ${message}`;
+  return `[Bedrock Energistics Core API v${VERSION}] (${tryGetNamespace() ?? "uninitialized"}) ${logLevel} ${message}`;
 }
 
 /**

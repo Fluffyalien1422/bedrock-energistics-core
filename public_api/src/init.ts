@@ -24,3 +24,10 @@ export function getNamespace(): string {
 
   return initNamespace;
 }
+
+/**
+ * @internal
+ */
+export function tryGetNamespace(): string | undefined {
+  return initNamespace;
+}

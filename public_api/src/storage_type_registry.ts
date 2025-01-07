@@ -1,7 +1,10 @@
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import { raise } from "./log.js";
 import { isRegistrationAllowed } from "./registration_allowed.js";
-import { StorageTypeColor, StorageTypeDefinition } from "./registry_types.js";
+import {
+  StorageTypeColor,
+  StorageTypeDefinition,
+} from "./storage_type_registry_types.js";
 
 /**
  * value should be `undefined` if the storage type does not exist

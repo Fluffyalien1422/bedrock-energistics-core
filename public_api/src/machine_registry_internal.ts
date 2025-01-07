@@ -1,4 +1,4 @@
-import { NetworkStorageTypeData, UiElement } from "./registry_types.js";
+import { NetworkStorageTypeData, UiElement } from "./machine_registry_types.js";
 import { SerializableDimensionLocation } from "./serialize_utils.js";
 
 /**
