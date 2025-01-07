@@ -31,6 +31,7 @@ import {
   InternalRegisteredStorageType,
   registerStorageTypeListener,
 } from "./storage_type_registry";
+import { registerItemMachineListener } from "./item_machine_registry";
 
 interface SetItemInMachineSlotPayload {
   loc: SerializableDimensionLocation;
@@ -46,6 +47,11 @@ ipc.registerListener(
 ipc.registerListener(
   "fluffyalien_energisticscore:ipc.registerStorageType",
   registerStorageTypeListener,
+);
+
+ipc.registerListener(
+  "fluffyalien_energisticscore:ipc.registerItemMachine",
+  registerItemMachineListener,
 );
 
 ipc.registerListener(

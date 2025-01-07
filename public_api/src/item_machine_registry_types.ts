@@ -1,4 +1,7 @@
-import { ItemStack } from "@minecraft/server";
+import {
+  BlockInventoryComponent,
+  EntityInventoryComponent,
+} from "@minecraft/server";
 
 /**
  * @beta
@@ -23,7 +26,8 @@ export interface ItemMachineDefinitionDescription {
  * @beta
  */
 export interface ItemMachineCallbackArg {
-  itemStack: ItemStack;
+  inventory: BlockInventoryComponent | EntityInventoryComponent;
+  slot: number;
 }
 
 /**

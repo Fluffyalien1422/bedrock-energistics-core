@@ -13,11 +13,10 @@ import {
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import { isRegistrationAllowed } from "./registration_allowed.js";
 import { raise } from "./log.js";
-
-const UPDATE_UI_HANDLER_SUFFIX = "__h0";
-const RECIEVE_HANDLER_SUFFIX = "__h1";
-const ON_BUTTON_PRESSED_EVENT_SUFFIX = "__e0";
-const NETWORK_STAT_EVENT_SUFFIX = "__e1";
+import {
+  CREATED_LISTENER_PREFIX,
+  IpcListenerType,
+} from "./ipc_listener_type.js";
 
 /**
  * value should be `undefined` if the machine does not exist
@@ -115,11 +114,12 @@ export function registerMachine(definition: MachineDefinition): void {
     );
   }
 
-  const eventIdPrefix = definition.description.id;
+  const eventIdPrefix = definition.description.id + CREATED_LISTENER_PREFIX;
 
   let updateUiEvent: string | undefined;
   if (definition.handlers?.updateUi) {
-    updateUiEvent = eventIdPrefix + UPDATE_UI_HANDLER_SUFFIX;
+    updateUiEvent =
+      eventIdPrefix + IpcListenerType.MachineUpdateUiHandler.toString();
 
     const callback = definition.handlers.updateUi.bind(null);
 
@@ -134,7 +134,8 @@ export function registerMachine(definition: MachineDefinition): void {
 
   let receiveHandlerEvent: string | undefined;
   if (definition.handlers?.receive) {
-    receiveHandlerEvent = eventIdPrefix + RECIEVE_HANDLER_SUFFIX;
+    receiveHandlerEvent =
+      eventIdPrefix + IpcListenerType.MachineRecieveHandler.toString();
 
     const callback = definition.handlers.receive.bind(null);
 
@@ -152,7 +153,8 @@ export function registerMachine(definition: MachineDefinition): void {
 
   let onButtonPressedEvent: string | undefined;
   if (definition.events?.onButtonPressed) {
-    onButtonPressedEvent = eventIdPrefix + ON_BUTTON_PRESSED_EVENT_SUFFIX;
+    onButtonPressedEvent =
+      eventIdPrefix + IpcListenerType.MachineOnButtonPressedEvent.toString();
 
     const callback = definition.events.onButtonPressed.bind(null);
 
@@ -170,7 +172,8 @@ export function registerMachine(definition: MachineDefinition): void {
 
   let networkStatEvent: string | undefined;
   if (definition.events?.onNetworkStatsRecieved) {
-    networkStatEvent = eventIdPrefix + NETWORK_STAT_EVENT_SUFFIX;
+    networkStatEvent =
+      eventIdPrefix + IpcListenerType.MachineNetworkStatEvent.toString();
 
     const callback = definition.events.onNetworkStatsRecieved.bind(null);
 
