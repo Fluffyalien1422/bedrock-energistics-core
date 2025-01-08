@@ -12,7 +12,9 @@ import { getMachineStorage, setMachineStorage } from "./data";
 import {
   DIRECTION_VECTORS,
   getBlockInDirection,
+  reverseDirection,
   StrDirection,
+  strDirectionToDirection,
 } from "./utils/direction";
 import { InternalNetworkLinkNode } from "./network_links/network_link_internal";
 import {
@@ -480,14 +482,17 @@ export class MachineNetwork extends DestroyableObject {
 
       const isHandled = visitedLocations.some((l) =>
         Vector3Utils.equals(l, nextBlock.location),
-      );
+      ); 
+
       if (isHandled) return;
 
-      const io = MachineIo.fromMachine(nextBlock);
+      const io = MachineIo.fromMachine(nextBlock, 
+        strDirectionToDirection(reverseDirection(direction))
+      );
       if (io.acceptsType(ioType)) handleBlock(nextBlock);
-    }
-
-    handleBlock(origin);
+    }           
+     
+    handleBlock(origin); 
 
     while (stack.length) {
       const block = stack.pop()!;

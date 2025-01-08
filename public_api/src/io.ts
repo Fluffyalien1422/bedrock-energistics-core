@@ -1,4 +1,4 @@
-import { Block } from "@minecraft/server";
+import { Block, Direction } from "@minecraft/server";
 import {
   RegisteredStorageType,
   StorageTypeData,
@@ -6,6 +6,8 @@ import {
 
 const IO_TYPE_TAG_PREFIX = "fluffyalien_energisticscore:io.type.";
 const IO_CATEGORY_TAG_PREFIX = "fluffyalien_energisticscore:io.category.";
+
+const IO_EXPLICIT_SIDES_TAG = "fluffyalien_energisticscore:enable_explicit_sides";
 
 interface MachineIoData {
   acceptsAny: boolean;
@@ -134,8 +136,13 @@ export class MachineIo {
    * @param machine The machine.
    * @returns A MachineIo object.
    */
-  static fromMachine(machine: Block): MachineIo {
+  static fromMachine(machine: Block, side: Direction): MachineIo {
     const tags = machine.getTags();
+
+    // Check if the machine uses explicit side IO.
+    if (tags.includes(IO_EXPLICIT_SIDES_TAG)) {
+      return MachineIo.fromMachineWithExplicitSides(tags, side);
+    }
 
     if (tags.includes("fluffyalien_energisticscore:io.any")) {
       return MachineIo.acceptingAny();
@@ -144,10 +151,26 @@ export class MachineIo {
     const types = tags
       .filter((tag) => tag.startsWith(IO_TYPE_TAG_PREFIX))
       .map((tag) => tag.slice(IO_TYPE_TAG_PREFIX.length));
+
     const categories = tags
       .filter((tag) => tag.startsWith(IO_CATEGORY_TAG_PREFIX))
       .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length));
 
     return MachineIo.accepting(types, categories);
   }
+
+  private static fromMachineWithExplicitSides(tags: string[], side: Direction): MachineIo {
+    // "fluffyalien_energisticscore:io.type.XYZ.{north|east|south|west|up|down}"
+    const dirString = side.toLowerCase();
+
+    const types = tags
+      .filter((tag) => tag.startsWith(IO_TYPE_TAG_PREFIX) && tag.endsWith(`.${dirString}`))
+      .map((tag) => tag.slice(IO_TYPE_TAG_PREFIX.length).split(".")[0]);
+
+    const categories = tags
+      .filter((tag) => tag.startsWith(IO_CATEGORY_TAG_PREFIX) && tag.endsWith(`.${dirString}`))
+      .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length).split(".")[0]);
+
+    return MachineIo.accepting(types, categories); 
+  } 
 }
