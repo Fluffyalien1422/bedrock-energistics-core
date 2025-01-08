@@ -134,6 +134,7 @@ export class MachineIo {
    * Get the input/output capabilities of a machine.
    * @beta
    * @param machine The machine.
+   * @param side The side of the machine to check.
    * @returns A MachineIo object.
    */
   static fromMachine(machine: Block, side: Direction): MachineIo {
@@ -160,15 +161,31 @@ export class MachineIo {
   }
 
   private static fromMachineWithExplicitSides(tags: string[], side: Direction): MachineIo {
-    // "fluffyalien_energisticscore:io.type.XYZ.{north|east|south|west|up|down}"
+    // "fluffyalien_energisticscore:io.type.XYZ.{north|east|south|west|up|down|side}"
     const dirString = side.toLowerCase();
 
+    const isSideDirection = side !== Direction.Up && side !== Direction.Down;
+
     const types = tags
-      .filter((tag) => tag.startsWith(IO_TYPE_TAG_PREFIX) && tag.endsWith(`.${dirString}`))
+      .filter((tag) => {
+        if (!tag.startsWith(IO_TYPE_TAG_PREFIX)) return false;
+
+        const allowsSide = tag.endsWith(".side") && isSideDirection;
+        const allowsDir = tag.endsWith(`.${dirString}`);
+
+        return allowsDir || allowsSide;
+      })
       .map((tag) => tag.slice(IO_TYPE_TAG_PREFIX.length).split(".")[0]);
 
     const categories = tags
-      .filter((tag) => tag.startsWith(IO_CATEGORY_TAG_PREFIX) && tag.endsWith(`.${dirString}`))
+      .filter((tag) => {
+        if (!tag.startsWith(IO_CATEGORY_TAG_PREFIX)) return false;
+
+        const allowsSide = tag.endsWith(".side") && isSideDirection;
+        const allowsDir = tag.endsWith(`.${dirString}`);
+
+        return allowsDir || allowsSide;
+      })
       .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length).split(".")[0]);
 
     return MachineIo.accepting(types, categories); 

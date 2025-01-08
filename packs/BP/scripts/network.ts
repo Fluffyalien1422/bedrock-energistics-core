@@ -25,7 +25,7 @@ import {
   StorageTypeData,
 } from "@/public_api/src";
 import { InternalRegisteredMachine } from "./machine_registry";
-
+ 
 interface SendQueueItem {
   block: Block;
   amount: number;
