@@ -140,4 +140,4 @@ export function strDirectionToDirection(strDir: StrDirection): Direction {
     case "down":
       return Direction.Down;
   }
-}
+}          

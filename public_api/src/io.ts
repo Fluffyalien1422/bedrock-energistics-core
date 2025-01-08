@@ -7,7 +7,8 @@ import {
 const IO_TYPE_TAG_PREFIX = "fluffyalien_energisticscore:io.type.";
 const IO_CATEGORY_TAG_PREFIX = "fluffyalien_energisticscore:io.category.";
 
-const IO_EXPLICIT_SIDES_TAG = "fluffyalien_energisticscore:enable_explicit_sides";
+const IO_EXPLICIT_SIDES_TAG = "fluffyalien_energisticscore:explicit_sides";
+const IO_EXPLICIT_SIDES_RELATIVE_ENABLE_TAG = "fluffyalien_energisticscore:explicit_sides.enable_cardinal_rotation";
 
 interface MachineIoData {
   acceptsAny: boolean;
@@ -142,7 +143,7 @@ export class MachineIo {
 
     // Check if the machine uses explicit side IO.
     if (tags.includes(IO_EXPLICIT_SIDES_TAG)) {
-      return MachineIo.fromMachineWithExplicitSides(tags, side);
+      return MachineIo.fromMachineWithExplicitSides(machine, tags, side);
     }
 
     if (tags.includes("fluffyalien_energisticscore:io.any")) {
@@ -160,18 +161,25 @@ export class MachineIo {
     return MachineIo.accepting(types, categories);
   }
 
-  private static fromMachineWithExplicitSides(tags: string[], side: Direction): MachineIo {
+  private static fromMachineWithExplicitSides(machine: Block, tags: string[], side: Direction): MachineIo {
     // "fluffyalien_energisticscore:io.type.XYZ.{north|east|south|west|up|down|side}"
-    const dirString = side.toLowerCase();
-
     const isSideDirection = side !== Direction.Up && side !== Direction.Down;
+    const isRelative = tags.includes(IO_EXPLICIT_SIDES_RELATIVE_ENABLE_TAG);
+    let realSide = side.toLowerCase();
+
+    
+    if (isRelative && isSideDirection) {
+      const strBlockDir = machine.permutation.getState("minecraft:cardinal_direction") as string;
+      const blockDir = Direction[strBlockDir.charAt(0).toUpperCase() + strBlockDir.slice(1) as keyof typeof Direction];
+      realSide = InverseRelativeRotate(side, blockDir).toLowerCase();
+    }
 
     const types = tags
       .filter((tag) => {
         if (!tag.startsWith(IO_TYPE_TAG_PREFIX)) return false;
 
         const allowsSide = tag.endsWith(".side") && isSideDirection;
-        const allowsDir = tag.endsWith(`.${dirString}`);
+        const allowsDir = tag.endsWith(`.${realSide}`);
 
         return allowsDir || allowsSide;
       })
@@ -182,7 +190,7 @@ export class MachineIo {
         if (!tag.startsWith(IO_CATEGORY_TAG_PREFIX)) return false;
 
         const allowsSide = tag.endsWith(".side") && isSideDirection;
-        const allowsDir = tag.endsWith(`.${dirString}`);
+        const allowsDir = tag.endsWith(`.${realSide}`);
 
         return allowsDir || allowsSide;
       })
@@ -190,4 +198,16 @@ export class MachineIo {
 
     return MachineIo.accepting(types, categories); 
   } 
+}
+
+// Helpers:
+const CARDINAL_DIRS = [Direction.North, Direction.East, Direction.South, Direction.West ]
+
+function InverseRelativeRotate(lhs: Direction, rhs: Direction): Direction {
+  const lhsIndex = CARDINAL_DIRS.indexOf(lhs);
+  const rhsIndex = CARDINAL_DIRS.indexOf(rhs);
+
+  let newIndex = lhsIndex - rhsIndex;
+  if (newIndex < 0) newIndex += 4; 
+  return CARDINAL_DIRS[newIndex];
 }
