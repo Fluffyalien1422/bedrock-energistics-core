@@ -1,19 +1,19 @@
 {
-    "files.exclude": {
-        "**/.git": true,
-        "**/.svn": true,
-        "**/.hg": true,
-        "**/CVS": true,
-        "**/.DS_Store": true,
-        "**/Thumbs.db": true,
-        "**/.regolith": true,
-        "**/.github": true,
-        "**/node_modules": true,
-        "**/LICENSE": true,
-        "**/package-lock.json": true,
-        "**/.prettierrc": true,
-        "**/.gitattributes": true,
-        "public_api/dist": true,
-        "public_api/docs": true,
-    }
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/.regolith": true,
+    "**/.github": true,
+    "**/node_modules": true,
+    "**/LICENSE": true,
+    "**/package-lock.json": true,
+    "**/.prettierrc": true,
+    "**/.gitattributes": true,
+    "public_api/dist": true,
+    "public_api/docs": true
+  }
 }

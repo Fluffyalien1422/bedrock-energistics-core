@@ -17,7 +17,7 @@ import {
   strDirectionToDirection,
 } from "./utils/direction";
 import { InternalNetworkLinkNode } from "./network_links/network_link_internal";
-import { 
+import {
   getBlockNetworkConnectionType,
   MachineIo,
   NetworkConnectionType,
@@ -25,7 +25,7 @@ import {
   StorageTypeData,
 } from "@/public_api/src";
 import { InternalRegisteredMachine } from "./machine_registry";
-  
+
 interface SendQueueItem {
   block: Block;
   amount: number;
@@ -482,17 +482,18 @@ export class MachineNetwork extends DestroyableObject {
 
       const isHandled = visitedLocations.some((l) =>
         Vector3Utils.equals(l, nextBlock.location),
-      ); 
+      );
 
       if (isHandled) return;
 
-      const io = MachineIo.fromMachine(nextBlock, 
-        strDirectionToDirection(reverseDirection(direction))
+      const io = MachineIo.fromMachine(
+        nextBlock,
+        strDirectionToDirection(reverseDirection(direction)),
       );
       if (io.acceptsType(ioType)) handleBlock(nextBlock);
-    }           
-     
-    handleBlock(origin); 
+    }
+
+    handleBlock(origin);
 
     while (stack.length) {
       const block = stack.pop()!;

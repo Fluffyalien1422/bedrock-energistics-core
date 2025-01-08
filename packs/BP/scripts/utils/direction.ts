@@ -134,10 +134,10 @@ export function strDirectionToDirection(strDir: StrDirection): Direction {
     case "south":
       return Direction.South;
     case "west":
-      return Direction.West; 
+      return Direction.West;
     case "up":
       return Direction.Up;
     case "down":
       return Direction.Down;
   }
-}          
+}
