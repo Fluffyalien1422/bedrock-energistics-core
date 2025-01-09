@@ -485,12 +485,14 @@ export class MachineNetwork extends DestroyableObject {
       );
       if (!selfIo.acceptsType(ioType)) return;
 
+      // Check that the recieving block can take this type in too
       const io = MachineSideIo.fromMachine(
         nextBlock,
         strDirectionToDirection(reverseDirection(direction)),
       );
+      if (!io.acceptsType(ioType)) return;
 
-      if (io.acceptsType(ioType)) handleBlock(nextBlock);
+      handleBlock(nextBlock);
     }
 
     handleBlock(origin);
@@ -504,8 +506,6 @@ export class MachineNetwork extends DestroyableObject {
       next(block, "up");
       next(block, "down");
     }
-
-    console.log(ioType.id, JSON.stringify(connections));
 
     return connections;
   }
