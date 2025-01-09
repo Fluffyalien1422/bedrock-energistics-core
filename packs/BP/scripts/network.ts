@@ -1,10 +1,4 @@
-import {
-  Block,
-  Dimension,
-  DimensionLocation,
-  Vector3,
-  system,
-} from "@minecraft/server";
+import { Block, Dimension, DimensionLocation, system } from "@minecraft/server";
 import { Vector3Utils } from "@minecraft/math";
 import { DestroyableObject } from "./utils/destroyable";
 import { logWarn } from "./utils/log";
@@ -450,7 +444,7 @@ export class MachineNetwork extends DestroyableObject {
         const linkedBlock = block.dimension.getBlock(pos);
         if (
           linkedBlock === undefined ||
-          visitedLocations.some((v) => Vector3Utils.equals(v, pos))
+          visitedLocations.has(Vector3Utils.toString(linkedBlock.location))
         )
           continue;
         handleBlock(linkedBlock);
@@ -479,11 +473,16 @@ export class MachineNetwork extends DestroyableObject {
       const nextBlock = getBlockInDirection(currentBlock, direction);
       if (!nextBlock) return;
 
-      const isHandled = visitedLocations.has(Vector3Utils.toString(nextBlock.location));
+      const isHandled = visitedLocations.has(
+        Vector3Utils.toString(nextBlock.location),
+      );
       if (isHandled) return;
 
       // Check that this current block can send this type out this side.
-      const selfIo = MachineSideIo.fromMachine(currentBlock, strDirectionToDirection(direction));
+      const selfIo = MachineSideIo.fromMachine(
+        currentBlock,
+        strDirectionToDirection(direction),
+      );
       if (!selfIo.acceptsType(ioType)) return;
 
       const io = MachineSideIo.fromMachine(
