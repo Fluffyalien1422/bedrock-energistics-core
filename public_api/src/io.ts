@@ -4,6 +4,7 @@ import {
   StorageTypeData,
 } from "./storage_type_registry.js";
 
+const IO_ANY_PREFIX = "fluffyalien_energisticscore:io.any";
 const IO_TYPE_TAG_PREFIX = "fluffyalien_energisticscore:io.type.";
 const IO_CATEGORY_TAG_PREFIX = "fluffyalien_energisticscore:io.category.";
 
@@ -165,19 +166,27 @@ export class MachineSideIo {
     side: Direction,
   ): MachineSideIo {
     const strDirection = side.toLowerCase();
+    const isSideDirection = side !== Direction.Up && side !== Direction.Down;
 
-    // "fluffyalien_energisticscore:io.{type|category}.XYZ.{north|east|south|west|up|down|side}"
+    // "fluffyalien_energisticscore:io.{type|category|any}.XYZ.{north|east|south|west|up|down|side}"
+    const allowsAny = tags.filter((tag) => {
+      if (!tag.startsWith(`${IO_ANY_PREFIX}.`)) return false;
+      return (isSideDirection && tag.endsWith(".side")) || tag.endsWith(`.${strDirection}`); 
+    }).length > 0;
+
+    if (allowsAny) return MachineSideIo.acceptingAny();
+
     const types = tags
       .filter((tag) => {
         if (!tag.startsWith(IO_TYPE_TAG_PREFIX)) return false;
-        return tag.endsWith(".side") || tag.endsWith(`.${strDirection}`);
+        return (isSideDirection && tag.endsWith(".side")) || tag.endsWith(`.${strDirection}`);
       })
       .map((tag) => tag.slice(IO_TYPE_TAG_PREFIX.length).split(".")[0]);
 
     const categories = tags
       .filter((tag) => {
         if (!tag.startsWith(IO_CATEGORY_TAG_PREFIX)) return false;
-        return tag.endsWith(".side") || tag.endsWith(`.${strDirection}`);
+        return (isSideDirection && tag.endsWith(".side")) || tag.endsWith(`.${strDirection}`);
       })
       .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length).split(".")[0]);
 
