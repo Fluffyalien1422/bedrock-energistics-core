@@ -8,8 +8,6 @@ const IO_TYPE_TAG_PREFIX = "fluffyalien_energisticscore:io.type.";
 const IO_CATEGORY_TAG_PREFIX = "fluffyalien_energisticscore:io.category.";
 
 const IO_EXPLICIT_SIDES_TAG = "fluffyalien_energisticscore:explicit_sides";
-const IO_EXPLICIT_SIDES_RELATIVE_ENABLE_TAG =
-  "fluffyalien_energisticscore:explicit_sides.enable_cardinal_rotation";
 
 interface MachineIoData {
   acceptsAny: boolean;
@@ -21,7 +19,7 @@ interface MachineIoData {
  * An object that represents the input/output capabilities of a machine.
  * @beta
  */
-export class MachineIo {
+export class MachineSideIo {
   private constructor(private readonly data: MachineIoData) {}
 
   /**
@@ -111,8 +109,8 @@ export class MachineIo {
    * @param categories Accepted categories.
    * @returns Returns a new MachineIo object.
    */
-  static accepting(types: string[], categories: string[]): MachineIo {
-    return new MachineIo({
+  static accepting(types: string[], categories: string[]): MachineSideIo {
+    return new MachineSideIo({
       acceptsAny: false,
       types,
       categories,
@@ -124,8 +122,8 @@ export class MachineIo {
    * @beta
    * @returns Returns a new MachineIo object.
    */
-  static acceptingAny(): MachineIo {
-    return new MachineIo({
+  static acceptingAny(): MachineSideIo {
+    return new MachineSideIo({
       acceptsAny: true,
       types: [],
       categories: [],
@@ -139,16 +137,16 @@ export class MachineIo {
    * @param side The side of the machine to check.
    * @returns A MachineIo object.
    */
-  static fromMachine(machine: Block, side: Direction): MachineIo {
+  static fromMachine(machine: Block, side: Direction): MachineSideIo {
     const tags = machine.getTags();
 
     // Check if the machine uses explicit side IO.
     if (tags.includes(IO_EXPLICIT_SIDES_TAG)) {
-      return MachineIo.fromMachineWithExplicitSides(machine, tags, side);
+      return MachineSideIo.fromMachineWithExplicitSides(tags, side);
     }
 
     if (tags.includes("fluffyalien_energisticscore:io.any")) {
-      return MachineIo.acceptingAny();
+      return MachineSideIo.acceptingAny();
     }
 
     const types = tags
@@ -159,71 +157,30 @@ export class MachineIo {
       .filter((tag) => tag.startsWith(IO_CATEGORY_TAG_PREFIX))
       .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length));
 
-    return MachineIo.accepting(types, categories);
+    return MachineSideIo.accepting(types, categories);
   }
 
   private static fromMachineWithExplicitSides(
-    machine: Block,
     tags: string[],
     side: Direction,
-  ): MachineIo {
-    const isSideDirection = side !== Direction.Up && side !== Direction.Down;
-    const isRelative = tags.includes(IO_EXPLICIT_SIDES_RELATIVE_ENABLE_TAG);
-    let realSide = side.toLowerCase();
-
-    // If the rotation mode is enabled AND this is a side direction, work out the real side.
-    if (isRelative && isSideDirection) {
-      const strBlockDir = machine.permutation.getState(
-        "minecraft:cardinal_direction",
-      ) as string;
-      const blockDir =
-        Direction[
-          (strBlockDir.charAt(0).toUpperCase() +
-            strBlockDir.slice(1)) as keyof typeof Direction
-        ];
-      realSide = InverseRelativeRotate(side, blockDir).toLowerCase();
-    }
+  ): MachineSideIo {
+    const strDirection = side.toLowerCase();
 
     // "fluffyalien_energisticscore:io.{type|category}.XYZ.{north|east|south|west|up|down|side}"
     const types = tags
       .filter((tag) => {
         if (!tag.startsWith(IO_TYPE_TAG_PREFIX)) return false;
-
-        const allowsSide = tag.endsWith(".side") && isSideDirection;
-        const allowsDir = tag.endsWith(`.${realSide}`);
-
-        return allowsDir || allowsSide;
+        return tag.endsWith(".side") || tag.endsWith(`.${strDirection}`);
       })
       .map((tag) => tag.slice(IO_TYPE_TAG_PREFIX.length).split(".")[0]);
 
     const categories = tags
       .filter((tag) => {
         if (!tag.startsWith(IO_CATEGORY_TAG_PREFIX)) return false;
-
-        const allowsSide = tag.endsWith(".side") && isSideDirection;
-        const allowsDir = tag.endsWith(`.${realSide}`);
-
-        return allowsDir || allowsSide;
+        return tag.endsWith(".side") || tag.endsWith(`.${strDirection}`);
       })
       .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length).split(".")[0]);
 
-    return MachineIo.accepting(types, categories);
+    return MachineSideIo.accepting(types, categories);
   }
-}
-
-// Helpers:
-const CARDINAL_DIRS = [
-  Direction.North,
-  Direction.East,
-  Direction.South,
-  Direction.West,
-];
-
-function InverseRelativeRotate(lhs: Direction, rhs: Direction): Direction {
-  const lhsIndex = CARDINAL_DIRS.indexOf(lhs);
-  const rhsIndex = CARDINAL_DIRS.indexOf(rhs);
-
-  let newIndex = lhsIndex - rhsIndex;
-  if (newIndex < 0) newIndex += 4;
-  return CARDINAL_DIRS[newIndex];
 }

@@ -19,7 +19,7 @@ import {
 import { InternalNetworkLinkNode } from "./network_links/network_link_internal";
 import {
   getBlockNetworkConnectionType,
-  MachineIo,
+  MachineSideIo,
   NetworkConnectionType,
   NetworkStorageTypeData,
   StorageTypeData,
@@ -433,7 +433,7 @@ export class MachineNetwork extends DestroyableObject {
     };
 
     const stack: Block[] = [];
-    const visitedLocations: Vector3[] = [];
+    const visitedLocations = new Set<string>();
 
     function handleNetworkLink(block: Block): void {
       connections.networkLinks.push(block);
@@ -459,7 +459,7 @@ export class MachineNetwork extends DestroyableObject {
 
     function handleBlock(block: Block): void {
       stack.push(block);
-      visitedLocations.push(block.location);
+      visitedLocations.add(Vector3Utils.toString(block.location));
 
       if (block.hasTag("fluffyalien_energisticscore:conduit")) {
         connections.conduits.push(block);
@@ -473,23 +473,24 @@ export class MachineNetwork extends DestroyableObject {
       if (block.hasTag("fluffyalien_energisticscore:machine")) {
         connections.machines.push(block);
       }
-      return;
     }
 
     function next(currentBlock: Block, direction: StrDirection): void {
       const nextBlock = getBlockInDirection(currentBlock, direction);
       if (!nextBlock) return;
 
-      const isHandled = visitedLocations.some((l) =>
-        Vector3Utils.equals(l, nextBlock.location),
-      );
-
+      const isHandled = visitedLocations.has(Vector3Utils.toString(nextBlock.location));
       if (isHandled) return;
 
-      const io = MachineIo.fromMachine(
+      // Check that this current block can send this type out this side.
+      const selfIo = MachineSideIo.fromMachine(currentBlock, strDirectionToDirection(direction));
+      if (!selfIo.acceptsType(ioType)) return;
+
+      const io = MachineSideIo.fromMachine(
         nextBlock,
         strDirectionToDirection(reverseDirection(direction)),
       );
+
       if (io.acceptsType(ioType)) handleBlock(nextBlock);
     }
 
@@ -504,6 +505,8 @@ export class MachineNetwork extends DestroyableObject {
       next(block, "up");
       next(block, "down");
     }
+
+    console.log(ioType.id, JSON.stringify(connections));
 
     return connections;
   }
