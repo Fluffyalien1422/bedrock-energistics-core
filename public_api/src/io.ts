@@ -169,24 +169,34 @@ export class MachineSideIo {
     const isSideDirection = side !== Direction.Up && side !== Direction.Down;
 
     // "fluffyalien_energisticscore:io.{type|category|any}.XYZ.{north|east|south|west|up|down|side}"
-    const allowsAny = tags.filter((tag) => {
-      if (!tag.startsWith(`${IO_ANY_PREFIX}.`)) return false;
-      return (isSideDirection && tag.endsWith(".side")) || tag.endsWith(`.${strDirection}`); 
-    }).length > 0;
+    const allowsAny =
+      tags.filter((tag) => {
+        if (!tag.startsWith(`${IO_ANY_PREFIX}.`)) return false;
+        return (
+          (isSideDirection && tag.endsWith(".side")) ||
+          tag.endsWith(`.${strDirection}`)
+        );
+      }).length > 0;
 
     if (allowsAny) return MachineSideIo.acceptingAny();
 
     const types = tags
       .filter((tag) => {
         if (!tag.startsWith(IO_TYPE_TAG_PREFIX)) return false;
-        return (isSideDirection && tag.endsWith(".side")) || tag.endsWith(`.${strDirection}`);
+        return (
+          (isSideDirection && tag.endsWith(".side")) ||
+          tag.endsWith(`.${strDirection}`)
+        );
       })
       .map((tag) => tag.slice(IO_TYPE_TAG_PREFIX.length).split(".")[0]);
 
     const categories = tags
       .filter((tag) => {
         if (!tag.startsWith(IO_CATEGORY_TAG_PREFIX)) return false;
-        return (isSideDirection && tag.endsWith(".side")) || tag.endsWith(`.${strDirection}`);
+        return (
+          (isSideDirection && tag.endsWith(".side")) ||
+          tag.endsWith(`.${strDirection}`)
+        );
       })
       .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length).split(".")[0]);
 
