@@ -1,10 +1,4 @@
-import {
-  Block,
-  Dimension,
-  DimensionLocation,
-  Vector3,
-  system,
-} from "@minecraft/server";
+import { Block, Dimension, DimensionLocation, system } from "@minecraft/server";
 import { Vector3Utils } from "@minecraft/math";
 import { DestroyableObject } from "./utils/destroyable";
 import { logWarn } from "./utils/log";
@@ -12,12 +6,14 @@ import { getMachineStorage, setMachineStorage } from "./data";
 import {
   DIRECTION_VECTORS,
   getBlockInDirection,
+  reverseDirection,
   StrDirection,
+  strDirectionToDirection,
 } from "./utils/direction";
 import { InternalNetworkLinkNode } from "./network_links/network_link_internal";
 import {
   getBlockNetworkConnectionType,
-  MachineIo,
+  MachineSideIo,
   NetworkConnectionType,
   NetworkStorageTypeData,
   StorageTypeData,
@@ -431,7 +427,7 @@ export class MachineNetwork extends DestroyableObject {
     };
 
     const stack: Block[] = [];
-    const visitedLocations: Vector3[] = [];
+    const visitedLocations = new Set<string>();
 
     function handleNetworkLink(block: Block): void {
       connections.networkLinks.push(block);
@@ -448,7 +444,7 @@ export class MachineNetwork extends DestroyableObject {
         const linkedBlock = block.dimension.getBlock(pos);
         if (
           linkedBlock === undefined ||
-          visitedLocations.some((v) => Vector3Utils.equals(v, pos))
+          visitedLocations.has(Vector3Utils.toString(linkedBlock.location))
         )
           continue;
         handleBlock(linkedBlock);
@@ -457,7 +453,7 @@ export class MachineNetwork extends DestroyableObject {
 
     function handleBlock(block: Block): void {
       stack.push(block);
-      visitedLocations.push(block.location);
+      visitedLocations.add(Vector3Utils.toString(block.location));
 
       if (block.hasTag("fluffyalien_energisticscore:conduit")) {
         connections.conduits.push(block);
@@ -477,13 +473,26 @@ export class MachineNetwork extends DestroyableObject {
       const nextBlock = getBlockInDirection(currentBlock, direction);
       if (!nextBlock) return;
 
-      const isHandled = visitedLocations.some((l) =>
-        Vector3Utils.equals(l, nextBlock.location),
+      const isHandled = visitedLocations.has(
+        Vector3Utils.toString(nextBlock.location),
       );
       if (isHandled) return;
 
-      const io = MachineIo.fromMachine(nextBlock);
-      if (io.acceptsType(ioType)) handleBlock(nextBlock);
+      // Check that this current block can send this type out this side.
+      const selfIo = MachineSideIo.fromMachine(
+        currentBlock,
+        strDirectionToDirection(direction),
+      );
+      if (!selfIo.acceptsType(ioType)) return;
+
+      // Check that the recieving block can take this type in too
+      const io = MachineSideIo.fromMachine(
+        nextBlock,
+        strDirectionToDirection(reverseDirection(direction)),
+      );
+      if (!io.acceptsType(ioType)) return;
+
+      handleBlock(nextBlock);
     }
 
     handleBlock(origin);

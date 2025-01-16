@@ -41,7 +41,7 @@ export class MachineNetwork {
       a: this.id,
     };
 
-    ipcSend("fluffyalien_energisisticscore:ipc.networkDestroy", payload);
+    ipcSend("fluffyalien_energisticscore:ipc.networkDestroy", payload);
   }
 
   /**

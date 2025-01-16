@@ -124,3 +124,20 @@ export function reverseDirection(
 export function isCardinalDirection(direction: string): boolean {
   return (STR_CARDINAL_DIRECTIONS as readonly string[]).includes(direction);
 }
+
+export function strDirectionToDirection(strDir: StrDirection): Direction {
+  switch (strDir) {
+    case "north":
+      return Direction.North;
+    case "east":
+      return Direction.East;
+    case "south":
+      return Direction.South;
+    case "west":
+      return Direction.West;
+    case "up":
+      return Direction.Up;
+    case "down":
+      return Direction.Down;
+  }
+}

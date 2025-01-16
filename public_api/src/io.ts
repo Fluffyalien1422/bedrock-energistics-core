@@ -1,4 +1,4 @@
-import { Block } from "@minecraft/server";
+import { Block, Direction } from "@minecraft/server";
 import {
   RegisteredStorageType,
   StorageTypeData,
@@ -6,6 +6,8 @@ import {
 
 const IO_TYPE_TAG_PREFIX = "fluffyalien_energisticscore:io.type.";
 const IO_CATEGORY_TAG_PREFIX = "fluffyalien_energisticscore:io.category.";
+const IO_ANY_TAG = "fluffyalien_energisticscore:io.any";
+const IO_EXPLICIT_SIDES_TAG = "fluffyalien_energisticscore:explicit_sides";
 
 interface MachineIoData {
   acceptsAny: boolean;
@@ -14,10 +16,10 @@ interface MachineIoData {
 }
 
 /**
- * An object that represents the input/output capabilities of a machine.
+ * Represents the input/output capabilities of one side of a machine.
  * @beta
  */
-export class MachineIo {
+export class MachineSideIo {
   private constructor(private readonly data: MachineIoData) {}
 
   /**
@@ -101,14 +103,14 @@ export class MachineIo {
   }
 
   /**
-   * Create a new MachineIo object that accepts the given types and categories.
+   * Create a new MachineSideIo object that accepts the given types and categories.
    * @beta
    * @param types Accepted type IDs.
    * @param categories Accepted categories.
-   * @returns Returns a new MachineIo object.
+   * @returns Returns a new MachineSideIo object.
    */
-  static accepting(types: string[], categories: string[]): MachineIo {
-    return new MachineIo({
+  static accepting(types: string[], categories: string[]): MachineSideIo {
+    return new MachineSideIo({
       acceptsAny: false,
       types,
       categories,
@@ -116,12 +118,12 @@ export class MachineIo {
   }
 
   /**
-   * Create a new MachineIo object that accepts any type or category.
+   * Create a new MachineSideIo object that accepts any type or category.
    * @beta
-   * @returns Returns a new MachineIo object.
+   * @returns Returns a new MachineSideIo object.
    */
-  static acceptingAny(): MachineIo {
-    return new MachineIo({
+  static acceptingAny(): MachineSideIo {
+    return new MachineSideIo({
       acceptsAny: true,
       types: [],
       categories: [],
@@ -132,22 +134,67 @@ export class MachineIo {
    * Get the input/output capabilities of a machine.
    * @beta
    * @param machine The machine.
-   * @returns A MachineIo object.
+   * @param side The side of the machine to check.
+   * @returns A MachineSideIo object.
    */
-  static fromMachine(machine: Block): MachineIo {
+  static fromMachine(machine: Block, side: Direction): MachineSideIo {
     const tags = machine.getTags();
 
-    if (tags.includes("fluffyalien_energisticscore:io.any")) {
-      return MachineIo.acceptingAny();
+    // Check if the machine uses explicit side IO.
+    if (tags.includes(IO_EXPLICIT_SIDES_TAG)) {
+      return MachineSideIo.fromMachineWithExplicitSides(tags, side);
+    }
+
+    if (tags.includes(IO_ANY_TAG)) {
+      return MachineSideIo.acceptingAny();
     }
 
     const types = tags
       .filter((tag) => tag.startsWith(IO_TYPE_TAG_PREFIX))
       .map((tag) => tag.slice(IO_TYPE_TAG_PREFIX.length));
+
     const categories = tags
       .filter((tag) => tag.startsWith(IO_CATEGORY_TAG_PREFIX))
       .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length));
 
-    return MachineIo.accepting(types, categories);
+    return MachineSideIo.accepting(types, categories);
+  }
+
+  private static fromMachineWithExplicitSides(
+    tags: string[],
+    side: Direction,
+  ): MachineSideIo {
+    const strDirection = side.toLowerCase();
+    const isSideDirection = side !== Direction.Up && side !== Direction.Down;
+
+    // "fluffyalien_energisticscore:io.{type|category}.<StorageTypeId>.{north|east|south|west|up|down|side}"
+    // "fluffyalien_energisticscore:io.any.{north|east|south|west|up|down|side}"
+
+    const tagMatchesSide = (tag: string): boolean =>
+      (isSideDirection && tag.endsWith(".side")) ||
+      tag.endsWith(`.${strDirection}`);
+
+    const allowsAny = tags.some((tag) => {
+      if (!tag.startsWith(`${IO_ANY_TAG}.`)) return false;
+      return tagMatchesSide(tag);
+    });
+
+    if (allowsAny) return MachineSideIo.acceptingAny();
+
+    const types = tags
+      .filter((tag) => {
+        if (!tag.startsWith(IO_TYPE_TAG_PREFIX)) return false;
+        return tagMatchesSide(tag);
+      })
+      .map((tag) => tag.slice(IO_TYPE_TAG_PREFIX.length).split(".")[0]);
+
+    const categories = tags
+      .filter((tag) => {
+        if (!tag.startsWith(IO_CATEGORY_TAG_PREFIX)) return false;
+        return tagMatchesSide(tag);
+      })
+      .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length).split(".")[0]);
+
+    return MachineSideIo.accepting(types, categories);
   }
 }
