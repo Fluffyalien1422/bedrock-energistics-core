@@ -1,4 +1,3 @@
-import * as ipc from "mcbe-addon-ipc";
 import { MachineItemStack } from "@/public_api/src";
 import { setMachineSlotItem } from "./data";
 import {
@@ -31,6 +30,8 @@ import {
   InternalRegisteredStorageType,
   registerStorageTypeListener,
 } from "./storage_type_registry";
+import { registerListener } from "./ipc_wrapper";
+import { BecIpcListener } from "@/public_api/src/bec_ipc_listener";
 
 interface SetItemInMachineSlotPayload {
   loc: SerializableDimensionLocation;
@@ -38,119 +39,64 @@ interface SetItemInMachineSlotPayload {
   item?: MachineItemStack;
 }
 
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.registerMachine",
-  registerMachineListener,
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.registerStorageType",
+registerListener(BecIpcListener.RegisterMachine, registerMachineListener);
+registerListener(
+  BecIpcListener.RegisterStorageType,
   registerStorageTypeListener,
 );
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.setMachineSlot",
-  (payload_) => {
-    const payload = payload_ as SetItemInMachineSlotPayload;
-    setMachineSlotItem(
-      deserializeDimensionLocation(payload.loc),
-      payload.slot,
-      payload.item,
-    );
-    return null;
-  },
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.networkDestroy",
-  networkDestroyListener,
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.networkQueueSend",
-  networkQueueSendListener,
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.generate",
-  generateListener,
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.networkEstablish",
-  networkEstablishHandler,
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.networkGetWith",
-  networkGetWithHandler,
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.networkGetAllWith",
-  networkGetAllWithHandler,
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.networkGetOrEstablish",
+registerListener(BecIpcListener.SetMachineSlot, (payload_) => {
+  const payload = payload_ as SetItemInMachineSlotPayload;
+  setMachineSlotItem(
+    deserializeDimensionLocation(payload.loc),
+    payload.slot,
+    payload.item,
+  );
+  return null;
+});
+registerListener(BecIpcListener.DestroyNetwork, networkDestroyListener);
+registerListener(BecIpcListener.NetworkQueueSend, networkQueueSendListener);
+registerListener(BecIpcListener.Generate, generateListener);
+registerListener(BecIpcListener.EstablishNetwork, networkEstablishHandler);
+registerListener(BecIpcListener.GetNetworkWith, networkGetWithHandler);
+registerListener(BecIpcListener.GetAllNetworksWith, networkGetAllWithHandler);
+registerListener(
+  BecIpcListener.GetOrEstablishNetwork,
   networkGetOrEstablishHandler,
 );
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.networkIsPartOfNetwork",
-  networkIsPartOfNetworkHandler,
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.registeredMachineGet",
+registerListener(BecIpcListener.IsPartOfNetwork, networkIsPartOfNetworkHandler);
+registerListener(
+  BecIpcListener.GetRegisteredMachine,
   (payload) =>
     InternalRegisteredMachine.getInternal(payload as string)?.getData() ?? null,
 );
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.registeredStorageTypeGet",
+registerListener(
+  BecIpcListener.GetRegisteredStorageType,
   (payload) =>
     InternalRegisteredStorageType.getInternal(
       payload as string,
     )?.getDefinition() ?? null,
 );
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.networkLinkGet",
-  (payload) => {
-    const data = payload as NetworkLinkGetRequest;
-    const link = getNetworkLinkNode(data.self);
-    const result: NetworkLinkGetResponse = { locations: link.getConnections() };
-    return result;
-  },
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.networkLinkAdd",
-  (payload) => {
-    const data = payload as NetworkLinkAddRequest;
-    const link = getNetworkLinkNode(data.self);
-    link.addConnection(data.other);
-    return null;
-  },
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.networkLinkRemove",
-  (payload) => {
-    const data = payload as NetworkLinkRemoveRequest;
-    const link = getNetworkLinkNode(data.self);
-    link.removeConnection(data.other);
-    return null;
-  },
-);
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.networkLinkDestroy",
-  (payload) => {
-    const data = payload as NetworkLinkDestroyRequest;
-    const link = getNetworkLinkNode(data.self);
-    link.destroyNode();
-    return null;
-  },
-);
+registerListener(BecIpcListener.GetNetworkLink, (payload) => {
+  const data = payload as NetworkLinkGetRequest;
+  const link = getNetworkLinkNode(data.self);
+  const result: NetworkLinkGetResponse = { locations: link.getConnections() };
+  return result;
+});
+registerListener(BecIpcListener.AddNetworkLink, (payload) => {
+  const data = payload as NetworkLinkAddRequest;
+  const link = getNetworkLinkNode(data.self);
+  link.addConnection(data.other);
+  return null;
+});
+registerListener(BecIpcListener.RemoveNetworkLink, (payload) => {
+  const data = payload as NetworkLinkRemoveRequest;
+  const link = getNetworkLinkNode(data.self);
+  link.removeConnection(data.other);
+  return null;
+});
+registerListener(BecIpcListener.DestroyNetworkLink, (payload) => {
+  const data = payload as NetworkLinkDestroyRequest;
+  const link = getNetworkLinkNode(data.self);
+  link.destroyNode();
+  return null;
+});

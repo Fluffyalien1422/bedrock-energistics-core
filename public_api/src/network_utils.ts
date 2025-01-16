@@ -2,6 +2,7 @@ import { Block, BlockPermutation, DimensionLocation } from "@minecraft/server";
 import { MangledGeneratePayload } from "./network_internal.js";
 import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 import { ipcSend } from "./ipc_wrapper.js";
+import { BecIpcListener } from "./bec_ipc_listener.js";
 
 /**
  * @beta
@@ -50,5 +51,5 @@ export function generate(
     c: amount,
   };
 
-  ipcSend("fluffyalien_energisticscore:ipc.generate", payload);
+  ipcSend(BecIpcListener.Generate, payload);
 }

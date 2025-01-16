@@ -1,26 +1,27 @@
+import * as ipc from "mcbe-addon-ipc";
 import { raise } from "./log.js";
 
-let initNamespace: string | undefined;
+let ipcRouter: ipc.Router | undefined;
 
 /**
  * Initializes this package. Some APIs require this to be called.
  * @beta
  */
 export function init(namespace: string): void {
-  if (initNamespace) {
+  if (ipcRouter) {
     raise("Library already initialized.");
   }
 
-  initNamespace = namespace;
+  ipcRouter = new ipc.Router(namespace);
 }
 
 /**
  * @internal
  */
-export function getNamespace(): string {
-  if (!initNamespace) {
+export function getIpcRouter(): ipc.Router {
+  if (!ipcRouter) {
     raise("Library not initialized.");
   }
 
-  return initNamespace;
+  return ipcRouter;
 }

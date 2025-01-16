@@ -1,19 +1,24 @@
 import * as ipc from "mcbe-addon-ipc";
-import { getNamespace } from "./init.js";
+import { getIpcRouter } from "./init.js";
+import { BecIpcListener } from "./bec_ipc_listener.js";
 
 /**
  * @internal
  */
-export function ipcSend(event: string, payload: ipc.SerializableValue): void {
-  void ipc.sendAuto({ event, payload, namespace: getNamespace() });
+export function ipcSend(
+  event: BecIpcListener,
+  payload: ipc.SerializableValue,
+): void {
+  void getIpcRouter().sendAuto({ event, payload });
 }
 
 /**
  * @internal
  */
 export function ipcInvoke(
-  event: string,
+  event: BecIpcListener,
   payload: ipc.SerializableValue,
+  throwFailures = true,
 ): Promise<ipc.SerializableValue> {
-  return ipc.invokeAuto({ event, payload, namespace: getNamespace() });
+  return getIpcRouter().invokeAuto({ event, payload, throwFailures });
 }
