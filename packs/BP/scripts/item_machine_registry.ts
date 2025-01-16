@@ -21,6 +21,10 @@ export class InternalRegisteredItemMachine extends RegisteredItemMachine {
     super(data);
   }
 
+  getData(): RegisteredItemMachineData {
+    return this.data;
+  }
+
   invokeGetIoHandler(
     inventory: EntityInventoryComponent | BlockInventoryComponent,
     slot: number,

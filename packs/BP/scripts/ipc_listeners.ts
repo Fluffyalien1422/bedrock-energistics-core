@@ -31,7 +31,10 @@ import {
   InternalRegisteredStorageType,
   registerStorageTypeListener,
 } from "./storage_type_registry";
-import { registerItemMachineListener } from "./item_machine_registry";
+import {
+  InternalRegisteredItemMachine,
+  registerItemMachineListener,
+} from "./item_machine_registry";
 
 interface SetItemInMachineSlotPayload {
   loc: SerializableDimensionLocation;
@@ -119,6 +122,13 @@ ipc.registerListener(
     InternalRegisteredStorageType.getInternal(
       payload as string,
     )?.getDefinition() ?? null,
+);
+
+ipc.registerListener(
+  "fluffyalien_energisticscore:ipc.getRegisteredItemMachine",
+  (payload) =>
+    InternalRegisteredItemMachine.getInternal(payload as string)?.getData() ??
+    null,
 );
 
 ipc.registerListener(
