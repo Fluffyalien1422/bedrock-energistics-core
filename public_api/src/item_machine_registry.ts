@@ -24,7 +24,12 @@ const itemMachineCache = new Map<string, RegisteredItemMachine | undefined>();
  * @see {@link ItemMachineDefinition}, {@link registerItemMachine}
  */
 export class RegisteredItemMachine {
-  private constructor(protected readonly data: RegisteredItemMachineData) {}
+  private constructor(
+    /**
+     * @internal
+     */
+    protected readonly data: RegisteredItemMachineData,
+  ) {}
 
   get id(): string {
     return this.data.id;
