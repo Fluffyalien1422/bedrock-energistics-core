@@ -35,6 +35,10 @@ import {
   InternalRegisteredItemMachine,
   registerItemMachineListener,
 } from "./item_machine_registry";
+import {
+  getItemMachineStorageHandler,
+  setItemMachineStorageListener,
+} from "./item_machine_ipc";
 
 interface SetItemInMachineSlotPayload {
   loc: SerializableDimensionLocation;
@@ -169,4 +173,14 @@ ipc.registerListener(
     link.destroyNode();
     return null;
   },
+);
+
+ipc.registerListener(
+  "fluffyalien_energisticscore:ipc.getItemMachineStorage",
+  getItemMachineStorageHandler,
+);
+
+ipc.registerListener(
+  "fluffyalien_energisticscore:ipc.setItemMachineStorage",
+  setItemMachineStorageListener,
 );

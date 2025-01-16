@@ -1,6 +1,7 @@
 import {
   BlockComponentTypes,
   BlockInventoryComponent,
+  ContainerSlot,
   DimensionLocation,
   EntityComponentTypes,
   EntityInventoryComponent,
@@ -80,6 +81,14 @@ export class SerializableContainerSlot {
     readonly inventory: BlockInventoryComponent | EntityInventoryComponent,
     readonly slot: number,
   ) {}
+
+  toContainerSlot(): ContainerSlot {
+    if (!this.inventory.container) {
+      raise("This inventory is no longer valid.");
+    }
+
+    return this.inventory.container.getSlot(this.slot);
+  }
 
   toJson(): SerializableContainerSlotJson {
     if (this.inventory instanceof BlockInventoryComponent) {

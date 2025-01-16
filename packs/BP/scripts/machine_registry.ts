@@ -116,11 +116,6 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     return machineRegistry.get(id);
   }
 
-  /**
-   *
-   * @param id
-   * @returns
-   */
   static forceGetInternal(id: string): InternalRegisteredMachine {
     const registered = InternalRegisteredMachine.getInternal(id);
     if (!registered) {
