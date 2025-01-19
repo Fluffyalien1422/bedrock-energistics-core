@@ -1,4 +1,3 @@
-import * as ipc from "mcbe-addon-ipc";
 import {
   CREATED_LISTENER_PREFIX,
   IpcListenerType,
@@ -12,6 +11,8 @@ import {
   SerializableContainerSlot,
   SerializableContainerSlotJson,
 } from "./serialize_utils.js";
+import { BecIpcListener } from "./bec_ipc_listener.js";
+import { getIpcRouter } from "./init.js";
 
 /**
  * value should be `undefined` if the item machine does not exist
@@ -55,7 +56,7 @@ export class RegisteredItemMachine {
     }
 
     const data = (await ipcInvoke(
-      "fluffyalien_energisticscore:ipc.getRegisteredItemMachine",
+      BecIpcListener.GetRegisteredItemMachine,
       id,
     )) as RegisteredItemMachineData | null;
 
@@ -83,6 +84,8 @@ export function registerItemMachine(definition: ItemMachineDefinition): void {
 
   const eventIdPrefix = definition.description.id + CREATED_LISTENER_PREFIX;
 
+  const ipcRouter = getIpcRouter();
+
   let getIoHandler: string | undefined;
   if (definition.handlers?.getIo) {
     getIoHandler =
@@ -90,7 +93,7 @@ export function registerItemMachine(definition: ItemMachineDefinition): void {
 
     const callback = definition.handlers.getIo.bind(null);
 
-    ipc.registerListener(getIoHandler, (payload) => {
+    ipcRouter.registerListener(getIoHandler, (payload) => {
       const serializableSlot = SerializableContainerSlot.fromJson(
         payload as SerializableContainerSlotJson,
       );
@@ -109,5 +112,5 @@ export function registerItemMachine(definition: ItemMachineDefinition): void {
     getIoHandler,
   };
 
-  ipcSend("fluffyalien_energisticscore:ipc.registerItemMachine", payload);
+  ipcSend(BecIpcListener.RegisterItemMachine, payload);
 }

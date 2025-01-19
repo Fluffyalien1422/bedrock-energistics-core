@@ -10,6 +10,7 @@ import {
 import { makeSerializableDimensionLocation } from "../serialize_utils.js";
 import { raise } from "../log.js";
 import { ipcInvoke } from "../ipc_wrapper.js";
+import { BecIpcListener } from "../bec_ipc_listener.js";
 
 /**
  * A network link node in a machine network.
@@ -40,7 +41,7 @@ export class NetworkLinkNode {
     };
 
     const res = (await ipcInvoke(
-      "fluffyalien_energisticscore:ipc.networkLinkGet",
+      BecIpcListener.GetNetworkLink,
       payload,
     )) as NetworkLinkGetResponse;
 
@@ -61,7 +62,7 @@ export class NetworkLinkNode {
       other: location,
     };
 
-    await ipcInvoke("fluffyalien_energisticscore:ipc.networkLinkAdd", payload);
+    await ipcInvoke(BecIpcListener.AddNetworkLink, payload);
   }
 
   /**
@@ -78,10 +79,7 @@ export class NetworkLinkNode {
       other: location,
     };
 
-    await ipcInvoke(
-      "fluffyalien_energisticscore:ipc.networkLinkRemove",
-      payload,
-    );
+    await ipcInvoke(BecIpcListener.RemoveNetworkLink, payload);
   }
 
   /**
@@ -96,10 +94,7 @@ export class NetworkLinkNode {
       }),
     };
 
-    await ipcInvoke(
-      "fluffyalien_energisticscore:ipc.networkLinkDestroy",
-      payload,
-    );
+    await ipcInvoke(BecIpcListener.DestroyNetworkLink, payload);
   }
 
   /**

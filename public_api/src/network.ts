@@ -15,6 +15,7 @@ import {
 } from "./network_utils.js";
 import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
+import { BecIpcListener } from "./bec_ipc_listener.js";
 
 /**
  * A network of machines with a certain I/O type.
@@ -41,7 +42,7 @@ export class MachineNetwork {
       a: this.id,
     };
 
-    ipcSend("fluffyalien_energisticscore:ipc.networkDestroy", payload);
+    ipcSend(BecIpcListener.DestroyNetwork, payload);
   }
 
   /**
@@ -59,7 +60,7 @@ export class MachineNetwork {
     };
 
     return ipcInvoke(
-      "fluffyalien_energisticscore:ipc.networkIsPartOfNetwork",
+      BecIpcListener.IsPartOfNetwork,
       payload,
     ) as Promise<boolean>;
   }
@@ -97,7 +98,7 @@ export class MachineNetwork {
       d: amount,
     };
 
-    ipcSend("fluffyalien_energisisticscore:ipc.networkQueueSend", payload);
+    ipcSend(BecIpcListener.NetworkQueueSend, payload);
   }
 
   /**
@@ -113,10 +114,9 @@ export class MachineNetwork {
       location: makeSerializableDimensionLocation(location),
     };
 
-    const id = (await ipcInvoke(
-      "fluffyalien_energisticscore:ipc.networkEstablish",
-      payload,
-    )) as number | null;
+    const id = (await ipcInvoke(BecIpcListener.EstablishNetwork, payload)) as
+      | number
+      | null;
 
     if (id) {
       return new MachineNetwork(id);
@@ -141,10 +141,9 @@ export class MachineNetwork {
       location: makeSerializableDimensionLocation(location),
     };
 
-    const id = (await ipcInvoke(
-      "fluffyalien_energisticscore:ipc.networkGetWith",
-      payload,
-    )) as number | null;
+    const id = (await ipcInvoke(BecIpcListener.GetNetworkWith, payload)) as
+      | number
+      | null;
 
     if (id) {
       return new MachineNetwork(id);
@@ -178,7 +177,7 @@ export class MachineNetwork {
     };
 
     const ids = (await ipcInvoke(
-      "fluffyalien_energisticscore:ipc.networkGetAllWith",
+      BecIpcListener.GetAllNetworksWith,
       payload,
     )) as number[];
 
@@ -214,7 +213,7 @@ export class MachineNetwork {
     };
 
     const id = (await ipcInvoke(
-      "fluffyalien_energisticscore:ipc.networkGetOrEstablish",
+      BecIpcListener.GetOrEstablishNetwork,
       payload,
     )) as number | null;
 

@@ -1,4 +1,3 @@
-import * as ipc from "mcbe-addon-ipc";
 import { MachineDefinition, UiElement } from "./machine_registry_types.js";
 import {
   IpcNetworkStatsEventArg,
@@ -13,6 +12,8 @@ import {
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import { isRegistrationAllowed } from "./registration_allowed.js";
 import { raise } from "./log.js";
+import { getIpcRouter } from "./init.js";
+import { BecIpcListener } from "./bec_ipc_listener.js";
 import {
   CREATED_LISTENER_PREFIX,
   IpcListenerType,
@@ -88,7 +89,7 @@ export class RegisteredMachine {
     }
 
     const data = (await ipcInvoke(
-      "fluffyalien_energisticscore:ipc.registeredMachineGet",
+      BecIpcListener.GetRegisteredMachine,
       id,
     )) as RegisteredMachineData | null;
 
@@ -116,6 +117,8 @@ export function registerMachine(definition: MachineDefinition): void {
 
   const eventIdPrefix = definition.description.id + CREATED_LISTENER_PREFIX;
 
+  const ipcRouter = getIpcRouter();
+
   let updateUiEvent: string | undefined;
   if (definition.handlers?.updateUi) {
     updateUiEvent =
@@ -123,7 +126,7 @@ export function registerMachine(definition: MachineDefinition): void {
 
     const callback = definition.handlers.updateUi.bind(null);
 
-    ipc.registerListener(updateUiEvent, (payload) =>
+    ipcRouter.registerListener(updateUiEvent, (payload) =>
       callback({
         blockLocation: deserializeDimensionLocation(
           payload as SerializableDimensionLocation,
@@ -139,7 +142,7 @@ export function registerMachine(definition: MachineDefinition): void {
 
     const callback = definition.handlers.receive.bind(null);
 
-    ipc.registerListener(receiveHandlerEvent, (payload) => {
+    ipcRouter.registerListener(receiveHandlerEvent, (payload) => {
       const data = payload as MangledRecieveHandlerPayload;
       return (
         callback({
@@ -158,7 +161,7 @@ export function registerMachine(definition: MachineDefinition): void {
 
     const callback = definition.events.onButtonPressed.bind(null);
 
-    ipc.registerListener(onButtonPressedEvent, (payload) => {
+    ipcRouter.registerListener(onButtonPressedEvent, (payload) => {
       const data = payload as MangledOnButtonPressedPayload;
       callback({
         blockLocation: deserializeDimensionLocation(data.a),
@@ -177,7 +180,7 @@ export function registerMachine(definition: MachineDefinition): void {
 
     const callback = definition.events.onNetworkStatsRecieved.bind(null);
 
-    ipc.registerListener(networkStatEvent, (payload) => {
+    ipcRouter.registerListener(networkStatEvent, (payload) => {
       const data = payload as IpcNetworkStatsEventArg;
 
       callback({
@@ -203,5 +206,5 @@ export function registerMachine(definition: MachineDefinition): void {
     networkStatEvent,
   };
 
-  ipcSend("fluffyalien_energisticscore:ipc.registerMachine", payload);
+  ipcSend(BecIpcListener.RegisterMachine, payload);
 }

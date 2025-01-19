@@ -12,6 +12,7 @@ import {
   GetItemMachineStoragePayload,
   SetItemMachineStoragePayload,
 } from "./item_machine_internal.js";
+import { BecIpcListener } from "./bec_ipc_listener.js";
 
 /**
  * Representation of an item machine.
@@ -80,7 +81,7 @@ export class ItemMachine {
     };
 
     return ipcInvoke(
-      "fluffyalien_energisticscore:ipc.getItemMachineStorage",
+      BecIpcListener.GetItemMachineStorage,
       payload,
     ) as Promise<number>;
   }
@@ -101,7 +102,7 @@ export class ItemMachine {
       value,
     };
 
-    ipcSend("fluffyalien_energisticscore:ipc.setItemMachineStorage", payload);
+    ipcSend(BecIpcListener.SetItemMachineStorage, payload);
   }
 
   private ensureValidity(): void {

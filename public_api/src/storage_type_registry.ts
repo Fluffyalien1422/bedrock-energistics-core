@@ -1,3 +1,4 @@
+import { BecIpcListener } from "./bec_ipc_listener.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import { raise } from "./log.js";
 import { isRegistrationAllowed } from "./registration_allowed.js";
@@ -76,7 +77,7 @@ export class RegisteredStorageType implements StorageTypeData {
     }
 
     const def = (await ipcInvoke(
-      "fluffyalien_energisticscore:ipc.registeredStorageTypeGet",
+      BecIpcListener.GetRegisteredStorageType,
       id,
     )) as StorageTypeDefinition | null;
 
@@ -117,5 +118,5 @@ export function registerStorageType(definition: StorageTypeDefinition): void {
     name: definition.name,
   };
 
-  ipcSend("fluffyalien_energisticscore:ipc.registerStorageType", payload);
+  ipcSend(BecIpcListener.RegisterStorageType, payload);
 }

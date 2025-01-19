@@ -1,8 +1,8 @@
 import { VERSION } from "./constants.js";
-import { tryGetNamespace } from "./init.js";
+import { tryGetIpcRouter } from "./init.js";
 
 function makeLogString(logLevel: string, message: string): string {
-  return `[Bedrock Energistics Core API v${VERSION}] (${tryGetNamespace() ?? "uninitialized"}) ${logLevel} ${message}`;
+  return `[Bedrock Energistics Core API v${VERSION}] (${tryGetIpcRouter()?.uid ?? "uninitialized"}) ${logLevel} ${message}`;
 }
 
 /**
