@@ -25,3 +25,10 @@ export function getIpcRouter(): ipc.Router {
 
   return ipcRouter;
 }
+
+/**
+ * @internal
+ */
+export function tryGetNamespace(): string | undefined {
+  return initNamespace;
+}

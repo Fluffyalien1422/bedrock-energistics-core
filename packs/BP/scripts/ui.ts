@@ -4,7 +4,7 @@ import {
   UiItemSlotElement,
   UiProgressIndicatorElementType,
   UiStorageBarElementUpdateOptions,
-} from "@/public_api/src/registry_types";
+} from "@/public_api/src";
 import {
   Container,
   DimensionLocation,

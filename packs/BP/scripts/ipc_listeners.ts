@@ -32,6 +32,14 @@ import {
 } from "./storage_type_registry";
 import { registerListener } from "./ipc_wrapper";
 import { BecIpcListener } from "@/public_api/src/bec_ipc_listener";
+import {
+  InternalRegisteredItemMachine,
+  registerItemMachineListener,
+} from "./item_machine_registry";
+import {
+  getItemMachineStorageHandler,
+  setItemMachineStorageListener,
+} from "./item_machine_ipc";
 
 interface SetItemInMachineSlotPayload {
   loc: SerializableDimensionLocation;
@@ -60,9 +68,13 @@ registerListener(BecIpcListener.EstablishNetwork, networkEstablishHandler);
 registerListener(BecIpcListener.GetNetworkWith, networkGetWithHandler);
 registerListener(BecIpcListener.GetAllNetworksWith, networkGetAllWithHandler);
 registerListener(
-  BecIpcListener.GetOrEstablishNetwork,
-  networkGetOrEstablishHandler,
+  BecIpcListener.GetOrEstablishNetwork,  networkGetOrEstablishHandler,
 );
+ipc.registerListener(
+  "fluffyalien_energisticscore:ipc.registerItemMachine",
+  registerItemMachineListener,
+);
+
 registerListener(BecIpcListener.IsPartOfNetwork, networkIsPartOfNetworkHandler);
 registerListener(
   BecIpcListener.GetRegisteredMachine,
@@ -100,3 +112,19 @@ registerListener(BecIpcListener.DestroyNetworkLink, (payload) => {
   link.destroyNode();
   return null;
 });
+
+ipc.registerListener(
+  "fluffyalien_energisticscore:ipc.getRegisteredItemMachine",
+  (payload) =>
+    InternalRegisteredItemMachine.getInternal(payload as string)?.getData() ??
+    null,
+);
+ipc.registerListener(
+  "fluffyalien_energisticscore:ipc.getItemMachineStorage",
+  getItemMachineStorageHandler,
+);
+
+ipc.registerListener(
+  "fluffyalien_energisticscore:ipc.setItemMachineStorage",
+  setItemMachineStorageListener,
+);
