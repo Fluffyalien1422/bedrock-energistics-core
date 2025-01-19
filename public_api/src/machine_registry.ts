@@ -1,4 +1,3 @@
-import * as ipc from "mcbe-addon-ipc";
 import { MachineDefinition, UiElement } from "./machine_registry_types.js";
 import {
   IpcNetworkStatsEventArg,

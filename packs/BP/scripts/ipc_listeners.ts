@@ -68,13 +68,13 @@ registerListener(BecIpcListener.EstablishNetwork, networkEstablishHandler);
 registerListener(BecIpcListener.GetNetworkWith, networkGetWithHandler);
 registerListener(BecIpcListener.GetAllNetworksWith, networkGetAllWithHandler);
 registerListener(
-  BecIpcListener.GetOrEstablishNetwork,  networkGetOrEstablishHandler,
+  BecIpcListener.GetOrEstablishNetwork,
+  networkGetOrEstablishHandler,
 );
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.registerItemMachine",
+registerListener(
+  BecIpcListener.RegisterItemMachine,
   registerItemMachineListener,
 );
-
 registerListener(BecIpcListener.IsPartOfNetwork, networkIsPartOfNetworkHandler);
 registerListener(
   BecIpcListener.GetRegisteredMachine,
@@ -112,19 +112,17 @@ registerListener(BecIpcListener.DestroyNetworkLink, (payload) => {
   link.destroyNode();
   return null;
 });
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.getRegisteredItemMachine",
+registerListener(
+  BecIpcListener.GetRegisteredItemMachine,
   (payload) =>
     InternalRegisteredItemMachine.getInternal(payload as string)?.getData() ??
     null,
 );
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.getItemMachineStorage",
+registerListener(
+  BecIpcListener.GetItemMachineStorage,
   getItemMachineStorageHandler,
 );
-
-ipc.registerListener(
-  "fluffyalien_energisticscore:ipc.setItemMachineStorage",
+registerListener(
+  BecIpcListener.SetItemMachineStorage,
   setItemMachineStorageListener,
 );

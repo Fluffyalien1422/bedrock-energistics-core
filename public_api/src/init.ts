@@ -29,6 +29,6 @@ export function getIpcRouter(): ipc.Router {
 /**
  * @internal
  */
-export function tryGetNamespace(): string | undefined {
-  return initNamespace;
+export function tryGetIpcRouter(): ipc.Router | undefined {
+  return ipcRouter;
 }
