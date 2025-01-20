@@ -1,5 +1,5 @@
 /.regolith
 /build
 /public_api/dist
-/public_api/docs
+/docs
 node_modules
