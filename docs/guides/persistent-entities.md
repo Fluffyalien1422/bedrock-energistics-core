@@ -10,4 +10,4 @@ This disables despawning the entity on hit and enables some internal optimizatio
 
 This will not destroy your machine when the entity is hit, you will need to implement this (or another system) yourself.
 
-Call [removeMachine](https://fluffyalien1422.github.io/bedrock-energistics-core/functions/API.removeMachine.html) to clean up machine data and update networks. It will not remove the block or the entity.
+Call [removeMachine](https://fluffyalien1422.github.io/bedrock-energistics-core/api/functions/API.removeMachine.html) to clean up machine data and update networks. It will not remove the block or the entity.

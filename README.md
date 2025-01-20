@@ -12,4 +12,4 @@ APIs for creating tech add-ons.
 
 ## Getting Started
 
-See [Getting Started](https://fluffyalien1422.github.io/bedrock-energistics-core/documents/Guides.Getting_Started.html).
+See [Getting Started](https://fluffyalien1422.github.io/bedrock-energistics-core/api/documents/Guides.Getting_Started.html).

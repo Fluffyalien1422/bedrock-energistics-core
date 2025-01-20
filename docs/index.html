@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/dark.min.css"
+    />
+    <script type="module">
+      import hljs from "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js";
+      import js from "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/languages/javascript.min.js";
+      hljs.registerLanguage("js", js);
+      hljs.highlightAll();
+    </script>
+    <title>Bedrock Energistics Core</title>
+  </head>
+  <body>
+    <nav class="top-nav">
+      <div class="top-nav-group">
+        <img src="https://raw.githubusercontent.com/Fluffyalien1422/bedrock-energistics-core/refs/heads/main/keyart/logo_nobg.png" class="top-nav-logo" />
+        <span class="title">Bedrock Energistics Core</span>
+      </div>
+      <div class="top-nav-group">
+        <a href="./api/index.html" class="top-nav-link" style="margin-right: 10px"
+          >API Docs</a
+        >
+        <div class="top-nav-dropdown">
+          <span class="top-nav-dropdown-label">Links</span>
+          <div
+            class="top-nav-dropdown-content button-list-dropdown-content"
+            style="right: 10px"
+          >
+            <a
+              href="https://x.com/Fluffyalien1422"
+              target="_blank"
+              class="top-nav-button-link"
+              >X</a
+            >
+            <a
+              href="https://github.com/Fluffyalien1422/bedrock-energistics-core"
+              target="_blank"
+              class="top-nav-button-link"
+              >GitHub</a
+            >
+          </div>
+        </div>
+      </div>
+    </nav>
+    <main>
+      <section style="text-align: center">
+        <h1>Bedrock Energistics Core</h1>
+        <p>
+          <span class="main-description-highlighted">Easy to use</span> and
+          <span class="main-description-highlighted">powerful</span> APIs for
+          creating
+          <span class="main-description-highlighted">compatible</span> Minecraft
+          Bedrock tech add-ons.
+        </p>
+        <div class="center-container">
+          <a href="./api/documents/Guides.Getting_Started.html" class="button"
+            >Get Started</a
+          >
+        </div>
+        <h2>Features</h2>
+      </section>
+
+      <section class="feature-showcase-container">
+        <div class="feature-showcase" style="max-width: 400px">
+          <h3>Machine UI</h3>
+          <span
+            >Provides powerful machine UI APIs, while abstracting away the hard
+            parts.</span
+          >
+          <pre><code class="language-js">export const voidMinerMachine = {
+  description: {
+    // ...
+    ui: {
+      elements: {
+        energyBar: {
+          type: "storageBar",
+          startIndex: 0,
+        },
+        progressIndicator: {
+          type: "progressIndicator",
+          indicator: "arrow",
+          index: 4,
+        },
+        outputSlot: {
+          type: "itemSlot",
+          slotId: 0,
+          index: 5,
+          allowedItems: OUTPUT_ITEM_TYPES,
+        },
+      },
+    },
+  },
+  handlers: {
+    updateUi({ blockLocation }) {
+      const uid = blockLocationToUid(blockLocation);
+
+      return {
+        storageBars: {
+          energyBar: {
+            type: "energy",
+            change: progressMap.has(uid)
+              ? -ENERGY_CONSUMPTION_PER_TICK
+              : 0,
+          },
+        },
+        progressIndicators: {
+          progressIndicator: Math.floor(
+            (progressMap.get(uid) ?? 0) / 1.5
+          ),
+        },
+      };
+    },
+  },
+  // ...
+};</code></pre>
+        </div>
+        <div class="feature-showcase" style="max-width: 560px">
+          <h3>Simple</h3>
+          <span
+            >Simple APIs for simple machines, while having more powerful APIs
+            for complex machines.</span
+          >
+          <pre><code>export const itemSpawnerComponent = {
+  onTick({ block }) {
+    const storedEnergy = getMachineStorage(block, "energy");
+    if (storedEnergy < ENERGY_CONSUMPTION) return;
+
+    const spawnLoc = Vector3Utils.add(block.location, VECTOR3_UP);
+    block.dimension.spawnItem(new ItemStack("example:item"), spawnLoc);
+
+    setMachineStorage(block, "energy", storedEnergy - ENERGY_CONSUMPTION);
+  },
+};</code></pre>
+          <pre><code>export const passiveGeneratorComponent = {
+  onTick({ block }) {
+    generate(block, "energy", 2);
+  },
+};</code></pre>
+        </div>
+        <div class="feature-showcase" style="max-width: 400px">
+          <h3>Storage Types</h3>
+          <span>Create storage types that can be shared between add-ons.</span>
+          <pre><code class="language-js">world.afterEvents.worldInitialize.subscribe(() => {
+  // Use a predefined storage type:
+  useStandardStorageType(StandardStorageType.Oil);
+
+  // Or, create your own:
+  registerStorageType({
+    id: "example:custom_fluid",
+    category: StandardStorageCategory.Fluid,
+    color: "blue",
+    name: "custom fluid"
+  });
+});</code></pre>
+        </div>
+      </section>
+      <section style="text-align: center">
+        <h2>Add-Ons Using Bedrock Energistics Core</h2>
+        <div class="addons-container">
+          <a
+            class="addon"
+            href="https://www.curseforge.com/minecraft-bedrock/addons/bedrock-energistics"
+            target="_blank"
+          >
+            <img
+              class="addon-img"
+              src="https://raw.githubusercontent.com/Fluffyalien1422/bedrock-energistics-core/refs/heads/main/keyart/addons/bedrock_energistics.png"
+            />
+            <h3>Bedrock Energistics</h3>
+          </a>
+          <a
+            class="addon"
+            href="https://www.curseforge.com/minecraft-bedrock/addons/advanced-storage-network-2"
+            target="_blank"
+          >
+            <img class="addon-img" src="https://raw.githubusercontent.com/Fluffyalien1422/bedrock-energistics-core/refs/heads/main/keyart/addons/asn.png" />
+            <h3>Advanced Storage Network</h3>
+          </a>
+        </div>
+      </section>
+      <div style="height: 100px"></div>
+    </main>
+  </body>
+</html>
+

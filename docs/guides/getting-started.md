@@ -4,6 +4,9 @@ title: Getting Started
 
 # Getting Started
 
+> [!warning]
+> Bedrock Energistics Core is in beta. Minor updates may contain breaking changes. See [Versioning](versioning.md) for more information.
+
 This guide assumes that you have a basic understanding of [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript), [Node.js](https://nodejs.org/), [npm](https://www.npmjs.com/), and an advanced understanding of [Minecraft Bedrock add-on development](https://learn.microsoft.com/en-us/minecraft/creator/documents/gettingstarted).
 
 Before getting started, ensure that you're using a Minecraft version that Bedrock Energistics Core supports. Each release will note which Minecraft versions it supports. Bedrock Energistics Core's latest release usually supports the latest Minecraft stable release. See [releases](https://github.com/Fluffyalien1422/bedrock-energistics-core/releases).
