@@ -121,7 +121,7 @@ export interface MachineDefinitionDescription {
   entityId?: string;
   /**
    * Is the machine entity persistent?
-   * See [Persistent Entities](https://fluffyalien1422.github.io/bedrock-energistics-core/documents/Guides.Persistent_Entities.html).
+   * See [Persistent Entities](https://fluffyalien1422.github.io/bedrock-energistics-core/api/documents/Guides.Persistent_Entities.html).
    */
   persistentEntity?: boolean;
   /**

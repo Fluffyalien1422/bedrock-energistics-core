@@ -4,7 +4,7 @@ title: Machine Block Tags
 
 # Machine Block Tags
 
-Note: remember to update the machine's networks using [updateMachineNetworks](https://fluffyalien1422.github.io/bedrock-energistics-core/functions/API.updateMachineNetworks.html) if any tags change.
+Note: remember to update the machine's networks using [updateMachineNetworks](https://fluffyalien1422.github.io/bedrock-energistics-core/api/functions/API.updateMachineNetworks.html) if any tags change.
 
 ## Required Tags
 
