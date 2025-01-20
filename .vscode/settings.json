@@ -9,7 +9,6 @@
     "**/.regolith": true,
     "**/node_modules": true,
     "**/package-lock.json": true,
-    "public_api/dist": true,
-    "public_api/docs": true
+    "public_api/dist": true
   }
 }

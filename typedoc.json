@@ -1,8 +1,8 @@
 {
-  "name": "Bedrock Energistics Core API",
+  "name": "Bedrock Energistics Core",
   "entryPoints": ["public_api/src"],
-  "out": "public_api/docs",
+  "projectDocuments": ["docs/guides/index.md"],
+  "out": "docs/api",
   "tsconfig": "public_api/tsconfig.json",
-  "projectDocuments": ["public_api/guides/index.md"],
   "excludeInternal": true
 }
