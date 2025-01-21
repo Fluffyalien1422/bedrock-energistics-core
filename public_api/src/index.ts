@@ -8,6 +8,7 @@ export * from "./init.js";
 export * from "./io.js";
 export * from "./item_machine_registry_types.js";
 export * from "./item_machine_registry.js";
+export * from "./item_machine.js";
 export * from "./machine_data.js";
 export * from "./machine_registry_types.js";
 export * from "./machine_registry.js";

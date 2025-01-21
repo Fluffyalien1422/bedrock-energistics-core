@@ -9,18 +9,26 @@ const IO_CATEGORY_TAG_PREFIX = "fluffyalien_energisticscore:io.category.";
 const IO_ANY_TAG = "fluffyalien_energisticscore:io.any";
 const IO_EXPLICIT_SIDES_TAG = "fluffyalien_energisticscore:explicit_sides";
 
-interface MachineIoData {
+/**
+ * @beta
+ */
+export interface IoCapabilitiesData {
   acceptsAny: boolean;
   types: string[];
   categories: string[];
 }
 
 /**
- * Represents the input/output capabilities of one side of a machine.
+ * Represents input/output capabilities of a machine side or item machine.
  * @beta
  */
-export class MachineSideIo {
-  private constructor(private readonly data: MachineIoData) {}
+export class IoCapabilities {
+  /**
+   * Note: {@link IoCapabilities.accepting} or {@link IoCapabilities.acceptingAny}
+   * should be used to create an instance instead.
+   * @beta
+   */
+  constructor(private readonly data: IoCapabilitiesData) {}
 
   /**
    * @beta
@@ -34,16 +42,16 @@ export class MachineSideIo {
    * @beta
    * @returns Returns the accepted type IDs (empty if the object accepts any).
    */
-  get types(): readonly string[] {
-    return this.data.types;
+  get types(): string[] {
+    return [...this.data.types];
   }
 
   /**
    * @beta
    * @returns Returns the accepted categories (empty if the object accepts any).
    */
-  get categories(): readonly string[] {
-    return this.data.categories;
+  get categories(): string[] {
+    return [...this.data.categories];
   }
 
   /**
@@ -103,14 +111,14 @@ export class MachineSideIo {
   }
 
   /**
-   * Create a new MachineSideIo object that accepts the given types and categories.
+   * Create a new IoCapabilities object that accepts the given types and categories.
    * @beta
    * @param types Accepted type IDs.
    * @param categories Accepted categories.
-   * @returns Returns a new MachineSideIo object.
+   * @returns Returns a new IoCapabilities object.
    */
-  static accepting(types: string[], categories: string[]): MachineSideIo {
-    return new MachineSideIo({
+  static accepting(types: string[], categories: string[]): IoCapabilities {
+    return new IoCapabilities({
       acceptsAny: false,
       types,
       categories,
@@ -118,12 +126,12 @@ export class MachineSideIo {
   }
 
   /**
-   * Create a new MachineSideIo object that accepts any type or category.
+   * Create a new IoCapabilities object that accepts any type or category.
    * @beta
-   * @returns Returns a new MachineSideIo object.
+   * @returns Returns a new IoCapabilities object.
    */
-  static acceptingAny(): MachineSideIo {
-    return new MachineSideIo({
+  static acceptingAny(): IoCapabilities {
+    return new IoCapabilities({
       acceptsAny: true,
       types: [],
       categories: [],
@@ -135,18 +143,18 @@ export class MachineSideIo {
    * @beta
    * @param machine The machine.
    * @param side The side of the machine to check.
-   * @returns A MachineSideIo object.
+   * @returns A IoCapabilities object.
    */
-  static fromMachine(machine: Block, side: Direction): MachineSideIo {
+  static fromMachine(machine: Block, side: Direction): IoCapabilities {
     const tags = machine.getTags();
 
     // Check if the machine uses explicit side IO.
     if (tags.includes(IO_EXPLICIT_SIDES_TAG)) {
-      return MachineSideIo.fromMachineWithExplicitSides(tags, side);
+      return IoCapabilities.fromMachineWithExplicitSides(tags, side);
     }
 
     if (tags.includes(IO_ANY_TAG)) {
-      return MachineSideIo.acceptingAny();
+      return IoCapabilities.acceptingAny();
     }
 
     const types = tags
@@ -157,13 +165,13 @@ export class MachineSideIo {
       .filter((tag) => tag.startsWith(IO_CATEGORY_TAG_PREFIX))
       .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length));
 
-    return MachineSideIo.accepting(types, categories);
+    return IoCapabilities.accepting(types, categories);
   }
 
   private static fromMachineWithExplicitSides(
     tags: string[],
     side: Direction,
-  ): MachineSideIo {
+  ): IoCapabilities {
     const strDirection = side.toLowerCase();
     const isSideDirection = side !== Direction.Up && side !== Direction.Down;
 
@@ -179,7 +187,7 @@ export class MachineSideIo {
       return tagMatchesSide(tag);
     });
 
-    if (allowsAny) return MachineSideIo.acceptingAny();
+    if (allowsAny) return IoCapabilities.acceptingAny();
 
     const types = tags
       .filter((tag) => {
@@ -195,6 +203,6 @@ export class MachineSideIo {
       })
       .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length).split(".")[0]);
 
-    return MachineSideIo.accepting(types, categories);
+    return IoCapabilities.accepting(types, categories);
   }
 }

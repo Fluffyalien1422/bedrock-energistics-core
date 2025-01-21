@@ -12,4 +12,5 @@ export enum IpcListenerType {
   MachineOnButtonPressedEvent,
   MachineNetworkStatEvent,
   ItemMachineGetIoHandler,
+  ItemMachineOnStorageSetEvent,
 }

@@ -13,7 +13,7 @@ import {
 import { InternalNetworkLinkNode } from "./network_links/network_link_internal";
 import {
   getBlockNetworkConnectionType,
-  MachineSideIo,
+  IoCapabilities,
   NetworkConnectionType,
   NetworkStorageTypeData,
   StorageTypeData,
@@ -479,14 +479,14 @@ export class MachineNetwork extends DestroyableObject {
       if (isHandled) return;
 
       // Check that this current block can send this type out this side.
-      const selfIo = MachineSideIo.fromMachine(
+      const selfIo = IoCapabilities.fromMachine(
         currentBlock,
         strDirectionToDirection(direction),
       );
       if (!selfIo.acceptsType(ioType)) return;
 
       // Check that the recieving block can take this type in too
-      const io = MachineSideIo.fromMachine(
+      const io = IoCapabilities.fromMachine(
         nextBlock,
         strDirectionToDirection(reverseDirection(direction)),
       );

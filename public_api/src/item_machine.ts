@@ -1,5 +1,6 @@
 import {
   BlockInventoryComponent,
+  ContainerSlot,
   EntityInventoryComponent,
 } from "@minecraft/server";
 import {
@@ -10,9 +11,11 @@ import { raise } from "./log.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import {
   GetItemMachineStoragePayload,
+  ItemMachineFuncPayload,
   SetItemMachineStoragePayload,
 } from "./item_machine_internal.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
+import { IoCapabilities, IoCapabilitiesData } from "./io.js";
 
 /**
  * Representation of an item machine.
@@ -58,6 +61,7 @@ export class ItemMachine {
   }
 
   /**
+   * Is this object valid?
    * @beta
    * @returns `true` if the type ID of the item in the specified slot has NOT changed since the creation of this object, otherwise `false`.
    */
@@ -66,11 +70,21 @@ export class ItemMachine {
   }
 
   /**
+   * Get the container slot that this item is in.
+   * @beta
+   * @throws Throws if this object is not valid.
+   */
+  getContainerSlot(): ContainerSlot {
+    this.ensureValidity();
+    return this.inventory.container!.getSlot(this.slot);
+  }
+
+  /**
    * Gets the storage of a specific type in the item machine.
    * @beta
    * @param type The type of storage to get.
    * @throws Throws if the storage type does not exist
-   * @throws If this object is not valid.
+   * @throws Throws if this object is not valid.
    */
   getStorage(type: string): Promise<number> {
     this.ensureValidity();
@@ -91,7 +105,7 @@ export class ItemMachine {
    * @beta
    * @param type The type of storage to set.
    * @param value The new value. Must be an integer.
-   * @throws If this object is not valid.
+   * @throws Throws if this object is not valid.
    */
   setStorage(type: string, value: number): void {
     this.ensureValidity();
@@ -103,6 +117,26 @@ export class ItemMachine {
     };
 
     ipcSend(BecIpcListener.SetItemMachineStorage, payload);
+  }
+
+  /**
+   * Get the I/O capabilities of this item machine.
+   * @beta
+   * @throws Throws if this object is not valid.
+   */
+  async getIo(): Promise<IoCapabilities> {
+    this.ensureValidity();
+
+    const payload: ItemMachineFuncPayload = {
+      slot: this.containerSlotJson,
+    };
+
+    const ioData = (await ipcInvoke(
+      BecIpcListener.GetItemMachineIo,
+      payload,
+    )) as IoCapabilitiesData;
+
+    return new IoCapabilities(ioData);
   }
 
   private ensureValidity(): void {

@@ -1,7 +1,4 @@
-import {
-  BlockInventoryComponent,
-  EntityInventoryComponent,
-} from "@minecraft/server";
+import { ItemMachine } from "./item_machine.js";
 
 /**
  * @beta
@@ -14,10 +11,9 @@ export interface ItemMachineDefinitionDescription {
    */
   maxStorage?: number;
   /**
-   * Use the item lore to display the amount of each storage type.
-   * @default true
+   * Default I/O for the item machine. This is used to fill in any `undefined` values returned by `getIo`.
    */
-  loreDisplay?: boolean;
+  defaultIo?: ItemMachineGetIoResponse;
 }
 
 // common callback types
@@ -26,8 +22,7 @@ export interface ItemMachineDefinitionDescription {
  * @beta
  */
 export interface ItemMachineCallbackArg {
-  inventory: BlockInventoryComponent | EntityInventoryComponent;
-  slot: number;
+  itemMachine: ItemMachine;
 }
 
 /**
@@ -38,21 +33,51 @@ export type ItemMachineCallback<
   TReturn,
 > = (this: null, arg: TArg) => TReturn;
 
+/**
+ * @beta
+ */
+export type ItemMachineEventCallback<T extends ItemMachineCallbackArg> =
+  ItemMachineCallback<T, void>;
+
 // handlers
 
 /**
  * @beta
  */
 export interface ItemMachineGetIoResponse {
-  categories: string[];
-  types: string[];
+  /**
+   * Accept any storage type. If this is `true`, `categories` and `types` are ignored.
+   */
+  acceptsAny?: boolean;
+  /**
+   * Accepted storage type categories.
+   */
+  categories?: string[];
+  /**
+   * Accepted storage types.
+   */
+  types?: string[];
 }
 
 /**
  * @beta
  */
-export interface ItemMachineHandlers {
+export interface ItemMachineDefinitionHandlers {
   getIo?: ItemMachineCallback<ItemMachineCallbackArg, ItemMachineGetIoResponse>;
+}
+
+// events
+
+export interface ItemMachineOnStorageSetArg extends ItemMachineCallbackArg {
+  type: string;
+  value: number;
+}
+
+/**
+ * @beta
+ */
+export interface ItemMachineDefinitionEvents {
+  onStorageSet?: ItemMachineEventCallback<ItemMachineOnStorageSetArg>;
 }
 
 // definition
@@ -62,5 +87,6 @@ export interface ItemMachineHandlers {
  */
 export interface ItemMachineDefinition {
   description: ItemMachineDefinitionDescription;
-  handlers?: ItemMachineHandlers;
+  handlers?: ItemMachineDefinitionHandlers;
+  events?: ItemMachineDefinitionEvents;
 }

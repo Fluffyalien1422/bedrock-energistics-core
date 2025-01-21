@@ -1,21 +1,21 @@
 import { SerializableContainerSlotJson } from "./serialize_utils.js";
 
 /**
- * @beta
+ * @internal
  */
 export interface ItemMachineFuncPayload {
   slot: SerializableContainerSlotJson;
 }
 
 /**
- * @beta
+ * @internal
  */
 export interface GetItemMachineStoragePayload extends ItemMachineFuncPayload {
   type: string;
 }
 
 /**
- * @beta
+ * @internal
  */
 export interface SetItemMachineStoragePayload extends ItemMachineFuncPayload {
   type: string;

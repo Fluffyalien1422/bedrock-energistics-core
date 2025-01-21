@@ -37,6 +37,7 @@ import {
   registerItemMachineListener,
 } from "./item_machine_registry";
 import {
+  getItemMachineIoHandler,
   getItemMachineStorageHandler,
   setItemMachineStorageListener,
 } from "./item_machine_ipc";
@@ -126,3 +127,4 @@ registerListener(
   BecIpcListener.SetItemMachineStorage,
   setItemMachineStorageListener,
 );
+registerListener(BecIpcListener.GetItemMachineIo, getItemMachineIoHandler);

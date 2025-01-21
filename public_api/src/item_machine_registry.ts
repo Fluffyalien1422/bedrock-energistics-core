@@ -3,7 +3,10 @@ import {
   IpcListenerType,
 } from "./ipc_listener_type.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
-import { RegisteredItemMachineData } from "./item_machine_registry_internal.js";
+import {
+  ItemMachineOnStorageSetPayload,
+  RegisteredItemMachineData,
+} from "./item_machine_registry_internal.js";
 import { ItemMachineDefinition } from "./item_machine_registry_types.js";
 import { raise } from "./log.js";
 import { isRegistrationAllowed } from "./registration_allowed.js";
@@ -13,6 +16,7 @@ import {
 } from "./serialize_utils.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
 import { getIpcRouter } from "./init.js";
+import { ItemMachine } from "./item_machine.js";
 
 /**
  * value should be `undefined` if the item machine does not exist
@@ -38,10 +42,6 @@ export class RegisteredItemMachine {
 
   get maxStorage(): number {
     return this.data.maxStorage ?? 6400;
-  }
-
-  get loreDisplay(): boolean {
-    return this.data.loreDisplay ?? true;
   }
 
   /**
@@ -99,17 +99,45 @@ export function registerItemMachine(definition: ItemMachineDefinition): void {
       );
 
       return callback({
-        inventory: serializableSlot.inventory,
-        slot: serializableSlot.slot,
+        itemMachine: new ItemMachine(
+          serializableSlot.inventory,
+          serializableSlot.slot,
+        ),
       });
+    });
+  }
+
+  let onStorageSetEvent: string | undefined;
+  if (definition.events?.onStorageSet) {
+    onStorageSetEvent =
+      eventIdPrefix + IpcListenerType.ItemMachineOnStorageSetEvent.toString();
+
+    const callback = definition.events.onStorageSet.bind(null);
+
+    ipcRouter.registerListener(onStorageSetEvent, (payloadRaw) => {
+      const payload = payloadRaw as ItemMachineOnStorageSetPayload;
+
+      const serializableSlot = SerializableContainerSlot.fromJson(payload.slot);
+
+      callback({
+        itemMachine: new ItemMachine(
+          serializableSlot.inventory,
+          serializableSlot.slot,
+        ),
+        type: payload.type,
+        value: payload.value,
+      });
+
+      return null;
     });
   }
 
   const payload: RegisteredItemMachineData = {
     id: definition.description.id,
     maxStorage: definition.description.maxStorage,
-    loreDisplay: definition.description.loreDisplay,
+    defaultIo: definition.description.defaultIo,
     getIoHandler,
+    onStorageSetEvent,
   };
 
   ipcSend(BecIpcListener.RegisterItemMachine, payload);

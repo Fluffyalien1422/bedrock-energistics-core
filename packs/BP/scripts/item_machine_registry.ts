@@ -4,13 +4,12 @@ import {
   RegisteredItemMachine,
 } from "@/public_api/src";
 import { SerializableContainerSlot } from "@/public_api/src/serialize_utils";
-import {
-  BlockInventoryComponent,
-  EntityInventoryComponent,
-} from "@minecraft/server";
 import { logInfo, raise } from "./utils/log";
-import { ipcInvoke } from "./ipc_wrapper";
-import { RegisteredItemMachineData } from "@/public_api/src/item_machine_registry_internal";
+import { ipcInvoke, ipcSend } from "./ipc_wrapper";
+import {
+  ItemMachineOnStorageSetPayload,
+  RegisteredItemMachineData,
+} from "@/public_api/src/item_machine_registry_internal";
 
 const itemMachineRegistry = new Map<string, InternalRegisteredItemMachine>();
 
@@ -26,14 +25,11 @@ export class InternalRegisteredItemMachine extends RegisteredItemMachine {
   }
 
   invokeGetIoHandler(
-    inventory: EntityInventoryComponent | BlockInventoryComponent,
-    slot: number,
+    serializableSlot: SerializableContainerSlot,
   ): Promise<ItemMachineGetIoResponse> {
     if (!this.data.getIoHandler) {
       raise(`Trying to call the 'getIo' handler but it is not defined.`);
     }
-
-    const serializableSlot = new SerializableContainerSlot(inventory, slot);
 
     return ipcInvoke(
       this.data.getIoHandler,
@@ -41,8 +37,36 @@ export class InternalRegisteredItemMachine extends RegisteredItemMachine {
     ) as Promise<ItemMachineGetIoResponse>;
   }
 
+  callOnStorageSetEvent(
+    serializableSlot: SerializableContainerSlot,
+    type: string,
+    value: number,
+  ): void {
+    if (!this.data.onStorageSetEvent) {
+      raise(`Trying to call the 'onStorageSet' event but it is not defined.`);
+    }
+
+    const payload: ItemMachineOnStorageSetPayload = {
+      slot: serializableSlot.toJson(),
+      type,
+      value,
+    };
+
+    ipcSend(this.data.onStorageSetEvent, payload);
+  }
+
   static getInternal(id: string): InternalRegisteredItemMachine | undefined {
     return itemMachineRegistry.get(id);
+  }
+
+  static forceGetInternal(id: string): InternalRegisteredItemMachine {
+    const registered = InternalRegisteredItemMachine.getInternal(id);
+    if (!registered) {
+      raise(
+        `Expected '${id}' to be registered as an item machine, but it could not be found in the item machine registry.`,
+      );
+    }
+    return registered;
   }
 }
 
