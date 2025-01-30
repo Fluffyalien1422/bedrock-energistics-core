@@ -320,7 +320,7 @@ export class MachineNetwork extends DestroyableObject {
         const categoryIsConsumer =
           typeCategory !== undefined &&
           machine.hasTag(
-            `fluffyalien_energisticscore:consumer.type.${typeCategory}`,
+            `fluffyalien_energisticscore:consumer.category.${typeCategory}`,
           );
 
         const isConsumer =
