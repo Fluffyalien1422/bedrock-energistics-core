@@ -82,7 +82,7 @@ export function dropItemsStoredInMachine(
     const item = getMachineSlotItem(blockLocation, element.slotId);
     if (item) {
       blockLocation.dimension.spawnItem(
-        machineItemStackToItemStack(element, item),
+        machineItemStackToItemStack(item),
         Vector3Utils.add(blockLocation, { x: 0.5, y: 0.5, z: 0.5 }),
       );
     }

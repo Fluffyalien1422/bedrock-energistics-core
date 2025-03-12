@@ -3,6 +3,23 @@ import {
   ScoreboardObjective,
   world,
 } from "@minecraft/server";
+import { SerializableDimensionLocation } from "./serialize_utils.js";
+import { MachineItemStack } from "./machine_data.js";
+
+/**
+ * @internal
+ */
+export interface GetMachineSlotPayload {
+  loc: SerializableDimensionLocation;
+  slot: number;
+}
+
+/**
+ * @internal
+ */
+export interface SetMachineSlotPayload extends GetMachineSlotPayload {
+  item?: MachineItemStack;
+}
 
 /**
  * @internal
@@ -24,26 +41,6 @@ export function getStorageScoreboardObjective(
 ): ScoreboardObjective | undefined {
   const id = `fluffyalien_energisticscore:storage${type}`;
   return world.scoreboard.getObjective(id);
-}
-
-/**
- * @internal
- */
-export function getItemTypeScoreboardObjective(
-  slot: number,
-): ScoreboardObjective {
-  const id = `fluffyalien_energisticscore:itemtype${slot.toString()}`;
-  return world.scoreboard.getObjective(id) ?? world.scoreboard.addObjective(id);
-}
-
-/**
- * @internal
- */
-export function getItemCountScoreboardObjective(
-  slot: number,
-): ScoreboardObjective {
-  const id = `fluffyalien_energisticscore:itemcount${slot.toString()}`;
-  return world.scoreboard.getObjective(id) ?? world.scoreboard.addObjective(id);
 }
 
 /**

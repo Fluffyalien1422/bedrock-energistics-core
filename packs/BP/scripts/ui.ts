@@ -184,10 +184,7 @@ function handleItemSlot(
   init: boolean,
 ): void {
   const expectedMachineItem = getMachineSlotItem(loc, element.slotId);
-  const expectedItemStack = machineItemStackToItemStack(
-    element,
-    expectedMachineItem,
-  );
+  const expectedItemStack = machineItemStackToItemStack(expectedMachineItem);
 
   const changedSlots = machineChangedItemSlots.get(getBlockUniqueId(loc));
   const slotChanged = changedSlots?.includes(element.slotId);
@@ -202,7 +199,7 @@ function handleItemSlot(
   if (!containerSlot.hasItem()) {
     clearUiItemsFromPlayer(player);
     setMachineSlotItem(loc, element.slotId, undefined, false);
-    containerSlot.setItem(machineItemStackToItemStack(element));
+    containerSlot.setItem(machineItemStackToItemStack());
     return;
   }
 
@@ -215,7 +212,7 @@ function handleItemSlot(
         loc,
         element.slotId,
         {
-          typeIndex: expectedMachineItem.typeIndex,
+          typeId: expectedMachineItem.typeId,
           count: containerSlot.amount,
         },
         false,
@@ -227,15 +224,16 @@ function handleItemSlot(
 
   clearUiItemsFromPlayer(player);
 
-  const newTypeIndex = element.allowedItems.indexOf(containerSlot.typeId);
+  const isAllowed =
+    element.allowedItems?.includes(containerSlot.typeId) ?? true;
   if (
-    newTypeIndex === -1 ||
+    !isAllowed ||
     // ensure the item has no special properties
     !containerSlot.isStackableWith(new ItemStack(containerSlot.typeId))
   ) {
     setMachineSlotItem(loc, element.slotId, undefined, false);
     player.dimension.spawnItem(containerSlot.getItem()!, player.location);
-    containerSlot.setItem(machineItemStackToItemStack(element));
+    containerSlot.setItem(machineItemStackToItemStack());
     return;
   }
 
@@ -243,7 +241,7 @@ function handleItemSlot(
     loc,
     element.slotId,
     {
-      typeIndex: newTypeIndex,
+      typeId: containerSlot.typeId,
       count: containerSlot.amount,
     },
     false,

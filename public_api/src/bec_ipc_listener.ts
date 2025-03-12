@@ -6,6 +6,7 @@ export enum BecIpcListener {
   RegisterStorageType = "fluffyalien_energisticscore:ipc.registerStorageType",
   RegisterItemMachine = "fluffyalien_energisticscore:ipc.registerItemMachine",
   SetMachineSlot = "fluffyalien_energisticscore:ipc.setMachineSlot",
+  GetMachineSlot = "fluffyalien_energisticscore:ipc.getMachineSlot",
   DestroyNetwork = "fluffyalien_energisticscore:ipc.destroyNetwork",
   NetworkQueueSend = "fluffyalien_energisticscore:ipc.networkQueueSend",
   Generate = "fluffyalien_energisticscore:ipc.generate",
