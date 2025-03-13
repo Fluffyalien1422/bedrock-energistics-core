@@ -1,6 +1,7 @@
-import { Block, system } from "@minecraft/server";
-import { MachineNetwork } from "./network.js";
-import { removeBlockFromScoreboards } from "./machine_data_internal.js";
+import { DimensionLocation } from "@minecraft/server";
+import { ipcSend } from "./ipc_wrapper.js";
+import { BecIpcListener } from "./bec_ipc_listener.js";
+import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 
 /**
  * Cleans up machine data and updates it's networks.
@@ -8,11 +9,8 @@ import { removeBlockFromScoreboards } from "./machine_data_internal.js";
  * @remarks
  * This is automatically done by Bedrock Energistics Core when a machine is destroyed by a player.
  * If you destroy a machine from script, call this function before the block is removed.
- * @param block The machine block.
+ * @param loc The machine block location.
  */
-export async function removeMachine(block: Block): Promise<void> {
-  await MachineNetwork.updateWithBlock(block);
-  system.run(() => {
-    removeBlockFromScoreboards(block);
-  });
+export function removeMachine(loc: DimensionLocation): void {
+  ipcSend(BecIpcListener.RemoveMachine, makeSerializableDimensionLocation(loc));
 }

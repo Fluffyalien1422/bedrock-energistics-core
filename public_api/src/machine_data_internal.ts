@@ -56,14 +56,3 @@ export function getScore(
 
   return objective.getScore(participant);
 }
-
-/**
- * @internal
- */
-export function removeBlockFromScoreboards(loc: DimensionLocation): void {
-  const participantId = getBlockUniqueId(loc);
-
-  for (const objective of world.scoreboard.getObjectives()) {
-    objective.removeParticipant(participantId);
-  }
-}

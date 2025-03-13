@@ -1,4 +1,5 @@
 import {
+  Block,
   BlockCustomComponent,
   DimensionLocation,
   system,
@@ -18,6 +19,20 @@ import {
   getMachineIdFromEntityId,
   InternalRegisteredMachine,
 } from "./machine_registry";
+import { removeAllDynamicPropertiesForBlock } from "./utils/dynamic_property";
+
+export function removeMachine(
+  block: Block,
+  definition: InternalRegisteredMachine,
+): void {
+  MachineNetwork.updateWithBlock(block);
+
+  system.run(() => {
+    dropItemsStoredInMachine(block, definition);
+    removeBlockFromScoreboards(block);
+    removeAllDynamicPropertiesForBlock(block);
+  });
+}
 
 export const machineNoInteractComponent: BlockCustomComponent = {
   onPlace(e) {
@@ -105,12 +120,7 @@ world.beforeEvents.playerBreakBlock.subscribe((e) => {
     return;
   }
 
-  MachineNetwork.updateWithBlock(e.block);
-
-  system.run(() => {
-    dropItemsStoredInMachine(e.block, definition);
-    removeBlockFromScoreboards(e.block);
-  });
+  removeMachine(e.block, definition);
 });
 
 world.afterEvents.entityHitEntity.subscribe((e) => {

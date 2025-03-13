@@ -24,6 +24,7 @@ import {
   NetworkConnectionType,
 } from "@/public_api/src";
 import { InternalRegisteredMachine } from "./machine_registry";
+import { removeAllDynamicPropertiesForBlock } from "./utils/dynamic_property";
 
 world.afterEvents.blockExplode.subscribe((e) => {
   const connectionType = getBlockNetworkConnectionType(
@@ -33,6 +34,7 @@ world.afterEvents.blockExplode.subscribe((e) => {
     return;
   }
 
+  removeAllDynamicPropertiesForBlock(e.block);
   MachineNetwork.updateWith(e.block, connectionType);
 
   if (connectionType === NetworkConnectionType.Machine) {
@@ -195,6 +197,8 @@ world.afterEvents.pistonActivate.subscribe((e) => {
       dropItemsStoredInMachine(attachedBlockDimensionLocation, definition);
       removeBlockFromScoreboards(attachedBlockDimensionLocation);
       removeBlockFromScoreboards(block);
+      removeAllDynamicPropertiesForBlock(attachedBlockDimensionLocation);
+      removeAllDynamicPropertiesForBlock(block);
       block.dimension.runCommand(
         `setblock ${block.x.toString()} ${block.y.toString()} ${block.z.toString()} air destroy`,
       );

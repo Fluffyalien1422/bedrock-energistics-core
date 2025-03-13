@@ -1,9 +1,8 @@
-import { Block, DimensionLocation, ItemStack } from "@minecraft/server";
+import { Block, DimensionLocation, ItemStack, world } from "@minecraft/server";
 import { machineChangedItemSlots } from "./ui";
 import { MachineItemStack, getMachineStorage } from "@/public_api/src";
 import {
   getBlockUniqueId,
-  removeBlockFromScoreboards,
   getStorageScoreboardObjective,
 } from "@/public_api/src/machine_data_internal";
 import { raise } from "./utils/log";
@@ -13,7 +12,15 @@ import {
   setBlockDynamicProperty,
 } from "./utils/dynamic_property";
 
-export { getBlockUniqueId, getMachineStorage, removeBlockFromScoreboards };
+export { getBlockUniqueId, getMachineStorage };
+
+export function removeBlockFromScoreboards(loc: DimensionLocation): void {
+  const participantId = getBlockUniqueId(loc);
+
+  for (const objective of world.scoreboard.getObjectives()) {
+    objective.removeParticipant(participantId);
+  }
+}
 
 /**
  * Sets the storage of a specific type in a machine.
