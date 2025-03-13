@@ -1,9 +1,3 @@
-import { MachineItemStack } from "@/public_api/src";
-import { setMachineSlotItem } from "./data";
-import {
-  deserializeDimensionLocation,
-  SerializableDimensionLocation,
-} from "@/public_api/src/serialize_utils";
 import {
   NetworkLinkGetRequest,
   NetworkLinkGetResponse,
@@ -41,27 +35,16 @@ import {
   getItemMachineStorageHandler,
   setItemMachineStorageListener,
 } from "./item_machine_ipc";
-
-interface SetItemInMachineSlotPayload {
-  loc: SerializableDimensionLocation;
-  slot: number;
-  item?: MachineItemStack;
-}
+import { getMachineSlotListener, setMachineSlotListener } from "./data_ipc";
+import { removeMachineListener } from "./machine_ipc";
 
 registerListener(BecIpcListener.RegisterMachine, registerMachineListener);
 registerListener(
   BecIpcListener.RegisterStorageType,
   registerStorageTypeListener,
 );
-registerListener(BecIpcListener.SetMachineSlot, (payload_) => {
-  const payload = payload_ as SetItemInMachineSlotPayload;
-  setMachineSlotItem(
-    deserializeDimensionLocation(payload.loc),
-    payload.slot,
-    payload.item,
-  );
-  return null;
-});
+registerListener(BecIpcListener.SetMachineSlot, setMachineSlotListener);
+registerListener(BecIpcListener.GetMachineSlot, getMachineSlotListener);
 registerListener(BecIpcListener.DestroyNetwork, networkDestroyListener);
 registerListener(BecIpcListener.NetworkQueueSend, networkQueueSendListener);
 registerListener(BecIpcListener.Generate, generateListener);
@@ -131,3 +114,4 @@ registerListener(
   setItemMachineStorageListener,
 );
 registerListener(BecIpcListener.GetItemMachineIo, getItemMachineIoHandler);
+registerListener(BecIpcListener.RemoveMachine, removeMachineListener);

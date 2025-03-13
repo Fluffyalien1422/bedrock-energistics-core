@@ -53,7 +53,11 @@ export interface UiItemSlotElementDefinition {
   type: "itemSlot";
   index: number;
   slotId: number;
-  allowedItems: string[];
+  /**
+   * Only allow specific items in this slot.
+   * @beta
+   */
+  allowedItems?: string[];
 }
 
 /**

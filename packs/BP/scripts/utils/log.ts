@@ -1,6 +1,6 @@
 import { VERSION_STR } from "../constants";
 
-function makeLogString(logLevel: string, message: string): string {
+export function makeLogString(logLevel: string, message: string): string {
   return `[Bedrock Energistics Core v${VERSION_STR}] ${logLevel} ${message}`;
 }
 

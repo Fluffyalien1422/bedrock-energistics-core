@@ -3,6 +3,23 @@ import {
   ScoreboardObjective,
   world,
 } from "@minecraft/server";
+import { SerializableDimensionLocation } from "./serialize_utils.js";
+import { MachineItemStack } from "./machine_data.js";
+
+/**
+ * @internal
+ */
+export interface GetMachineSlotPayload {
+  loc: SerializableDimensionLocation;
+  slot: number;
+}
+
+/**
+ * @internal
+ */
+export interface SetMachineSlotPayload extends GetMachineSlotPayload {
+  item?: MachineItemStack;
+}
 
 /**
  * @internal
@@ -29,26 +46,6 @@ export function getStorageScoreboardObjective(
 /**
  * @internal
  */
-export function getItemTypeScoreboardObjective(
-  slot: number,
-): ScoreboardObjective {
-  const id = `fluffyalien_energisticscore:itemtype${slot.toString()}`;
-  return world.scoreboard.getObjective(id) ?? world.scoreboard.addObjective(id);
-}
-
-/**
- * @internal
- */
-export function getItemCountScoreboardObjective(
-  slot: number,
-): ScoreboardObjective {
-  const id = `fluffyalien_energisticscore:itemcount${slot.toString()}`;
-  return world.scoreboard.getObjective(id) ?? world.scoreboard.addObjective(id);
-}
-
-/**
- * @internal
- */
 export function getScore(
   objective: ScoreboardObjective,
   participant: string,
@@ -58,15 +55,4 @@ export function getScore(
   }
 
   return objective.getScore(participant);
-}
-
-/**
- * @internal
- */
-export function removeBlockFromScoreboards(loc: DimensionLocation): void {
-  const participantId = getBlockUniqueId(loc);
-
-  for (const objective of world.scoreboard.getObjectives()) {
-    objective.removeParticipant(participantId);
-  }
 }

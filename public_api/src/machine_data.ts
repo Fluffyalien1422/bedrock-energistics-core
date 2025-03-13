@@ -1,13 +1,13 @@
 import { Block, DimensionLocation } from "@minecraft/server";
 import {
   getBlockUniqueId,
-  getItemCountScoreboardObjective,
-  getItemTypeScoreboardObjective,
+  GetMachineSlotPayload,
   getScore,
   getStorageScoreboardObjective,
+  SetMachineSlotPayload,
 } from "./machine_data_internal.js";
 import { makeSerializableDimensionLocation } from "./serialize_utils.js";
-import { ipcSend } from "./ipc_wrapper.js";
+import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
 import { raise } from "./log.js";
 import { RegisteredMachine } from "./machine_registry.js";
@@ -19,10 +19,9 @@ import { callMachineOnStorageSetEvent } from "./machine_registry_internal.js";
  */
 export interface MachineItemStack {
   /**
-   * The index of the item in the slot's `allowedItems`.
-   * @see {@link UiItemSlotElementDefinition}
+   * The type ID of the item.
    */
-  typeIndex: number;
+  typeId: string;
   /**
    * The amount of this item.
    */
@@ -108,34 +107,21 @@ export async function setMachineStorage(
  * @beta
  * @param loc The location of the machine.
  * @param slotId The number ID of the slot as defined when the machine was registered (see {@link UiItemSlotElementDefinition}).
- * @returns The {@link MachineItemStack}.
+ * @returns The {@link MachineItemStack} or `null` if there is no item in the specified slot.
  */
 export function getMachineSlotItem(
   loc: DimensionLocation,
   slotId: number,
-): MachineItemStack | undefined {
-  const participantId = getBlockUniqueId(loc);
-
-  const itemType = getScore(
-    getItemTypeScoreboardObjective(slotId),
-    participantId,
-  );
-  if (itemType === undefined) {
-    return;
-  }
-
-  const itemCount = getScore(
-    getItemCountScoreboardObjective(slotId),
-    participantId,
-  );
-  if (!itemCount) {
-    return;
-  }
-
-  return {
-    typeIndex: itemType,
-    count: itemCount,
+): Promise<MachineItemStack | null> {
+  const payload: GetMachineSlotPayload = {
+    loc: makeSerializableDimensionLocation(loc),
+    slot: slotId,
   };
+
+  return ipcInvoke(
+    BecIpcListener.GetMachineSlot,
+    payload,
+  ) as Promise<MachineItemStack | null>;
 }
 
 /**
@@ -150,9 +136,11 @@ export function setMachineSlotItem(
   slotId: number,
   newItemStack?: MachineItemStack,
 ): void {
-  ipcSend(BecIpcListener.SetMachineSlot, {
+  const payload: SetMachineSlotPayload = {
     loc: makeSerializableDimensionLocation(loc),
     slot: slotId,
     item: newItemStack,
-  });
+  };
+
+  ipcSend(BecIpcListener.SetMachineSlot, payload);
 }
