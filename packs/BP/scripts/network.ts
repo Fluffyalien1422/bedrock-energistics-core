@@ -38,7 +38,6 @@ interface NetworkConnections {
 interface DistributionData {
   total: number;
   queueItems: SendQueueItem[];
-  generators: Block[];
 }
 
 let totalNetworkCount = 0; // used to create a unique id
@@ -110,14 +109,12 @@ export class MachineNetwork extends DestroyableObject {
         const data = distribution[send.type];
         data.total += send.amount;
         data.queueItems.push(send);
-        data.generators.push(send.block);
         continue;
       }
 
       distribution[send.type] = {
         total: send.amount,
         queueItems: [send],
-        generators: [send.block],
       };
     }
 
@@ -132,6 +129,8 @@ export class MachineNetwork extends DestroyableObject {
     for (const key of typesToDistribute) {
       consumers[key] = new Map();
     }
+
+    yield;
 
     // find and filter connections into their consumer groups.
     for (const machine of this.connections.machines) {
@@ -196,12 +195,15 @@ export class MachineNetwork extends DestroyableObject {
         logWarn(
           `Machine with ID '${machine.typeId}' not found in MachineNetwork#send.`,
         );
+        yield;
         continue;
       }
 
       if (machineDef.hasCallback("onNetworkStatsRecieved")) {
         networkStatListeners.push([machine, machineDef]);
       }
+
+      yield;
     }
 
     const networkStats: Record<string, NetworkStorageTypeData> = {};
@@ -224,10 +226,10 @@ export class MachineNetwork extends DestroyableObject {
           );
           if (budget <= 0) break;
         }
-
-        // Then return any left-over budget to the generators.
-        this.returnToGenerators(distributionData, type, budget);
       });
+
+      // Then return any left-over budget to the generators.
+      yield* this.returnToGenerators(distributionData, type, budget);
     }
 
     for (const [block, machineDef] of networkStatListeners) {
@@ -237,16 +239,17 @@ export class MachineNetwork extends DestroyableObject {
     this.sendJobRunning = false;
   }
 
-  private returnToGenerators(
+  private *returnToGenerators(
     distributionData: DistributionData,
     type: string,
     leftOverBudget: number,
-  ): void {
-    const numGenerators = distributionData.generators.length;
-    if (numGenerators === 0) return;
+  ): Generator<void, void, void> {
+    if (distributionData.queueItems.length === 0) return;
 
-    let budget = Math.floor(leftOverBudget / numGenerators);
-    let remainder = leftOverBudget % numGenerators;
+    const allocation = Math.floor(
+      leftOverBudget / distributionData.queueItems.length,
+    );
+    let remainder = leftOverBudget % distributionData.queueItems.length;
 
     const typeCategory =
       InternalRegisteredStorageType.getInternal(type)?.category;
@@ -265,7 +268,7 @@ export class MachineNetwork extends DestroyableObject {
         machine.hasTag("fluffyalien_energisticscore:consumer.any") ||
         machine.hasTag(`fluffyalien_energisticscore:consumer.type.${type}`);
 
-      let actualBudgetAllocation = budget;
+      let actualBudgetAllocation = allocation;
 
       // Divide any remainder between the generators. (E.g. splitting 11 into 3 would output: 4, 4, 3)
       if (remainder > 0) {
@@ -275,11 +278,15 @@ export class MachineNetwork extends DestroyableObject {
 
       if (actualBudgetAllocation <= 0 && !isConsumer) {
         setMachineStorage(machine, type, 0);
+        yield;
         continue;
       }
 
       if (isConsumer) {
-        actualBudgetAllocation = Math.min(sendData.amount, budget);
+        actualBudgetAllocation = Math.min(
+          sendData.amount,
+          actualBudgetAllocation,
+        );
 
         setMachineStorage(
           machine,
@@ -289,7 +296,7 @@ export class MachineNetwork extends DestroyableObject {
             sendData.amount,
         );
 
-        budget -= actualBudgetAllocation;
+        yield;
         continue;
       }
 
@@ -298,17 +305,19 @@ export class MachineNetwork extends DestroyableObject {
         logWarn(
           `Machine with ID '${machine.typeId}' not found in MachineNetwork#returnToGenerators.`,
         );
+        yield;
         continue;
       }
 
       const newAmount = Math.min(
-        budget,
+        actualBudgetAllocation,
         machineDef.maxStorage,
         sendData.amount,
       );
 
-      budget -= newAmount;
       setMachineStorage(machine, type, newAmount);
+
+      yield;
     }
   }
 
