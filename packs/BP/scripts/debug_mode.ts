@@ -1,12 +1,13 @@
 import { Block, EquipmentSlot, Player, system, world } from "@minecraft/server";
 import { ModalFormData } from "@minecraft/server-ui";
 import { getMachineStorage, setMachineStorage } from "./data";
-import { logInfo, makeLogString } from "./utils/log";
+import { logInfo, makeLogString, raise } from "./utils/log";
 import { getEntityComponent } from "./polyfills/component_type_map";
 import { InternalRegisteredStorageType } from "./storage_type_registry";
 import {
   getBlockDynamicProperties,
   getBlockDynamicProperty,
+  setBlockDynamicProperty,
 } from "./utils/dynamic_property";
 
 const DEBUG_ACTIONBAR_MAX_WIDTH_CHARS = 50;
@@ -65,14 +66,17 @@ function showDebugUi(player: Player): void {
   let line = "";
 
   for (const storageType of InternalRegisteredStorageType.getAllIdsInternal()) {
-    line += `§s${storageType}§r=§p${getMachineStorage(block, storageType).toString()} `;
+    const value = getMachineStorage(block, storageType);
+    if (!value) continue;
+    line += `§ustorage§r.§s${storageType}§r=§p${value.toString()} `;
     if (line.length > DEBUG_ACTIONBAR_MAX_WIDTH_CHARS) {
       info += `\n${line}`;
       line = "";
     }
   }
   for (const dynamicProp of getBlockDynamicProperties(block)) {
-    line += `§s${dynamicProp}§r=§p${getBlockDynamicProperty(block, dynamicProp)?.toString() ?? "undefined"} `;
+    const value = getBlockDynamicProperty(block, dynamicProp);
+    line += `§s${dynamicProp}§r=§p${value ? JSON.stringify(value) : "undefined"} `;
     if (line.length > DEBUG_ACTIONBAR_MAX_WIDTH_CHARS) {
       info += `\n${line}`;
       line = "";
@@ -88,8 +92,11 @@ function showSetStorageForm(block: Block, player: Player): void {
   playersInSetStorageForm.add(player.id);
 
   const form = new ModalFormData()
-    .title("Debug Menu")
-    .textField("Storage Type ID", "energy")
+    .title("Set Variable")
+    .textField(
+      "Set the value of a variable in the machine.\n\nNOTE: The value will not be verified. Setting the value of a variable to an invalid type may cause unexpected issues. IF YOU DON'T KNOW WHAT YOU'RE DOING, CLOSE THIS MENU.\n\nVariable",
+      "storage.energy",
+    )
     .textField("Value", "0");
 
   void form.show(player).then((response) => {
@@ -97,13 +104,31 @@ function showSetStorageForm(block: Block, player: Player): void {
 
     if (!response.formValues) return;
 
-    const id = response.formValues[0] as string;
-    const value = Number(response.formValues[1]);
-
-    if (isNaN(value)) {
-      throw new Error("Debug menu: value field must be a number.");
+    const varName = response.formValues[0] as string;
+    let value: unknown;
+    try {
+      value = JSON.parse(response.formValues[1] as string) as unknown;
+    } catch (err) {
+      raise(`Debug menu: Invalid JSON value. Error: ${String(err)}.`);
     }
 
-    setMachineStorage(block, id, value);
+    if (
+      typeof value !== "number" &&
+      typeof value !== "string" &&
+      typeof value !== "boolean"
+    ) {
+      raise("Debug menu: Expected a number, string, or boolean.");
+    }
+
+    if (varName.startsWith("storage.")) {
+      const storageType = varName.slice("storage.".length);
+      if (typeof value !== "number") {
+        raise("Debug menu: Expected a number to set a storage type.");
+      }
+      setMachineStorage(block, storageType, value);
+      return;
+    }
+
+    setBlockDynamicProperty(block, varName, value);
   });
 }
