@@ -51,7 +51,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     ) as Promise<MachineUpdateUiHandlerResponse>;
   }
 
-  invokeRecieveHandler(
+  invokeReceiveHandler(
     blockLocation: DimensionLocation,
     recieveType: string,
     recieveAmount: number,

@@ -15,6 +15,7 @@ export interface NetworkQueueSendPayload extends NetworkInstanceMethodPayload {
   loc: SerializableDimensionLocation;
   type: string;
   amount: number;
+  minPriority: number | null;
 }
 
 /**
@@ -56,4 +57,5 @@ export interface GeneratePayload {
   loc: SerializableDimensionLocation;
   type: string;
   amount: number;
+  minPriority: number | null;
 }
