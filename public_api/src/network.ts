@@ -84,18 +84,21 @@ export class MachineNetwork {
    * @param blockLocation The location of the machine that is sending the storage type.
    * @param type The storage type to send.
    * @param amount The amount to send. Must be greater than zero.
+   * @param minPriority The minimum machine priority to send to. Set to `null` to send to all priorities. Defaults to `null`.
    * @see {@link generate}
    */
   queueSend(
     blockLocation: DimensionLocation,
     type: string,
     amount: number,
+    minPriority: number | null = null,
   ): void {
     const payload: NetworkQueueSendPayload = {
       networkId: this.id,
       loc: makeSerializableDimensionLocation(blockLocation),
       type,
       amount,
+      minPriority,
     };
 
     ipcSend(BecIpcListener.NetworkQueueSend, payload);

@@ -38,17 +38,20 @@ export function getBlockNetworkConnectionType(
  * @param blockLocation The location of the machine that is generating.
  * @param type The storage type to generate.
  * @param amount The amount to generate.
+ * @param minPriority The minimum machine priority to send to. Set to `null` to send to all priorities. Defaults to `null`.
  * @see {@link MachineNetwork.queueSend}
  */
 export function generate(
   blockLocation: DimensionLocation,
   type: string,
   amount: number,
+  minPriority: number | null = null,
 ): void {
   const payload: GeneratePayload = {
     loc: makeSerializableDimensionLocation(blockLocation),
     type,
     amount,
+    minPriority,
   };
 
   ipcSend(BecIpcListener.Generate, payload);

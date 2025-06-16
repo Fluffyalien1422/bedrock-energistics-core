@@ -27,6 +27,7 @@ interface SendQueueItem {
   block: Block;
   amount: number;
   type: string;
+  minPriority: number | null;
 }
 
 interface NetworkConnections {
@@ -102,20 +103,25 @@ export class MachineNetwork extends DestroyableObject {
     if (!this.isValid) return;
 
     // Calculate the amount of each type that is available to send around.
-    const distribution: Record<string, DistributionData> = {};
+    const distribution: Record<
+      string,
+      Map<number | null, DistributionData>
+    > = {};
 
     for (const send of this.sendQueue) {
-      if (send.type in distribution) {
-        const data = distribution[send.type];
+      const map = distribution[send.type] ?? new Map();
+      if (map.has(send.minPriority)) {
+        const data = map.get(send.minPriority)!;
         data.total += send.amount;
         data.queueItems.push(send);
         continue;
       }
 
-      distribution[send.type] = {
+      map.set(send.minPriority, {
         total: send.amount,
         queueItems: [send],
-      };
+      });
+      distribution[send.type] = map;
     }
 
     this.sendQueue = [];
@@ -213,32 +219,45 @@ export class MachineNetwork extends DestroyableObject {
     const networkStats: Record<string, NetworkStorageTypeData> = {};
 
     for (const type of typesToDistribute) {
-      const distributionData = distribution[type];
-      let budget = distributionData.total;
-
+      const distributionPriorities = [...distribution[type].keys()];
       const machinePriorities = Array.from(consumers[type].keys()).sort(
         (a, b) => b - a,
       );
 
-      yield* asyncAsGenerator(async () => {
-        // Distribute to each consumer group in order of priority.
-        for (const key of machinePriorities) {
-          budget = await this.distributeToGroup(
-            consumers[type].get(key)!,
-            type,
-            budget,
-          );
-          if (budget <= 0) break;
-        }
-      });
+      for (const machinePriority of machinePriorities) {
+        for (const distributionPriority of distributionPriorities) {
+          if (
+            distributionPriority !== null &&
+            machinePriority < distributionPriority
+          ) {
+            continue;
+          }
 
-      networkStats[type] = {
-        before: distributionData.total,
-        after: budget,
-      };
+          const distributionData =
+            distribution[type].get(distributionPriority)!;
+
+          yield* asyncAsGenerator(async () => {
+            distributionData.total = await this.distributeToGroup(
+              consumers[type].get(machinePriority)!,
+              type,
+              distributionData.total,
+            );
+          });
+        }
+      }
 
       // Then return any left-over budget to the generators.
-      yield* this.returnToGenerators(distributionData, type, budget);
+      for (const distributionPriority of distributionPriorities) {
+        const distributionData = distribution[type].get(distributionPriority)!;
+
+        yield* this.returnToGenerators(
+          distributionData.queueItems,
+          type,
+          distributionData.total,
+        );
+      }
+
+      //TODO: re-add network stats
     }
 
     for (const [block, machineDef] of networkStatListeners) {
@@ -249,21 +268,19 @@ export class MachineNetwork extends DestroyableObject {
   }
 
   private *returnToGenerators(
-    distributionData: DistributionData,
+    queueItems: SendQueueItem[],
     type: string,
     leftOverBudget: number,
   ): Generator<void, void, void> {
-    if (distributionData.queueItems.length === 0) return;
+    if (queueItems.length === 0) return;
 
-    const allocation = Math.floor(
-      leftOverBudget / distributionData.queueItems.length,
-    );
-    let remainder = leftOverBudget % distributionData.queueItems.length;
+    const allocation = Math.floor(leftOverBudget / queueItems.length);
+    let remainder = leftOverBudget % queueItems.length;
 
     const typeCategory =
       InternalRegisteredStorageType.getInternal(type)?.category;
 
-    for (const sendData of distributionData.queueItems) {
+    for (const sendData of queueItems) {
       const machine = sendData.block;
 
       const consumesCategory =
@@ -399,7 +416,7 @@ export class MachineNetwork extends DestroyableObject {
   ): Promise<RecieveHandlerResponse> {
     // Allow the machine to change how much of its allocation it chooses to take
     if (machineDef.hasCallback("receive")) {
-      return machineDef.invokeRecieveHandler(machine, type, amount);
+      return machineDef.invokeReceiveHandler(machine, type, amount);
     }
 
     // if no handler, give it everything in its allocation
@@ -441,9 +458,19 @@ export class MachineNetwork extends DestroyableObject {
     return this.isPartOfNetwork(block, type);
   }
 
-  queueSend(block: Block, type: string, amount: number): void {
+  queueSend(
+    block: Block,
+    type: string,
+    amount: number,
+    minPriority: number | null = null,
+  ): void {
     if (amount <= 0) return;
-    this.sendQueue.push({ block, type, amount: Math.floor(amount) });
+    this.sendQueue.push({
+      block,
+      type,
+      amount: Math.floor(amount),
+      minPriority,
+    });
   }
 
   private static discoverConnections(

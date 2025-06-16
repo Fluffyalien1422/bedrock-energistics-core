@@ -30,7 +30,12 @@ export function networkQueueSendListener(payload: ipc.SerializableValue): null {
   const block = location.dimension.getBlock(location);
   if (!block) return null;
 
-  MachineNetwork.getFromId(networkId)?.queueSend(block, type, amount);
+  MachineNetwork.getFromId(networkId)?.queueSend(
+    block,
+    type,
+    amount,
+    data.minPriority,
+  );
 
   return null;
 }
@@ -125,6 +130,7 @@ export function generateListener(payload: ipc.SerializableValue): null {
     block,
     type,
     fullAmount,
+    data.minPriority,
   );
 
   return null;
