@@ -64,6 +64,12 @@ export interface UiItemSlotElementDefinition {
    * @beta
    */
   allowedItems?: string[];
+
+  /**
+   * The item ID to use when the slot is empty.
+   * - If not provided will fall back to "fluffyalien_energisticscore:ui_empty_slot"
+   */
+  emptyItemId?: string;
 }
 
 /**

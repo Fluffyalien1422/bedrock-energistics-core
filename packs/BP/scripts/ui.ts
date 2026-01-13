@@ -227,7 +227,7 @@ function handleItemSlot(
 
   if (slotChanged || init) {
     containerSlot.setItem(
-      optionalMachineItemStackToItemStack(expectedMachineItem),
+      optionalMachineItemStackToItemStack(expectedMachineItem, element.emptyItemId),
     );
     return;
   }
@@ -235,7 +235,7 @@ function handleItemSlot(
   if (!containerSlot.hasItem()) {
     clearUiItemsFromPlayer(player);
     setMachineSlotItem(block, elementId, undefined, false);
-    containerSlot.setItem(optionalMachineItemStackToItemStack());
+    containerSlot.setItem(optionalMachineItemStackToItemStack(undefined, element.emptyItemId));
     return;
   }
 
@@ -267,7 +267,7 @@ function handleItemSlot(
   if (!isAllowed) {
     setMachineSlotItem(block, elementId, undefined, false);
     player.dimension.spawnItem(containerSlot.getItem()!, player.location);
-    containerSlot.setItem(optionalMachineItemStackToItemStack());
+    containerSlot.setItem(optionalMachineItemStackToItemStack(undefined, element.emptyItemId));
     return;
   }
 

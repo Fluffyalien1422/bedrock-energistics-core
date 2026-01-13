@@ -19,15 +19,16 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "link": "npm link mcbe-addon-ipc"
   },
   "devDependencies": {
-    "@minecraft/server": "2.0.0",
-    "@minecraft/vanilla-data": ">=1.21.90"
+    "@minecraft/server": "^2.3.0",
+    "@minecraft/vanilla-data": ">=1.21.120"
   },
   "peerDependencies": {
-    "@minecraft/server": "2.0.0",
-    "@minecraft/vanilla-data": ">=1.21.90"
+    "@minecraft/server": "^2.3.0",
+    "@minecraft/vanilla-data": ">=1.21.120"
   },
   "dependencies": {
     "@minecraft/math": "^2.2.7",

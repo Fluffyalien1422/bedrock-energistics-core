@@ -5,7 +5,7 @@ import {
   getBlockUniqueId,
   getStorageScoreboardObjective,
 } from "@/public_api/src/machine_data_internal";
-import { raise } from "./utils/log";
+import { logWarn, raise } from "./utils/log";
 import { InternalRegisteredMachine } from "./machine_registry";
 import {
   getBlockDynamicProperty,
@@ -157,8 +157,18 @@ export function setMachineSlotItem(
 
 export function optionalMachineItemStackToItemStack(
   machineItem?: MachineItemStack,
+  emptyItemId = "fluffyalien_energisticscore:ui_empty_slot",
 ): ItemStack {
-  return machineItem
-    ? machineItem.toItemStack()
-    : new ItemStack("fluffyalien_energisticscore:ui_empty_slot");
+  if (machineItem) return machineItem.toItemStack();
+
+  const defaultEmptyItem = new ItemStack(emptyItemId);
+  if (!defaultEmptyItem.hasTag("fluffyalien_energisticscore:ui_item")) {
+    logWarn(
+      `Failed to create empty UI element '${emptyItemId}', it does not have the 'fluffyalien_energisticscore:ui_item' tag. Falling back to using 'fluffyalien_energisticscore:ui_empty_slot'.`,
+    );
+
+    return new ItemStack("fluffyalien_energisticscore:ui_empty_slot");
+  }
+
+  return defaultEmptyItem;
 }
