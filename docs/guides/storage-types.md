@@ -30,7 +30,7 @@ There are three standard storage categories: energy, gas, and fluid. If you are 
 ```ts
 registerStorageType({
   category: StandardStorageCategory.Fluid,
-  color: "blue",
+  texture: "blue",
   id: "example:custom_fluid",
   name: "custom fluid",
 });
