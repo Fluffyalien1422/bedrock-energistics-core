@@ -23,6 +23,7 @@ import { MachineUiElements } from "./machine_ui_elements.js";
  * value should be `undefined` if the machine does not exist
  */
 const machineCache = new Map<string, RegisteredMachine | undefined>();
+const ownRegisteredMachines = new Map<string, RegisteredMachine>();
 
 /**
  * Representation of a machine definition that has been registered.
@@ -101,6 +102,18 @@ export class RegisteredMachine {
   }
 
   /**
+   * Get a machine registered by this pack by its ID.
+   * @beta
+   * @remarks
+   * This will only include machines that have been registered by this pack. If a machine registered by this pack has been overriden by another pack, this will return the original version registered by this pack. Use {@link RegisteredMachine.get} to get machines registered by any pack.
+   * @param id The ID of the machine to get.
+   * @returns The registered machine, or `undefined` if it does not exist.
+   */
+  static getOwn(id: string): RegisteredMachine | undefined {
+    return ownRegisteredMachines.get(id);
+  }
+
+  /**
    * Get a registered machine by its ID.
    * @beta
    * @param id The ID of the machine to get.
@@ -111,6 +124,14 @@ export class RegisteredMachine {
       return machineCache.get(id);
     }
 
+    const isRegistrationOngoing = isRegistrationAllowed();
+    // if registration is still ongoing, check own registered machines first.
+    // we don't want to do this if registration has ended, since the machine
+    // may have been overriden by another pack.
+    if (isRegistrationOngoing && ownRegisteredMachines.has(id)) {
+      return ownRegisteredMachines.get(id);
+    }
+
     const data = (await ipcInvoke(
       BecIpcListener.GetRegisteredMachine,
       id,
@@ -118,7 +139,7 @@ export class RegisteredMachine {
 
     const result = data ? new RegisteredMachine(data) : undefined;
 
-    if (!isRegistrationAllowed()) {
+    if (!isRegistrationOngoing) {
       machineCache.set(id, result);
     }
 
@@ -272,6 +293,12 @@ export function registerMachine(definition: MachineDefinition): void {
     networkStatEvent,
     onStorageSetEvent,
   };
+  ownRegisteredMachines.set(
+    payload.id,
+    // @ts-expect-error - internal use of private constructor
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    new RegisteredMachine(payload),
+  );
 
   ipcSend(BecIpcListener.RegisterMachine, payload);
 }

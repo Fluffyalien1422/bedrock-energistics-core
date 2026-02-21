@@ -56,7 +56,7 @@ function registerStorageType(data: StorageTypeDefinition): void {
 
     if (existing.texture !== data.texture) {
       logWarn(
-        `Overrode color of storage type '${data.id}', originally was '${JSON.stringify(existing.texture)}', now is '${JSON.stringify(data.texture)}'.`,
+        `Overrode texture of storage type '${data.id}', originally was '${JSON.stringify(existing.texture)}', now is '${JSON.stringify(data.texture)}'.`,
       );
     }
 

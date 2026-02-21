@@ -22,6 +22,7 @@ import { ItemMachine } from "./item_machine.js";
  * value should be `undefined` if the item machine does not exist
  */
 const itemMachineCache = new Map<string, RegisteredItemMachine | undefined>();
+const ownRegisteredItemMachines = new Map<string, RegisteredItemMachine>();
 
 /**
  * Representation of an item machine definition that has been registered.
@@ -60,6 +61,18 @@ export class RegisteredItemMachine {
   }
 
   /**
+   * Get an item machine registered by this pack by its ID.
+   * @beta
+   * @remarks
+   * This will only include item machines that have been registered by this pack. If an item machine registered by this pack has been overriden by another pack, this will return the original version registered by this pack. Use {@link RegisteredItemMachine.get} to get item machines registered by any pack.
+   * @param id The ID of the item machine to get.
+   * @returns The registered item machine, or `undefined` if it does not exist.
+   */
+  static getOwn(id: string): RegisteredItemMachine | undefined {
+    return ownRegisteredItemMachines.get(id);
+  }
+
+  /**
    * Get a registered item machine by its ID.
    * @beta
    * @param id The ID of the item machine to get.
@@ -70,6 +83,14 @@ export class RegisteredItemMachine {
       return itemMachineCache.get(id);
     }
 
+    const isRegistrationOngoing = isRegistrationAllowed();
+    // if registration is still ongoing, check own registered item machines first.
+    // we don't want to do this if registration has ended, since the item machine
+    // may have been overriden by another pack.
+    if (isRegistrationOngoing && ownRegisteredItemMachines.has(id)) {
+      return ownRegisteredItemMachines.get(id);
+    }
+
     const data = (await ipcInvoke(
       BecIpcListener.GetRegisteredItemMachine,
       id,
@@ -77,7 +98,7 @@ export class RegisteredItemMachine {
 
     const result = data ? new RegisteredItemMachine(data) : undefined;
 
-    if (!isRegistrationAllowed()) {
+    if (!isRegistrationOngoing) {
       itemMachineCache.set(id, result);
     }
 
@@ -156,6 +177,12 @@ export function registerItemMachine(definition: ItemMachineDefinition): void {
     getIoHandler,
     onStorageSetEvent,
   };
+  ownRegisteredItemMachines.set(
+    payload.id,
+    // @ts-expect-error - internal use of private constructor
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    new RegisteredItemMachine(payload),
+  );
 
   ipcSend(BecIpcListener.RegisterItemMachine, payload);
 }

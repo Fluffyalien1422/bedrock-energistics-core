@@ -12,8 +12,9 @@ import {
  * value should be `undefined` if the storage type does not exist
  */
 const storageTypeCache = new Map<string, RegisteredStorageType | undefined>();
-
 let storageTypeIdCache: string[] | undefined;
+
+const ownRegisteredStorageTypes = new Map<string, RegisteredStorageType>();
 
 /**
  * @beta
@@ -69,6 +70,29 @@ export class RegisteredStorageType implements StorageTypeData {
   }
 
   /**
+   * Get a storage type registered by this pack by its ID.
+   * @beta
+   * @remarks
+   * This will only include storage types that have been registered by this pack. If a storage type registered by this pack has been overriden by another pack, this will return the original version registered by this pack. Use {@link RegisteredStorageType.get} to get storage types registered by any pack.
+   * @param id The ID of the storage type to get.
+   * @returns The registered storage type, or `undefined` if it does not exist.
+   */
+  static getOwn(id: string): RegisteredStorageType | undefined {
+    return ownRegisteredStorageTypes.get(id);
+  }
+
+  /**
+   * Get all storage type IDs registered by this pack.
+   * @beta
+   * @remarks
+   * This will only include storage types that have been registered by this pack. Use {@link RegisteredStorageType.getAllIds} to get storage types registered by any pack.
+   * @returns An array containing all local registered storage type IDs.
+   */
+  static getOwnIds(): string[] {
+    return [...ownRegisteredStorageTypes.keys()];
+  }
+
+  /**
    * Get a registered storage type by its ID.
    * @beta
    * @param id The ID of the storage type to get.
@@ -79,6 +103,14 @@ export class RegisteredStorageType implements StorageTypeData {
       return storageTypeCache.get(id);
     }
 
+    const isRegistrationOngoing = isRegistrationAllowed();
+    // if registration is still ongoing, check own registered storage types first.
+    // we don't want to do this if registration has ended, since the storage type
+    // may have been overriden by another pack.
+    if (isRegistrationOngoing && ownRegisteredStorageTypes.has(id)) {
+      return ownRegisteredStorageTypes.get(id);
+    }
+
     const def = (await ipcInvoke(
       BecIpcListener.GetRegisteredStorageType,
       id,
@@ -86,7 +118,7 @@ export class RegisteredStorageType implements StorageTypeData {
 
     const result = def ? new RegisteredStorageType(def) : undefined;
 
-    if (!isRegistrationAllowed()) {
+    if (!isRegistrationOngoing) {
       storageTypeCache.set(id, result);
     }
 
@@ -96,7 +128,7 @@ export class RegisteredStorageType implements StorageTypeData {
   /**
    * Get all registered storage type IDs.
    * @beta
-   * @returns All registered storage type IDs.
+   * @returns An array containing all registered storage type IDs.
    */
   static async getAllIds(): Promise<string[]> {
     if (storageTypeIdCache) {
@@ -148,6 +180,12 @@ export function registerStorageType(definition: StorageTypeDefinition): void {
     texture: definition.texture,
     name: definition.name,
   };
+  ownRegisteredStorageTypes.set(
+    payload.id,
+    // @ts-expect-error - internal use of private constructor
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    new RegisteredStorageType(payload),
+  );
 
   ipcSend(BecIpcListener.RegisterStorageType, payload);
 }
