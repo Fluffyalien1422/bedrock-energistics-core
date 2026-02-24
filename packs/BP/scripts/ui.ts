@@ -410,6 +410,7 @@ async function updateEntityUi(
   }
 
   const block = entity.dimension.getBlock(entity.location);
+  if (!entity.dimension.isChunkLoaded(entity.location)) return
   if (block?.typeId !== definition.id) {
     raise(
       `Failed to update UI for entity '${entity.typeId}' (machine: '${definition.id}'). The machine block does not exist or is not the expected block type.`,

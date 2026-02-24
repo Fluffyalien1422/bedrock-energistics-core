@@ -73,10 +73,16 @@ export class MachineNetwork extends DestroyableObject {
     networks.set(this.id, this);
     totalNetworkCount++;
 
-    this.intervalId = system.runInterval(() => {
+    this.intervalId = system.runInterval(async () => {
       if (this.allocateJobRunning || !this.sendQueue.length) return;
+
       this.allocateJobRunning = true;
-      system.runJob(this.allocate());
+
+      try {
+        await this.allocate();
+      } finally {
+        this.allocateJobRunning = false;
+      }
     }, 5);
   }
 
@@ -98,30 +104,27 @@ export class MachineNetwork extends DestroyableObject {
    * automatically sets each generator's storage to the amount it sent that was not received.
    * returns automatically if the object is not valid.
    */
-  private *allocate(): Generator<void, void, void> {
+  private async allocate(): Promise<void> {
     if (!this.isValid) return;
 
-    // Calculate the amount of each type that is available to send around.
     const distribution: Record<string, DistributionData> = {};
+
     for (const send of this.sendQueue) {
       if (send.type in distribution) {
         const data = distribution[send.type];
         data.total += send.amount;
         data.queueItems.push(send);
-        continue;
+      } else {
+        distribution[send.type] = {
+          total: send.amount,
+          queueItems: [send],
+        };
       }
-
-      distribution[send.type] = {
-        total: send.amount,
-        queueItems: [send],
-      };
     }
 
     this.sendQueue = [];
 
     const typesToDistribute = Object.keys(distribution);
-
-    // initialize consumers keys.      <priority>
     const consumers: Record<string, Map<number, Block[]>> = {};
     const networkStatListeners: [Block, InternalRegisteredMachine][] = [];
 
@@ -129,32 +132,13 @@ export class MachineNetwork extends DestroyableObject {
       consumers[key] = new Map();
     }
 
-    yield;
-
-    // find and filter connections into their consumer groups.
     for (const machine of this.connections.machines.values()) {
+      if(!machine.dimension.isChunkLoaded(machine.location)) return
       const tags = machine.getTags();
-
       const priorityTags = tags
         .filter((t) => t.startsWith("fluffyalien_energisticscore:priority."))
-        .map((t) => {
-          const number = Number(t.split(".")[1]);
-
-          if (!Number.isInteger(number)) {
-            logWarn(
-              `Priority tag '${t}' on machine with id '${machine.typeId}' is not a valid number. Defaulting to 0.`,
-            );
-            return 0;
-          }
-
-          return number;
-        });
-
-      if (priorityTags.length > 1) {
-        logWarn(
-          `Found multiple priority tags on a machine ${machine.typeId}, the highest priority will be used.`,
-        );
-      }
+        .map((t) => Number(t.split(".")[1]))
+        .filter((n) => Number.isInteger(n));
 
       const priority =
         priorityTags.length === 0 ? 0 : Math.max(...priorityTags);
@@ -163,9 +147,6 @@ export class MachineNetwork extends DestroyableObject {
         "fluffyalien_energisticscore:consumer.any",
       );
 
-      yield;
-
-      // Check machine tags and sort into appropriate groups.
       for (const consumerType of typesToDistribute) {
         const consumerCategory =
           InternalRegisteredStorageType.getInternal(consumerType)?.category;
@@ -187,26 +168,12 @@ export class MachineNetwork extends DestroyableObject {
         }
 
         consumers[consumerType].get(priority)!.push(machine);
-
-        yield;
       }
 
-      // Check if the machine is listening for network stat events.
       const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
-
-      if (!machineDef) {
-        logWarn(
-          `Machine with ID '${machine.typeId}' not found in MachineNetwork#send.`,
-        );
-        yield;
-        continue;
-      }
-
-      if (machineDef.hasCallback("onNetworkAllocationCompleted")) {
+      if (machineDef?.hasCallback("onNetworkAllocationCompleted")) {
         networkStatListeners.push([machine, machineDef]);
       }
-
-      yield;
     }
 
     const networkStats: Record<string, NetworkStorageTypeData> = {};
@@ -219,49 +186,38 @@ export class MachineNetwork extends DestroyableObject {
         (a, b) => b - a,
       );
 
-        for (const key of machinePriorities) {
-          budget = this.distributeToGroupSync(
-            consumers[type].get(key)!,
-            type,
-            budget,
-          );
-          if (budget <= 0) break;
-        }
-
-      // yield* asyncAsGenerator(async () => {
-      //   // Distribute to each consumer group in order of priority.
-      //   for (const key of machinePriorities) {
-      //     budget = await this.distributeToGroup(
-      //       consumers[type].get(key)!,
-      //       type,
-      //       budget,
-      //     );
-      //     if (budget <= 0) break;
-      //   }
-      // });
-
+      for (const key of machinePriorities) {
+        budget = await this.distributeToGroup(
+          consumers[type].get(key)!,
+          type,
+          budget,
+        );
+        if (budget <= 0) break;
+      }
 
       networkStats[type] = {
         before: distributionData.total,
         after: budget,
       };
 
-      // Then return any left-over budget to the generators.
-      yield* this.returnToGenerators(distributionData, type, budget);
+      this.returnToGeneratorsSync(distributionData, type, budget);
     }
 
     for (const [block, machineDef] of networkStatListeners) {
+
+      if (!block.dimension.isChunkLoaded(block.location)) {
+        continue;
+      }
+
       machineDef.callOnNetworkAllocationCompletedEvent(block, networkStats);
     }
-
-    this.allocateJobRunning = false;
   }
 
-  private *returnToGenerators(
+  private returnToGeneratorsSync(
     distributionData: DistributionData,
     type: string,
     leftOverBudget: number,
-  ): Generator<void, void, void> {
+  ): void {
     if (distributionData.queueItems.length === 0) return;
 
     const allocation = Math.floor(
@@ -274,7 +230,9 @@ export class MachineNetwork extends DestroyableObject {
 
     for (const sendData of distributionData.queueItems) {
       const machine = sendData.block;
-
+      if (!machine.dimension.isChunkLoaded(machine.location)) {
+        continue;
+      }
       const consumesCategory =
         typeCategory !== undefined &&
         machine.hasTag(
@@ -288,7 +246,6 @@ export class MachineNetwork extends DestroyableObject {
 
       let actualBudgetAllocation = allocation;
 
-      // Divide any remainder between the generators. (E.g. splitting 11 into 3 would output: 4, 4, 3)
       if (remainder > 0) {
         actualBudgetAllocation++;
         remainder--;
@@ -296,7 +253,6 @@ export class MachineNetwork extends DestroyableObject {
 
       if (actualBudgetAllocation <= 0 && !isConsumer) {
         setMachineStorage(machine, type, 0);
-        yield;
         continue;
       }
 
@@ -313,19 +269,11 @@ export class MachineNetwork extends DestroyableObject {
             actualBudgetAllocation -
             sendData.amount,
         );
-
-        yield;
         continue;
       }
 
       const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
-      if (!machineDef) {
-        logWarn(
-          `Machine with ID '${machine.typeId}' not found in MachineNetwork#returnToGenerators.`,
-        );
-        yield;
-        continue;
-      }
+      if (!machineDef) continue;
 
       const newAmount = Math.min(
         actualBudgetAllocation,
@@ -334,53 +282,7 @@ export class MachineNetwork extends DestroyableObject {
       );
 
       setMachineStorage(machine, type, newAmount);
-
-      yield;
     }
-  }
-
-  private distributeToGroupSync(
-    machines: Block[],
-    type: string,
-    budget: number,
-  ): number {
-
-    const budgetAllocation = Math.floor(budget / machines.length);
-
-    for (const machine of machines) {
-      const currentStored = getMachineStorage(machine, type);
-      const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
-
-      if (!machineDef) continue;
-
-      const amountToAllocate = Math.min(
-        budgetAllocation,
-        machineDef.maxStorage - currentStored,
-      );
-
-      let finalAmount = amountToAllocate;
-
-      if (machineDef.hasCallback("receive")) {
-        const result = machineDef.invokeRecieveHandler(
-          machine,
-          type,
-          amountToAllocate,
-        );
-
-        finalAmount = result.amount ?? amountToAllocate;
-
-        if (result.handleStorage ?? true) {
-          setMachineStorage(machine, type, currentStored + finalAmount);
-        }
-      } else {
-        setMachineStorage(machine, type, currentStored + finalAmount);
-      }
-
-      budget -= finalAmount;
-      if (budget <= 0) break;
-    }
-
-    return budget;
   }
 
   /**
@@ -395,6 +297,9 @@ export class MachineNetwork extends DestroyableObject {
     const budgetAllocation = Math.floor(budget / machines.length);
 
     for (const machine of machines) {
+      if (!machine.dimension.isChunkLoaded(machine.location)) {
+        continue;
+      }
       const currentStored = getMachineStorage(machine, type);
       const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
 
