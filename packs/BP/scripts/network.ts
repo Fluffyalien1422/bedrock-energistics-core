@@ -103,7 +103,6 @@ export class MachineNetwork extends DestroyableObject {
 
     // Calculate the amount of each type that is available to send around.
     const distribution: Record<string, DistributionData> = {};
-
     for (const send of this.sendQueue) {
       if (send.type in distribution) {
         const data = distribution[send.type];
@@ -220,17 +219,27 @@ export class MachineNetwork extends DestroyableObject {
         (a, b) => b - a,
       );
 
-      yield* asyncAsGenerator(async () => {
-        // Distribute to each consumer group in order of priority.
         for (const key of machinePriorities) {
-          budget = await this.distributeToGroup(
+          budget = this.distributeToGroupSync(
             consumers[type].get(key)!,
             type,
             budget,
           );
           if (budget <= 0) break;
         }
-      });
+
+      // yield* asyncAsGenerator(async () => {
+      //   // Distribute to each consumer group in order of priority.
+      //   for (const key of machinePriorities) {
+      //     budget = await this.distributeToGroup(
+      //       consumers[type].get(key)!,
+      //       type,
+      //       budget,
+      //     );
+      //     if (budget <= 0) break;
+      //   }
+      // });
+
 
       networkStats[type] = {
         before: distributionData.total,
@@ -328,6 +337,51 @@ export class MachineNetwork extends DestroyableObject {
 
       yield;
     }
+  }
+
+  private distributeToGroupSync(
+    machines: Block[],
+    type: string,
+    budget: number,
+  ): number {
+
+    const budgetAllocation = Math.floor(budget / machines.length);
+
+    for (const machine of machines) {
+      const currentStored = getMachineStorage(machine, type);
+      const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
+
+      if (!machineDef) continue;
+
+      const amountToAllocate = Math.min(
+        budgetAllocation,
+        machineDef.maxStorage - currentStored,
+      );
+
+      let finalAmount = amountToAllocate;
+
+      // Si existe receive handler, ejecutarlo SIN async
+      if (machineDef.hasCallback("receive")) {
+        const result = machineDef.invokeRecieveHandler(
+          machine,
+          type,
+          amountToAllocate,
+        );
+
+        finalAmount = result.amount ?? amountToAllocate;
+
+        if (result.handleStorage ?? true) {
+          setMachineStorage(machine, type, currentStored + finalAmount);
+        }
+      } else {
+        setMachineStorage(machine, type, currentStored + finalAmount);
+      }
+
+      budget -= finalAmount;
+      if (budget <= 0) break;
+    }
+
+    return budget;
   }
 
   /**
