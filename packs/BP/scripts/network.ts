@@ -360,7 +360,6 @@ export class MachineNetwork extends DestroyableObject {
 
       let finalAmount = amountToAllocate;
 
-      // Si existe receive handler, ejecutarlo SIN async
       if (machineDef.hasCallback("receive")) {
         const result = machineDef.invokeRecieveHandler(
           machine,
