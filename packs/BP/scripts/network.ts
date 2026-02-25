@@ -134,6 +134,12 @@ export class MachineNetwork extends DestroyableObject {
 
     // find and filter connections into their consumer groups.
     for (const machine of this.connections.machines.values()) {
+      if (!machine.isValid) {
+        logWarn(
+          "Found invalid machine in network in MachineNetwork#allocate. Skipping.",
+        );
+        continue;
+      }
       const tags = machine.getTags();
 
       const priorityTags = tags
@@ -194,12 +200,10 @@ export class MachineNetwork extends DestroyableObject {
 
       // Check if the machine is listening for network stat events.
       const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
-
       if (!machineDef) {
         logWarn(
-          `Machine with ID '${machine.typeId}' not found in MachineNetwork#send.`,
+          `Machine with ID '${machine.typeId}' not found in MachineNetwork#allocate.`,
         );
-        yield;
         continue;
       }
 
@@ -220,17 +224,15 @@ export class MachineNetwork extends DestroyableObject {
         (a, b) => b - a,
       );
 
-      yield* asyncAsGenerator(async () => {
-        // Distribute to each consumer group in order of priority.
-        for (const key of machinePriorities) {
-          budget = await this.distributeToGroup(
-            consumers[type].get(key)!,
-            type,
-            budget,
-          );
-          if (budget <= 0) break;
-        }
-      });
+      // Distribute to each consumer group in order of priority.
+      for (const key of machinePriorities) {
+        budget = yield* this.distributeToGroup(
+          consumers[type].get(key)!,
+          type,
+          budget,
+        );
+        if (budget <= 0) break;
+      }
 
       networkStats[type] = {
         before: distributionData.total,
@@ -265,6 +267,12 @@ export class MachineNetwork extends DestroyableObject {
 
     for (const sendData of distributionData.queueItems) {
       const machine = sendData.block;
+      if (!machine.isValid) {
+        logWarn(
+          "Found invalid machine in network in MachineNetwork#returnToGenerators. Skipping.",
+        );
+        continue;
+      }
 
       const consumesCategory =
         typeCategory !== undefined &&
@@ -333,21 +341,19 @@ export class MachineNetwork extends DestroyableObject {
   /**
    * @returns How much of the budget was left-over
    */
-  private async distributeToGroup(
+  private *distributeToGroup(
     machines: Block[],
     type: string,
     budget: number,
-  ): Promise<number> {
-    const promises: Promise<void>[] = [];
+  ): Generator<void, number, void> {
     const budgetAllocation = Math.floor(budget / machines.length);
 
     for (const machine of machines) {
       const currentStored = getMachineStorage(machine, type);
       const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
-
       if (!machineDef) {
         logWarn(
-          `Machine with ID '${machine.typeId}' not found in MachineNetwork#send.`,
+          `Machine with ID '${machine.typeId}' not found in MachineNetwork#distributeToGroup.`,
         );
         continue;
       }
@@ -357,55 +363,23 @@ export class MachineNetwork extends DestroyableObject {
         machineDef.maxStorage - currentStored,
       );
 
-      const promise = this.determineActualMachineAllocation(
-        machine,
-        machineDef,
-        type,
-        amountToAllocate,
-      )
-        .then((v) => {
-          budget -= v.amount ?? amountToAllocate;
-          if (v.handleStorage ?? true) {
-            setMachineStorage(
-              machine,
-              type,
-              currentStored + (v.amount ?? amountToAllocate),
-            );
-          }
-        })
-        .catch((e: unknown) => {
-          logWarn(
-            `Error in determineActualMachineAllocation for id: ${machineDef.id}, error: ${JSON.stringify(e)}`,
-          );
-        });
+      const v: RecieveHandlerResponse = machineDef.hasCallback("receive")
+        ? yield* asyncAsGenerator(() =>
+            machineDef.invokeRecieveHandler(machine, type, amountToAllocate),
+          )
+        : {};
 
-      promises.push(promise);
+      const actualAmount = v.amount ?? amountToAllocate;
+      budget -= actualAmount;
+      if (v.handleStorage ?? true) {
+        setMachineStorage(machine, type, currentStored + actualAmount);
+      }
+
+      // give the scheduler a chance to breathe
+      yield;
     }
 
-    await Promise.all(promises);
     return budget;
-  }
-
-  /**
-   * invoke the 'recieve' handler on a machine to get the
-   * actual allocation of a storage type (the 'recieve' handler
-   * may override the amount a machine is supposed to recieve)
-   */
-  private async determineActualMachineAllocation(
-    machine: Block,
-    machineDef: InternalRegisteredMachine,
-    type: string,
-    amount: number,
-  ): Promise<RecieveHandlerResponse> {
-    // Allow the machine to change how much of its allocation it chooses to take
-    if (machineDef.hasCallback("receive")) {
-      return machineDef.invokeRecieveHandler(machine, type, amount);
-    }
-
-    // if no handler, give it everything in its allocation
-    return {
-      amount,
-    };
   }
 
   /**
