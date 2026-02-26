@@ -134,12 +134,7 @@ export class MachineNetwork extends DestroyableObject {
 
     // find and filter connections into their consumer groups.
     for (const machine of this.connections.machines.values()) {
-      if (!machine.isValid) {
-        logWarn(
-          "Found invalid machine in network in MachineNetwork#allocate. Skipping.",
-        );
-        continue;
-      }
+      if (!machine.isValid) continue;
       const tags = machine.getTags();
 
       const priorityTags = tags
@@ -267,12 +262,7 @@ export class MachineNetwork extends DestroyableObject {
 
     for (const sendData of distributionData.queueItems) {
       const machine = sendData.block;
-      if (!machine.isValid) {
-        logWarn(
-          "Found invalid machine in network in MachineNetwork#returnToGenerators. Skipping.",
-        );
-        continue;
-      }
+      if (!machine.isValid) continue;
 
       const consumesCategory =
         typeCategory !== undefined &&
