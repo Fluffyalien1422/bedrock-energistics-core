@@ -21,7 +21,6 @@ import {
 } from "@/public_api/src";
 import { InternalRegisteredMachine } from "./machine_registry";
 import { InternalRegisteredStorageType } from "./storage_type_registry";
-import { asyncAsGenerator } from "./utils/async_generator";
 
 interface SendQueueItem {
   block: Block;
@@ -47,7 +46,8 @@ const networks = new Map<number, MachineNetwork>();
  * A network of machines with a certain I/O type.
  */
 export class MachineNetwork extends DestroyableObject {
-  private allocateJobRunning = false;
+  private allocateTickRunning = false;
+  private allocateJob: AsyncGenerator<void, void, void> | undefined;
   private sendQueue: SendQueueItem[] = [];
   private readonly intervalId: number;
 
@@ -74,10 +74,10 @@ export class MachineNetwork extends DestroyableObject {
     totalNetworkCount++;
 
     this.intervalId = system.runInterval(() => {
-      if (this.allocateJobRunning || !this.sendQueue.length) return;
-      this.allocateJobRunning = true;
-      system.runJob(this.allocate());
-    }, 5);
+      if (this.allocateTickRunning || !this.sendQueue.length) return;
+      this.allocateTickRunning = true;
+      void this.allocateTick();
+    });
   }
 
   /**
@@ -92,13 +92,28 @@ export class MachineNetwork extends DestroyableObject {
     networks.delete(this.id);
   }
 
+  private async allocateTick(): Promise<void> {
+    const startTick = system.currentTick;
+    this.allocateJob ??= this.allocate();
+
+    while (system.currentTick === startTick) {
+      const result = await this.allocateJob.next();
+      if (result.done) {
+        this.allocateJob = undefined;
+        break;
+      }
+    }
+
+    this.allocateTickRunning = false;
+  }
+
   /**
    * processes the `sendQueue`. sends storage types to the consumers in the network starting
    * with the ones with the least stored.
    * automatically sets each generator's storage to the amount it sent that was not received.
    * returns automatically if the object is not valid.
    */
-  private *allocate(): Generator<void, void, void> {
+  private async *allocate(): AsyncGenerator<void, void, void> {
     if (!this.isValid) return;
 
     // Calculate the amount of each type that is available to send around.
@@ -242,7 +257,7 @@ export class MachineNetwork extends DestroyableObject {
       machineDef.callOnNetworkAllocationCompletedEvent(block, networkStats);
     }
 
-    this.allocateJobRunning = false;
+    //this.allocateJobRunning = false;
   }
 
   private *returnToGenerators(
@@ -331,11 +346,11 @@ export class MachineNetwork extends DestroyableObject {
   /**
    * @returns How much of the budget was left-over
    */
-  private *distributeToGroup(
+  private async *distributeToGroup(
     machines: Block[],
     type: string,
     budget: number,
-  ): Generator<void, number, void> {
+  ): AsyncGenerator<void, number, void> {
     const budgetAllocation = Math.floor(budget / machines.length);
 
     for (const machine of machines) {
@@ -354,9 +369,7 @@ export class MachineNetwork extends DestroyableObject {
       );
 
       const v: RecieveHandlerResponse = machineDef.hasCallback("receive")
-        ? yield* asyncAsGenerator(() =>
-            machineDef.invokeRecieveHandler(machine, type, amountToAllocate),
-          )
+        ? await machineDef.invokeRecieveHandler(machine, type, amountToAllocate)
         : {};
 
       const actualAmount = v.amount ?? amountToAllocate;
