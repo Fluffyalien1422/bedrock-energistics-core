@@ -363,16 +363,16 @@ export class MachineNetwork extends DestroyableObject {
         continue;
       }
 
-      const amountToAllocate = Math.min(
-        budgetAllocation,
-        machineDef.maxStorage - currentStored,
+      const amountToAllocate = Math.max(
+        Math.min(budgetAllocation, machineDef.maxStorage - currentStored),
+        0,
       );
 
       const v: RecieveHandlerResponse = machineDef.hasCallback("receive")
         ? await machineDef.invokeRecieveHandler(machine, type, amountToAllocate)
         : {};
 
-      const actualAmount = v.amount ?? amountToAllocate;
+      const actualAmount = Math.max(v.amount ?? amountToAllocate, 0);
       budget -= actualAmount;
       if (v.handleStorage ?? true) {
         setMachineStorage(machine, type, currentStored + actualAmount);
