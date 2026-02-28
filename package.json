@@ -8,7 +8,6 @@
     "check-eslint": "eslint .",
     "check-typedoc": "typedoc --emit none --treatWarningsAsErrors",
     "check": "npm run check-tsc && npm run check-eslint && npm run check-typedoc",
-    "tsx": "tsx",
     "docs": "typedoc"
   },
   "devDependencies": {

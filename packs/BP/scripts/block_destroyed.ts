@@ -126,6 +126,10 @@ world.afterEvents.pistonActivate.subscribe((e) => {
       const connectionType = getBlockNetworkConnectionType(block);
       if (!connectionType) continue;
 
+      logWarn(
+        `DEPRECATION WARNING: Bedrock Energistics Core will no longer automatically destroy/update machines and conduits moved by pistons in a future update. ALL MACHINES AND CONDUITS MUST NOW BE IMMOVABLE. Use the 'minecraft:movable' component with 'movement_type' set to 'immovable' to make blocks immovable. This warning was logged because 'pistonActivate' was triggered for machine with ID '${block.typeId}' at (${Vector3Utils.toString(block.location)}) in '${block.dimension.id}'.`,
+      );
+
       const attachedBlockDimensionLocation: DimensionLocation = {
         dimension: e.dimension,
         ...attachedBlockLocation,
