@@ -90,7 +90,6 @@ function dropItemsStoredInMachine(
 
 export const machineNoInteractComponent: BlockCustomComponent = {
   onPlace(e) {
-    if (e.block.typeId === e.previousBlock.type.id) return;
     MachineNetwork.updateAdjacent(e.block);
 
     const definition = InternalRegisteredMachine.forceGetInternal(

@@ -1,18 +1,12 @@
-import { BlockCustomComponent, world } from "@minecraft/server";
+import { BlockCustomComponent } from "@minecraft/server";
 import { MachineNetwork } from "./network";
+import { NetworkConnectionType } from "@/public_api/src";
 
 export const conduitComponent: BlockCustomComponent = {
   onPlace(e) {
-    if (e.block.typeId === e.previousBlock.type.id) return;
-
     MachineNetwork.updateAdjacent(e.block);
   },
+  onBreak(e) {
+    MachineNetwork.updateWith(e.block, NetworkConnectionType.Conduit);
+  },
 };
-
-world.beforeEvents.playerBreakBlock.subscribe((e) => {
-  if (!e.block.hasTag("fluffyalien_energisticscore:conduit")) {
-    return;
-  }
-
-  MachineNetwork.updateWithBlock(e.block);
-});
