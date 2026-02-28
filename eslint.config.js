@@ -1,11 +1,12 @@
 // @ts-check
 
 import eslint from "@eslint/js";
+import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
 
-export default tseslint.config(
+export default defineConfig(
+  globalIgnores(["build/**/*", "public_api/dist/**/*", "docs/**/*"]),
   {
-    ignores: ["build/**/*", "public_api/dist/**/*", "docs/**/*"],
     extends: [eslint.configs.recommended],
     rules: {
       eqeqeq: "error",
@@ -13,7 +14,6 @@ export default tseslint.config(
   },
   {
     files: ["**/*.ts"],
-    ignores: ["public_api/dist/**/*"],
     extends: [
       ...tseslint.configs.strictTypeChecked,
       ...tseslint.configs.stylisticTypeChecked,

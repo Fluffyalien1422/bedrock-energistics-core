@@ -4,8 +4,6 @@
 
 import * as imgManip from "imagescript";
 import * as fs from "fs";
-import * as path from "path";
-import { TMP_DIR } from "./common";
 
 const STORAGE_BAR_COLORS: string[] = [
   "black",
@@ -19,7 +17,7 @@ const STORAGE_BAR_COLORS: string[] = [
   "green",
 ];
 
-const itemTexturePath = path.join(TMP_DIR, "RP/textures/item_texture.json");
+const itemTexturePath = "RP/textures/item_texture.json";
 
 const itemTexture = JSON.parse(fs.readFileSync(itemTexturePath, "utf8")) as {
   texture_data: Record<string, { textures: string }>;
@@ -62,10 +60,7 @@ async function makeStorageBar(
     const shortId = baseShortId + poweredCount.toString();
     const itemId = `fluffyalien_energisticscore:${shortId}`;
 
-    fs.writeFileSync(
-      path.join(TMP_DIR, `BP/items/${shortId}.json`),
-      createUiItem(itemId),
-    );
+    fs.writeFileSync(`BP/items/${shortId}.json`, createUiItem(itemId));
 
     const texturePath = `textures/fluffyalien/energisticscore/${shortId}`;
     itemTexture.texture_data[itemId] = { textures: texturePath };
@@ -79,29 +74,26 @@ async function makeStorageBar(
       img.composite(compositeImg, 0, 16 - poweredCount);
     }
 
-    fs.writeFileSync(
-      path.join(TMP_DIR, "RP", `${texturePath}.png`),
-      await img.encode(),
-    );
+    fs.writeFileSync(`RP/${texturePath}.png`, await img.encode());
   }
 }
 
 const arrowProgressEmpty = await readImg(
-  "packs/data/ui_composite/progress_indicators/arrow_empty.png",
+  "data/ui_composite/progress_indicators/arrow_empty.png",
 );
 const arrowProgressFull = await readImg(
-  "packs/data/ui_composite/progress_indicators/arrow_full.png",
+  "data/ui_composite/progress_indicators/arrow_full.png",
 );
 const flameProgressEmpty = await readImg(
-  "packs/data/ui_composite/progress_indicators/flame_empty.png",
+  "data/ui_composite/progress_indicators/flame_empty.png",
 );
 const flameProgressFull = await readImg(
-  "packs/data/ui_composite/progress_indicators/flame_full.png",
+  "data/ui_composite/progress_indicators/flame_full.png",
 );
 
 // storage bars
 for (const color of STORAGE_BAR_COLORS) {
-  const imgBasePath = `packs/data/ui_composite/storage_bar_segments/${color}`;
+  const imgBasePath = `data/ui_composite/storage_bar_segments/${color}`;
 
   const onImg = await readImg(`${imgBasePath}_on.png`);
   const offImg = await readImg(`${imgBasePath}_off.png`);
@@ -116,10 +108,7 @@ for (let progress = 0; progress <= 16; progress++) {
   const shortId = `ui_progress_arrow${progress.toString()}`;
   const itemId = `fluffyalien_energisticscore:${shortId}`;
 
-  fs.writeFileSync(
-    path.join(TMP_DIR, `BP/items/${shortId}.json`),
-    createUiItem(itemId),
-  );
+  fs.writeFileSync(`BP/items/${shortId}.json`, createUiItem(itemId));
 
   const texturePath = `textures/fluffyalien/energisticscore/${shortId}`;
   itemTexture.texture_data[itemId] = { textures: texturePath };
@@ -133,10 +122,7 @@ for (let progress = 0; progress <= 16; progress++) {
     img.composite(compositeImg);
   }
 
-  fs.writeFileSync(
-    path.join(TMP_DIR, "RP", `${texturePath}.png`),
-    await img.encode(),
-  );
+  fs.writeFileSync(`RP/${texturePath}.png`, await img.encode());
 }
 
 // flame progress bar
@@ -144,10 +130,7 @@ for (let progress = 0; progress <= 13; progress++) {
   const shortId = `ui_progress_flame${progress.toString()}`;
   const itemId = `fluffyalien_energisticscore:${shortId}`;
 
-  fs.writeFileSync(
-    path.join(TMP_DIR, `BP/items/${shortId}.json`),
-    createUiItem(itemId),
-  );
+  fs.writeFileSync(`BP/items/${shortId}.json`, createUiItem(itemId));
 
   const texturePath = `textures/fluffyalien/energisticscore/${shortId}`;
   itemTexture.texture_data[itemId] = { textures: texturePath };
@@ -161,10 +144,7 @@ for (let progress = 0; progress <= 13; progress++) {
     img.composite(compositeImg, 0, 16 - progress);
   }
 
-  fs.writeFileSync(
-    path.join(TMP_DIR, "RP", `${texturePath}.png`),
-    await img.encode(),
-  );
+  fs.writeFileSync(`RP/${texturePath}.png`, await img.encode());
 }
 
 fs.writeFileSync(itemTexturePath, JSON.stringify(itemTexture));

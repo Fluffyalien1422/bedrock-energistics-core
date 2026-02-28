@@ -12,19 +12,15 @@
     "filterDefinitions": {
       "build_scripts": {
         "runWith": "shell",
-        "command": "npx esbuild BP/scripts/index.ts --outfile=BP/scripts/__bundle.js --bundle --format=esm --log-level=warning --external:@minecraft/common --external:@minecraft/debug-utilities --external:@minecraft/server --external:@minecraft/server-* --preserve-symlinks"
+        "command": "npx esbuild BP/scripts/index.ts --outfile=BP/scripts/__bundle.js --bundle --format=esm --log-level=warning --preserve-symlinks --external:@minecraft/server --external:@minecraft/server-* --external:@minecraft/common --external:@minecraft/diagnostics"
       },
       "prod_finish_up_build_scripts": {
         "runWith": "shell",
         "command": "npx terser BP/scripts/__bundle.js --module -cmo BP/scripts/__bundle.js; Remove-Item BP/scripts/* -Recurse -Exclude __bundle.js"
       },
-      "simple_manifest": {
-        "runWith": "shell",
-        "command": "npm run tsx scripts/filters/simple_manifest"
-      },
       "gen_ui_bars": {
-        "runWith": "shell",
-        "command": "npm run tsx scripts/filters/gen_ui_bars"
+        "runWith": "nodejs",
+        "script": "scripts/filters/gen_ui_bars.ts"
       }
     },
     "profiles": {
@@ -36,9 +32,6 @@
         "filters": [
           {
             "filter": "build_scripts"
-          },
-          {
-            "filter": "simple_manifest"
           },
           {
             "filter": "gen_ui_bars"

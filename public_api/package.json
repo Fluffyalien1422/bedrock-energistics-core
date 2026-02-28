@@ -1,6 +1,6 @@
 {
   "//": [
-    "NOTE: remember to update the VERSION constant in the api as well"
+    "NOTE: remember to update the VERSION constant in the api as well!"
   ],
   "name": "bedrock-energistics-core-api",
   "description": "Bedrock Energistics Core public API",
@@ -19,19 +19,18 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
-    "link": "npm link mcbe-addon-ipc"
+    "build": "tsc"
   },
   "devDependencies": {
-    "@minecraft/server": "2.3.0",
-    "@minecraft/vanilla-data": "1.21.120"
+    "@minecraft/server": "2.5.0",
+    "@minecraft/vanilla-data": "1.26.2"
   },
   "peerDependencies": {
-    "@minecraft/server": "^2.3.0",
-    "@minecraft/vanilla-data": ">=1.21.120"
+    "@minecraft/server": "^2.5.0",
+    "@minecraft/vanilla-data": ">=1.26.2"
   },
   "dependencies": {
-    "@minecraft/math": "^2.2.7",
+    "@minecraft/math": "^2.4.0",
     "mcbe-addon-ipc": "^0.9.0"
   }
 }

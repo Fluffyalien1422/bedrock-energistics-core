@@ -1,15 +1,12 @@
 {
+  "extends": "./tsconfig.node.json",
   "include": ["./packs/BP/scripts"],
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"]
     },
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "target": "es2022",
     "module": "es2022",
     "moduleResolution": "bundler",
-    "noEmit": true,
-    "skipLibCheck": true
+    "verbatimModuleSyntax": false
   }
 }

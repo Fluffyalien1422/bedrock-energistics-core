@@ -20,7 +20,7 @@ Please read the [coding guidelines](CODING_GUIDELINES.md) as well before contrib
 ### Setting Up
 
 1. Run `npm i`
-2. Run `npm i` again in the `scripts` directory
+2. Run `npm i` again in the `scripts` and `public_api` directories
 
 ## Editing Documentation
 
