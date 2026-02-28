@@ -6,13 +6,14 @@ import {
 } from "@/public_api/src/serialize_utils";
 import { InternalNetworkLinkNode } from "./network_link_internal";
 import { raise } from "../utils/log";
+import { getBlockNetworkConnectionType } from "@/public_api/src";
 
 export const networkLinkComponent: BlockCustomComponent = {
   onPlace(ev) {
     MachineNetwork.updateAdjacent(ev.block);
   },
 
-  onPlayerBreak(ev) {
+  onBreak(ev) {
     const linkNode = InternalNetworkLinkNode.tryGetAt(
       ev.dimension,
       ev.block.location,
@@ -22,7 +23,10 @@ export const networkLinkComponent: BlockCustomComponent = {
     if (linkNode) linkNode.destroyNode();
 
     // update the rest of the blocks in the network.
-    MachineNetwork.updateWithBlock(ev.block);
+    MachineNetwork.updateWith(
+      ev.block,
+      getBlockNetworkConnectionType(ev.brokenBlockPermutation)!,
+    );
   },
 };
 

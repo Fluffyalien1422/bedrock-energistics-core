@@ -9,6 +9,10 @@ import {
   setBlockDynamicProperty,
 } from "./utils/dynamic_property";
 import { MachineNetwork } from "./network";
+import {
+  getBlockNetworkConnectionType,
+  NetworkConnectionType,
+} from "@/public_api/src";
 
 const DEBUG_ACTIONBAR_MAX_WIDTH_CHARS = 50;
 
@@ -50,23 +54,40 @@ export function enableDebugMode(): void {
 
 function showDebugUi(player: Player): void {
   const block = player.getBlockFromViewDirection({ maxDistance: 7 })?.block;
-  if (!block?.hasTag("fluffyalien_energisticscore:machine")) {
-    player.onScreenDisplay.setActionBar(
-      `§sBlock§r: §p${block?.typeId ?? "undefined"}\n§cNot a machine.`,
-    );
+  if (!block) {
+    player.onScreenDisplay.setActionBar(`§cNo block.`);
     return;
   }
 
-  if (player.isSneaking) {
+  const networkConnectionType = getBlockNetworkConnectionType(block);
+  if (!networkConnectionType) {
+    player.onScreenDisplay.setActionBar(
+      `§sBlock§r: §p${block.typeId}\n§cNo network connection type.`,
+    );
+    return;
+  }
+  if (
+    networkConnectionType === NetworkConnectionType.Machine &&
+    player.isSneaking
+  ) {
     showSetStorageForm(block, player);
     return;
   }
 
-  let info = `§sBlock§r: §p${block.typeId}\n§sNetworks§r: ${MachineNetwork.getAllWithBlock(
-    block,
-  )
-    .map((network) => `§p${network.id.toString()} §r(§p${network.ioType.id}§r)`)
-    .join(", ")}`;
+  const isNetworkLinkAndMachine =
+    networkConnectionType === NetworkConnectionType.Machine &&
+    block.hasTag("fluffyalien_energisticscore:network_link");
+  const headerLabel = isNetworkLinkAndMachine
+    ? `[${NetworkConnectionType.Machine}, ${NetworkConnectionType.NetworkLink}]`
+    : networkConnectionType;
+
+  let info =
+    `§s${headerLabel}§r: §p${block.typeId}\n§sNetworks§r: ` +
+    MachineNetwork.getAllWithBlock(block)
+      .map(
+        (network) => `§p${network.id.toString()} §r(§p${network.ioType.id}§r)`,
+      )
+      .join(", ");
 
   let line = "";
 
@@ -99,7 +120,7 @@ function showSetStorageForm(block: Block, player: Player): void {
   const form = new ModalFormData()
     .title("Set Variable")
     .textField(
-      "Set the value of a variable in the machine.\n\nNOTE: The value will not be verified. Setting the value of a variable to an invalid type may cause unexpected issues. IF YOU DON'T KNOW WHAT YOU'RE DOING, CLOSE THIS MENU.\n\nVariable",
+      "Set the value of a variable in the machine.\n\nVariable",
       "storage.energy",
     )
     .textField("Value", "0");
@@ -141,7 +162,7 @@ function showSetStorageForm(block: Block, player: Player): void {
     }
 
     raise(
-      `Debug menu: Invalid variable domain. Expected 'storage.' or 'property.' but got '${varName.split(".")[0]}'.`,
+      `Debug menu: Invalid variable domain. Expected 'storage' or 'property' but got '${varName.split(".")[0]}'.`,
     );
   });
 }

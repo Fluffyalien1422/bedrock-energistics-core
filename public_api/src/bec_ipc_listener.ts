@@ -26,5 +26,6 @@ export enum BecIpcListener {
   GetItemMachineStorage = "fluffyalien_energisticscore:ipc.getItemMachineStorage",
   SetItemMachineStorage = "fluffyalien_energisticscore:ipc.setItemMachineStorage",
   GetItemMachineIo = "fluffyalien_energisticscore:ipc.getItemMachineIo",
-  RemoveMachine = "fluffyalien_energisticscore:ipc.removeMachine",
+  RemoveMachineData = "fluffyalien_energisticscore:ipc.removeMachineData",
+  DestroyMachine = "fluffyalien_energisticscore:ipc.destroyMachine",
 }

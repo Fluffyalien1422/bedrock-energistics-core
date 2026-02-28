@@ -18,14 +18,13 @@ export enum NetworkConnectionType {
  */
 export function getBlockNetworkConnectionType(
   block: Block | BlockPermutation,
-): NetworkConnectionType | null {
+): NetworkConnectionType | undefined {
   if (block.hasTag("fluffyalien_energisticscore:conduit"))
     return NetworkConnectionType.Conduit;
   if (block.hasTag("fluffyalien_energisticscore:machine"))
     return NetworkConnectionType.Machine;
   if (block.hasTag("fluffyalien_energisticscore:network_link"))
     return NetworkConnectionType.NetworkLink;
-  return null;
 }
 
 /**

@@ -4,6 +4,7 @@ import {
   world,
 } from "@minecraft/server";
 import { SerializableDimensionLocation } from "./serialize_utils.js";
+import { NetworkConnectionType } from "./network_utils.js";
 
 /**
  * @internal
@@ -18,6 +19,14 @@ export interface GetMachineSlotPayload {
  */
 export interface SetMachineSlotPayload extends GetMachineSlotPayload {
   item?: string;
+}
+
+/**
+ * @internal
+ */
+export interface RemoveMachineDataPayload {
+  loc: SerializableDimensionLocation;
+  connectionType: NetworkConnectionType;
 }
 
 /**

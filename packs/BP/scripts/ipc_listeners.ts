@@ -36,8 +36,9 @@ import {
   setItemMachineStorageListener,
 } from "./item_machine_ipc";
 import {
+  destroyMachineListener,
   getMachineSlotListener,
-  removeMachineListener,
+  removeMachineDataListener,
   setMachineSlotListener,
 } from "./data_ipc";
 
@@ -117,4 +118,5 @@ registerListener(
   setItemMachineStorageListener,
 );
 registerListener(BecIpcListener.GetItemMachineIo, getItemMachineIoHandler);
-registerListener(BecIpcListener.RemoveMachine, removeMachineListener);
+registerListener(BecIpcListener.RemoveMachineData, removeMachineDataListener);
+registerListener(BecIpcListener.DestroyMachine, destroyMachineListener);

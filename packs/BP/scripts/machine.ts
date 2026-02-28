@@ -1,9 +1,9 @@
 import {
   Block,
   BlockCustomComponent,
+  BlockPermutation,
   DimensionLocation,
   Entity,
-  system,
   world,
 } from "@minecraft/server";
 import {
@@ -14,27 +14,51 @@ import {
 import { MachineNetwork } from "./network";
 import { raise } from "./utils/log";
 import { Vector3Utils } from "@minecraft/math";
-import { RegisteredMachine } from "@/public_api/src";
+import {
+  getBlockNetworkConnectionType,
+  NetworkConnectionType,
+  RegisteredMachine,
+} from "@/public_api/src";
 import {
   getMachineIdFromEntityId,
   InternalRegisteredMachine,
 } from "./machine_registry";
 import { removeAllDynamicPropertiesForBlock } from "./utils/dynamic_property";
 
-export function removeMachine(
-  block: Block,
-  definition: InternalRegisteredMachine,
+export function removeMachineData(
+  loc: DimensionLocation,
+  connectionType: NetworkConnectionType,
 ): void {
-  MachineNetwork.updateWithBlock(block);
-
-  system.run(() => {
-    dropItemsStoredInMachine(block, definition);
-    removeBlockFromScoreboards(block);
-    removeAllDynamicPropertiesForBlock(block);
-  });
+  MachineNetwork.updateWith(loc, connectionType);
+  removeBlockFromScoreboards(loc);
+  removeAllDynamicPropertiesForBlock(loc);
 }
 
-export function spawnMachineEntity(block: Block, entityId: string): Entity {
+export function destroyMachine(
+  block: Block,
+  destroyedPermutation: BlockPermutation = block.permutation,
+  newBlockType: string | false = "air",
+): void {
+  const definition = InternalRegisteredMachine.forceGetInternal(
+    destroyedPermutation.type.id,
+  );
+  const connectionType = getBlockNetworkConnectionType(destroyedPermutation);
+  if (!connectionType) {
+    raise(
+      `Failed to destroy machine. Could not get network connection type for block '${destroyedPermutation.type.id}'.`,
+    );
+  }
+  dropItemsStoredInMachine(block, definition);
+  removeMachineData(block, connectionType);
+
+  block.dimension
+    .getEntitiesAtBlockLocation(block)
+    .find((entity) => entity.typeId === definition.entityId)
+    ?.remove();
+  if (newBlockType) block.setType(newBlockType);
+}
+
+function spawnMachineEntity(block: Block, entityId: string): Entity {
   // there is a similar function to this one in the public api.
   // if this is changed, then ensure the public api function is
   // changed as well.
@@ -43,42 +67,7 @@ export function spawnMachineEntity(block: Block, entityId: string): Entity {
   return entity;
 }
 
-export const machineNoInteractComponent: BlockCustomComponent = {
-  onPlace(e) {
-    if (e.block.typeId === e.previousBlock.type.id) return;
-    MachineNetwork.updateAdjacent(e.block);
-
-    const definition = InternalRegisteredMachine.getInternal(e.block.typeId);
-    if (!definition) {
-      raise(
-        `The block '${e.block.typeId}' uses the 'fluffyalien_energisticscore:machine' custom component but it could not be found in the machine registry.`,
-      );
-    }
-
-    if (definition.persistentEntity) {
-      spawnMachineEntity(e.block, definition.entityId);
-    }
-  },
-};
-
-export const machineComponent: BlockCustomComponent = {
-  ...machineNoInteractComponent,
-  onPlayerInteract(e) {
-    const definition = InternalRegisteredMachine.getInternal(e.block.typeId);
-    if (!definition) {
-      raise(
-        `The block '${e.block.typeId}' uses the 'fluffyalien_energisticscore:machine' custom component but it could not be found in the machine registry.`,
-      );
-    }
-    if (!definition.uiElements || definition.persistentEntity) {
-      return;
-    }
-
-    spawnMachineEntity(e.block, definition.entityId);
-  },
-};
-
-export function dropItemsStoredInMachine(
+function dropItemsStoredInMachine(
   blockLocation: DimensionLocation,
   definition: RegisteredMachine,
 ): void {
@@ -99,24 +88,36 @@ export function dropItemsStoredInMachine(
   }
 }
 
-world.beforeEvents.playerBreakBlock.subscribe((e) => {
-  if (!e.block.hasTag("fluffyalien_energisticscore:machine")) {
-    return;
-  }
+export const machineNoInteractComponent: BlockCustomComponent = {
+  onPlace(e) {
+    if (e.block.typeId === e.previousBlock.type.id) return;
+    MachineNetwork.updateAdjacent(e.block);
 
-  const definition = InternalRegisteredMachine.getInternal(e.block.typeId);
-  if (!definition) {
-    raise(
-      `The block '${e.block.typeId}' has the 'fluffyalien_energisticscore:machine' tag but it could not be found in the machine registry.`,
+    const definition = InternalRegisteredMachine.forceGetInternal(
+      e.block.typeId,
     );
-  }
+    if (definition.persistentEntity) {
+      spawnMachineEntity(e.block, definition.entityId);
+    }
+  },
+  onBreak(e) {
+    destroyMachine(e.block, e.brokenBlockPermutation, false);
+  },
+};
 
-  if (definition.persistentEntity) {
-    return;
-  }
+export const machineComponent: BlockCustomComponent = {
+  ...machineNoInteractComponent,
+  onPlayerInteract(e) {
+    const definition = InternalRegisteredMachine.forceGetInternal(
+      e.block.typeId,
+    );
+    if (!definition.uiElements || definition.persistentEntity) {
+      return;
+    }
 
-  removeMachine(e.block, definition);
-});
+    spawnMachineEntity(e.block, definition.entityId);
+  },
+};
 
 world.afterEvents.entityHitEntity.subscribe((e) => {
   if (
@@ -142,25 +143,4 @@ world.afterEvents.entityHitEntity.subscribe((e) => {
   }
 
   e.hitEntity.remove();
-});
-
-world.afterEvents.entitySpawn.subscribe((e) => {
-  const entity = e.entity;
-  if (!entity.isValid) return; // Entities can become invalid if they're spawned and removed in the same tick.
-
-  if (
-    !entity
-      .getComponent("type_family")
-      ?.hasTypeFamily("fluffyalien_energisticscore:machine_entity")
-  ) {
-    return;
-  }
-
-  // machine entities can be spawned via the public api
-  // but dynamic properties are sandboxed,
-  // so set the dynamic property in this event
-  e.entity.setDynamicProperty(
-    "block_location",
-    Vector3Utils.floor(e.entity.location),
-  );
 });
