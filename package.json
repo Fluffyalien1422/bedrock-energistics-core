@@ -9,8 +9,7 @@
     "check-typedoc": "typedoc --emit none --treatWarningsAsErrors",
     "check": "npm run check-tsc && npm run check-eslint && npm run check-typedoc",
     "tsx": "tsx",
-    "docs": "typedoc",
-    "link": "npm link mcbe-addon-ipc"
+    "docs": "typedoc"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -21,7 +20,6 @@
     "eslint": "^10.0.2",
     "prettier": "^3.8.1",
     "terser": "^5.46.0",
-    "tsx": "^4.21.0",
     "typedoc": "^0.28.17",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1"
