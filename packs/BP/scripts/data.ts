@@ -155,6 +155,10 @@ export function setMachineSlotItem(
   );
 }
 
+export function isUiItem(item: ItemStack): boolean {
+  return item.hasTag("fluffyalien_energisticscore:ui_item");
+}
+
 export function optionalMachineItemStackToItemStack(
   machineItem?: MachineItemStack,
   emptyItemId = "fluffyalien_energisticscore:ui_empty_slot",
@@ -162,7 +166,7 @@ export function optionalMachineItemStackToItemStack(
   if (machineItem) return machineItem.toItemStack();
 
   const defaultEmptyItem = new ItemStack(emptyItemId);
-  if (!defaultEmptyItem.hasTag("fluffyalien_energisticscore:ui_item")) {
+  if (!isUiItem(defaultEmptyItem)) {
     logWarn(
       `Failed to create empty UI element '${emptyItemId}', it does not have the 'fluffyalien_energisticscore:ui_item' tag. Falling back to using 'fluffyalien_energisticscore:ui_empty_slot'.`,
     );

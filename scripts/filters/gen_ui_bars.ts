@@ -29,23 +29,20 @@ function readImg(imgPath: string): Promise<imgManip.Image> {
 
 function createUiItem(itemId: string): string {
   return JSON.stringify({
-    format_version: "1.20.80",
+    format_version: "1.26.0",
     "minecraft:item": {
       description: {
         identifier: itemId,
         menu_category: {
           category: "none",
+          is_hidden_in_commands: true,
         },
       },
       components: {
         "minecraft:tags": {
           tags: ["fluffyalien_energisticscore:ui_item"],
         },
-        "minecraft:icon": {
-          textures: {
-            default: itemId,
-          },
-        },
+        "minecraft:icon": itemId,
       },
     },
   });

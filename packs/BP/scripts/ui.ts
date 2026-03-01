@@ -22,6 +22,7 @@ import {
   getBlockUniqueId,
   getMachineSlotItem,
   getMachineStorage,
+  isUiItem,
   optionalMachineItemStackToItemStack,
   setMachineSlotItem,
 } from "./data";
@@ -67,10 +68,6 @@ const playersInUi = new Map<Entity, Player>();
  * value = array of slot IDs that have changed
  */
 export const machineChangedItemSlots = new Map<string, string[]>();
-
-function isUiItem(item: ItemStack): boolean {
-  return item.hasTag("fluffyalien_energisticscore:ui_item");
-}
 
 /**
  * @returns whether anything was cleared or not
@@ -138,7 +135,7 @@ function fillUiBar(
         "fluffyalien_energisticscore:ui_disabled_storage_bar_segment",
       );
 
-    if (!itemStack.hasTag("fluffyalien_energisticscore:ui_item")) {
+    if (!isUiItem(itemStack)) {
       logWarn(
         `Failed to create storage bar segment element. The item '${segmentId}' does not have the 'fluffyalien_energisticscore:ui_item' tag.`,
       );
@@ -169,7 +166,7 @@ function handleBarItems(
 ): void {
   for (let i = startIndex; i < startIndex + size; i++) {
     const inventoryItem = inventory.getItem(i);
-    if (inventoryItem?.hasTag("fluffyalien_energisticscore:ui_item")) {
+    if (inventoryItem && isUiItem(inventoryItem)) {
       continue;
     }
 
@@ -227,7 +224,10 @@ function handleItemSlot(
 
   if (slotChanged || init) {
     containerSlot.setItem(
-      optionalMachineItemStackToItemStack(expectedMachineItem, element.emptyItemId),
+      optionalMachineItemStackToItemStack(
+        expectedMachineItem,
+        element.emptyItemId,
+      ),
     );
     return;
   }
@@ -235,7 +235,9 @@ function handleItemSlot(
   if (!containerSlot.hasItem()) {
     clearUiItemsFromPlayer(player);
     setMachineSlotItem(block, elementId, undefined, false);
-    containerSlot.setItem(optionalMachineItemStackToItemStack(undefined, element.emptyItemId));
+    containerSlot.setItem(
+      optionalMachineItemStackToItemStack(undefined, element.emptyItemId),
+    );
     return;
   }
 
@@ -267,7 +269,9 @@ function handleItemSlot(
   if (!isAllowed) {
     setMachineSlotItem(block, elementId, undefined, false);
     player.dimension.spawnItem(containerSlot.getItem()!, player.location);
-    containerSlot.setItem(optionalMachineItemStackToItemStack(undefined, element.emptyItemId));
+    containerSlot.setItem(
+      optionalMachineItemStackToItemStack(undefined, element.emptyItemId),
+    );
     return;
   }
 
@@ -292,7 +296,7 @@ function handleProgressIndicator(
     value < 0 || value > maxValue || !Number.isInteger(value);
 
   const inventoryItem = inventory.getItem(element.index);
-  if (!inventoryItem?.hasTag("fluffyalien_energisticscore:ui_item")) {
+  if (!inventoryItem || !isUiItem(inventoryItem)) {
     clearUiItemsFromPlayer(player);
 
     if (inventoryItem) {
@@ -322,7 +326,7 @@ function handleProgressIndicator(
   }
 
   const item = tryCreateItemStack(indicator.frames[value]);
-  if (!item?.hasTag("fluffyalien_energisticscore:ui_item")) {
+  if (!item || !isUiItem(item)) {
     logWarn(
       `Failed to create progress indicator element. The item '${indicator.frames[value]}' does not have the 'fluffyalien_energisticscore:ui_item' tag or does not exist.`,
     );
@@ -350,7 +354,7 @@ function handleButton(
 ): void {
   if (init) {
     const item = tryCreateItemStack(buttonItemId);
-    if (!item?.hasTag("fluffyalien_energisticscore:ui_item")) {
+    if (!item || !isUiItem(item)) {
       logWarn(
         `Failed to create button element. The button item '${buttonItemId}' does not have the 'fluffyalien_energisticscore:ui_item' tag or does not exist.`,
       );
@@ -371,7 +375,7 @@ function handleButton(
     return;
   }
 
-  if (!inventoryItem?.hasTag("fluffyalien_energisticscore:ui_item")) {
+  if (!inventoryItem || !isUiItem(inventoryItem)) {
     clearUiItemsFromPlayer(player);
 
     if (inventoryItem) {
@@ -389,7 +393,7 @@ function handleButton(
   }
 
   let btnItem = tryCreateItemStack(buttonItemId);
-  if (btnItem?.hasTag("fluffyalien_energisticscore:ui_item")) {
+  if (btnItem && isUiItem(btnItem)) {
     btnItem.nameTag = buttonItemName;
   } else {
     btnItem = new ItemStack("fluffyalien_energisticscore:ui_error");

@@ -5,7 +5,7 @@
     "name": "pack.name",
     "description": "pack.description",
     "pack_scope": "world",
-    "min_engine_version": [1, 21, 120],
+    "min_engine_version": [1, 26, 0],
     "uuid": "5ca8983e-f3ab-4817-b66b-f33face407af",
     "version": [0, 10, 0]
   },
