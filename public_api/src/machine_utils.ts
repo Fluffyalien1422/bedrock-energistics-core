@@ -56,6 +56,7 @@ export async function destroyMachine(loc: DimensionLocation): Promise<void> {
 
 /**
  * Gets the machine entity for the specified block, if it exists.
+ * @beta
  * @param block The machine.
  * @returns The machine entity, or `undefined` if it doesn't exist.
  * @throws Throws if the machine does not exist in the registry.
@@ -72,6 +73,7 @@ export async function getMachineEntity(
 
 /**
  * Spawns the machine entity for the machine at the specified location, if it doesn't already exist.
+ * @beta
  * @param block The machine.
  * @returns The new entity or the one that was already there.
  * @throws Throws if the machine does not exist in the registry.
