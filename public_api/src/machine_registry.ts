@@ -26,7 +26,7 @@ const machineCache = new Map<string, RegisteredMachine | undefined>();
 const ownRegisteredMachines = new Map<string, RegisteredMachine>();
 
 /**
- * Representation of a machine definition that has been registered.
+ * A registered machine definition.
  * @beta
  * @see {@link MachineDefinition}, {@link registerMachine}
  */

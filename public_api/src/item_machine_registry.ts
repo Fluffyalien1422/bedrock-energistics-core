@@ -25,9 +25,9 @@ const itemMachineCache = new Map<string, RegisteredItemMachine | undefined>();
 const ownRegisteredItemMachines = new Map<string, RegisteredItemMachine>();
 
 /**
- * Representation of an item machine definition that has been registered.
+ * A registered item machine definition.
  * @beta
- * @see {@link ItemMachineDefinition}, {@link registerItemMachine}
+ * @see {@link ItemMachineDefinition}, {@link registerItemMachine}.
  */
 export class RegisteredItemMachine {
   private constructor(
@@ -107,7 +107,7 @@ export class RegisteredItemMachine {
 }
 
 /**
- * Registers an item machine. This function should be called in the `worldInitialize` after event.
+ * Registers an item machine. This function should be called in the `worldLoad` after event.
  * @beta
  * @throws Throws if registration has been closed.
  */

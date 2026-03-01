@@ -34,8 +34,8 @@ export class MachineItemStack {
   }
 
   /**
-   * Converts a Minecraft ItemStack to a MachineItemStack.
-   * @param itemStack The Minecraft ItemStack to convert.
+   * Converts a Minecraft `ItemStack` to a `MachineItemStack`.
+   * @param itemStack The Minecraft `ItemStack` to convert.
    * @beta
    */
   static fromItemStack(itemStack: ItemStack): MachineItemStack {
@@ -56,9 +56,9 @@ export class MachineItemStack {
   }
 
   /**
-   * Converts this MachineItemStack to a Minecraft ItemStack.
+   * Converts this `MachineItemStack` to a Minecraft `ItemStack`.
    * @beta
-   * @returns A Minecraft ItemStack with the same properties as this MachineItemStack.
+   * @returns A Minecraft `ItemStack` with the same properties as this `MachineItemStack`.
    */
   toItemStack(): ItemStack {
     const result = new ItemStack(this.typeId, this.amount);
@@ -98,10 +98,10 @@ export class MachineItemStack {
   }
 
   /**
-   * Tests if all properties of two MachineItemStacks, except 'amount', are the same.
+   * Tests if all properties of two `MachineItemStacks`, except `amount`, are the same.
    * @beta
-   * @param other The other MachineItemStack to compare with.
-   * @returns Whether the two MachineItemStacks are similar.
+   * @param other The other `MachineItemStack` to compare with.
+   * @returns Whether the two `MachineItemStacks` are similar.
    */
   isSimilarTo(other: MachineItemStack): boolean {
     return (
@@ -126,7 +126,7 @@ export class MachineItemStack {
   /**
    * Clones this object.
    * @beta
-   * @returns A new MachineItemStack with the same properties as this one.
+   * @returns A new `MachineItemStack` with the same properties as this one.
    */
   clone(): MachineItemStack {
     return new MachineItemStack(this.typeId, this.amount, {
@@ -141,7 +141,7 @@ export class MachineItemStack {
    * Clones this object and sets the amount to the given value.
    * @beta
    * @param amount The new amount.
-   * @returns A new MachineItemStack with the same properties as this one, but with the given amount.s
+   * @returns A new `MachineItemStack` with the same properties as this one, but with the given amount.
    */
   withAmount(amount: number): MachineItemStack {
     return new MachineItemStack(this.typeId, amount, {

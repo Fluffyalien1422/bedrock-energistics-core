@@ -22,7 +22,7 @@ import {
  * Gets the storage of a specific type in a machine.
  * @beta
  * @param loc The location of the machine.
- * @param type The type of storage to get.
+ * @param type The storage type ID.
  * @throws Throws if the storage type does not exist
  */
 export function getMachineStorage(
@@ -44,8 +44,8 @@ export function getMachineStorage(
  * Sets the storage of a specific type in a machine.
  * @beta
  * @param block The machine block.
- * @param type The type of storage to set.
- * @param value The new value. Must be an integer.
+ * @param type The storage type ID.
+ * @param value The new value. Must be a non-negative integer.
  * @param callOnStorageSet Whether to call the `onStorageSet` event on the machine, if applicable.
  * @throws Throws if the storage type does not exist.
  * @throws Throws if the new value isn't a non-negative integer.

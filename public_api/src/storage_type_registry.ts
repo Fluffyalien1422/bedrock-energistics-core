@@ -25,7 +25,7 @@ export interface StorageTypeData {
 }
 
 /**
- * Representation of a storage type definition that has been registered.
+ * A registered storage type definition.
  * @beta
  * @see {@link StorageTypeDefinition}, {@link registerStorageType}
  */
