@@ -69,9 +69,8 @@ export class MachineNetwork extends DestroyableObject {
   ) {
     super();
 
-    this.id = totalNetworkCount;
+    this.id = totalNetworkCount++;
     networks.set(this.id, this);
-    totalNetworkCount++;
 
     this.intervalId = system.runInterval(() => {
       if (this.allocateTickRunning || !this.sendQueue.length) return;

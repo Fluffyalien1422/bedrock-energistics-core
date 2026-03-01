@@ -16,7 +16,7 @@ import { BecIpcListener } from "../bec_ipc_listener.js";
  * A network link node in a machine network.
  * @beta
  * @remarks
- * NetworkLinkNodes can be used to combine two seperate networks without any physcical connection between them.
+ * NetworkLinkNodes can be used to combine two separate networks without any physical connection between them.
  */
 export class NetworkLinkNode {
   private readonly entity: Entity;
@@ -28,8 +28,8 @@ export class NetworkLinkNode {
   }
 
   /**
-   * Fetches all of the outbound connections to other {@link NetworkLinkNode}s
-   * @returns The block positions of each connection
+   * Fetches all of the outbound connections to other {@link NetworkLinkNode}s.
+   * @returns The block positions of each connection.
    * @beta
    */
   public async getConnections(): Promise<Vector3[]> {
@@ -98,7 +98,7 @@ export class NetworkLinkNode {
   }
 
   /**
-   * Returns the internal entity being used for this network link node
+   * Returns the internal entity being used for this network link node.
    * - Can be used to stash additional data by other packs.
    * @beta
    */
@@ -107,11 +107,11 @@ export class NetworkLinkNode {
   }
 
   /**
-   * Finds the `NetworkLinkNode` associated with this block, or creates it if it doesn't exist
+   * Finds the `NetworkLinkNode` associated with this block, or creates it if it doesn't exist.
    *
-   * @param block Expected to have the `fluffyalien_energisticscore:network_link` block tag
-   * @returns The `NetworkLinkNode` at the block location
-   * @throws When the `NetworkLinkNode` does not exist yet, and the block at this location does not have the correct tags
+   * @param block Expected to have the `fluffyalien_energisticscore:network_link` block tag.
+   * @returns The `NetworkLinkNode` at the block location.
+   * @throws When the `NetworkLinkNode` does not exist yet, and the block at this location does not have the correct tags.
    * @beta
    */
   static get(block: Block): NetworkLinkNode {
@@ -135,10 +135,10 @@ export class NetworkLinkNode {
   }
 
   /**
-   * Finds the `NetworkLinkNode` associated with this location, or undefined if it does not exist yet
-   * @param dimension The dimension the block is in
-   * @param location The location of the block
-   * @returns The associated `NetworkLinkNode` or `undefined` if it does not exist
+   * Finds the `NetworkLinkNode` associated with this location, or undefined if it does not exist yet.
+   * @param dimension The dimension the block is in.
+   * @param location The location of the block.
+   * @returns The associated `NetworkLinkNode` or `undefined` if it does not exist.
    * @beta
    */
   static tryGetAt(

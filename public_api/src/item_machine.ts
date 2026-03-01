@@ -15,7 +15,8 @@ import {
   SetItemMachineStoragePayload,
 } from "./item_machine_internal.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
-import { IoCapabilities, IoCapabilitiesData } from "./io.js";
+import { IoCapabilities } from "./io.js";
+import { ItemMachineGetIoResponse } from "./item_machine_registry_types.js";
 
 /**
  * Representation of an item machine.
@@ -134,9 +135,13 @@ export class ItemMachine {
     const ioData = (await ipcInvoke(
       BecIpcListener.GetItemMachineIo,
       payload,
-    )) as IoCapabilitiesData;
+    )) as Required<ItemMachineGetIoResponse>;
 
-    return new IoCapabilities(ioData);
+    if (ioData.acceptsAny) {
+      return IoCapabilities.acceptingAny();
+    } else {
+      return IoCapabilities.accepting(ioData.types, ioData.categories);
+    }
   }
 
   private ensureValidity(): void {

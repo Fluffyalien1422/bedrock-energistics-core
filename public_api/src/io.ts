@@ -12,64 +12,48 @@ const IO_REQUIRE_CONDUIT_CONNECTIONS_TAG =
   "fluffyalien_energisticscore:require_conduit_connection";
 
 /**
- * @beta
- */
-export interface IoCapabilitiesData {
-  acceptsAny: boolean;
-  types: string[];
-  categories: string[];
-  onlyAllowConduitConnections: boolean;
-}
-
-/**
- * Represents input/output capabilities of a machine side or item machine.
+ * Represents the input/output capabilities of a machine side or item machine.
  * @beta
  */
 export class IoCapabilities {
-  /**
-   * Note: {@link IoCapabilities.accepting} or {@link IoCapabilities.acceptingAny}
-   * should be used to create an instance instead.
-   * @beta
-   */
-  constructor(private readonly data: IoCapabilitiesData) {}
+  private constructor(
+    /**
+     * Does this object accept any type or category?
+     * @beta
+     */
+    readonly acceptsAny: boolean,
+    /**
+     * Does this object only accept connections from conduits?
+     * @beta
+     * @remarks
+     * This is `true` for machines when they have the 'fluffyalien_energisticscore:require_conduit_connection' tag.
+     */
+    readonly onlyAllowsConduitConnections: boolean,
+    private readonly internalTypes: readonly string[] = [],
+    private readonly internalCategories: readonly string[] = [],
+  ) {}
 
   /**
+   * The accepted type IDs. This is an empty array if {@link IoCapabilities.acceptsAny} is `true`.
    * @beta
-   * @returns Returns whether this object only accepts conduit connections
-   */
-  get onlyAllowsConduitConnections(): boolean {
-    return this.data.onlyAllowConduitConnections;
-  }
-
-  /**
-   * @beta
-   * @returns Returns whether this object accepts any type or category.
-   */
-  get acceptsAny(): boolean {
-    return this.data.acceptsAny;
-  }
-
-  /**
-   * @beta
-   * @returns Returns the accepted type IDs (empty if the object accepts any).
    */
   get types(): string[] {
-    return [...this.data.types];
+    return [...this.internalTypes];
   }
 
   /**
+   * The accepted category IDs. This is an empty array if {@link IoCapabilities.acceptsAny} is `true`.
    * @beta
-   * @returns Returns the accepted categories (empty if the object accepts any).
    */
   get categories(): string[] {
-    return [...this.data.categories];
+    return [...this.internalCategories];
   }
 
   /**
-   * Check if this object accepts the given storage type.
+   * Check if this object accepts the given storage type. Use {@link IoCapabilities.acceptsTypeWithId} to check by ID.
    * @beta
    * @param storageType The storage type data to check.
-   * @param isFromConduit Is the source a conduit
+   * @param isFromConduit Is the source a conduit?
    * @returns Whether this object accepts the given storage type.
    */
   acceptsType(storageType: StorageTypeData, isFromConduit = false): boolean {
@@ -77,8 +61,8 @@ export class IoCapabilities {
 
     return (
       this.acceptsAny ||
-      this.categories.includes(storageType.category) ||
-      this.types.includes(storageType.id)
+      this.internalCategories.includes(storageType.category) ||
+      this.internalTypes.includes(storageType.id)
     );
   }
 
@@ -86,7 +70,7 @@ export class IoCapabilities {
    * Get a storage type by it's ID and check if this object accepts it.
    * @beta
    * @param id The ID of the storage type.
-   * @param isFromConduit Is the sender a conduit
+   * @param isFromConduit Is the source a conduit?
    * @returns Whether this object accepts the storage type with the given ID.
    */
   async acceptsTypeWithId(id: string, isFromConduit = false): Promise<boolean> {
@@ -103,12 +87,12 @@ export class IoCapabilities {
    * Check if this object accepts the given category.
    * @beta
    * @param category The category to check.
-   * @param isFromConduit Is the sender a conduit
+   * @param isFromConduit Is the source a conduit?
    * @returns Whether this object accepts the given category.
    */
   acceptsCategory(category: string, isFromConduit = false): boolean {
     if (!isFromConduit && this.onlyAllowsConduitConnections) return false;
-    return this.acceptsAny || this.categories.includes(category);
+    return this.acceptsAny || this.internalCategories.includes(category);
   }
 
   /**
@@ -124,7 +108,7 @@ export class IoCapabilities {
     if (!isFromConduit && this.onlyAllowsConduitConnections) return false;
     if (this.acceptsCategory(category, isFromConduit)) return true;
 
-    for (const type of this.types) {
+    for (const type of this.internalTypes) {
       const storageType = await RegisteredStorageType.get(type);
       if (storageType?.category === category) return true;
     }
@@ -133,46 +117,42 @@ export class IoCapabilities {
   }
 
   /**
-   * Create a new IoCapabilities object that accepts the given types and categories.
+   * Create a new `IoCapabilities` object that accepts the given types and categories.
    * @beta
    * @param types Accepted type IDs.
    * @param categories Accepted categories.
-   * @param onlyAllowConduitConnections Are only conduits allowed to connect?
-   * @returns Returns a new IoCapabilities object.
+   * @param onlyAllowConduitConnections Only accept conduit connections?
+   * @returns Returns a new `IoCapabilities` object.
    */
   static accepting(
     types: string[],
     categories: string[],
     onlyAllowConduitConnections = false,
   ): IoCapabilities {
-    return new IoCapabilities({
-      acceptsAny: false,
-      types,
-      categories,
+    return new IoCapabilities(
+      false,
       onlyAllowConduitConnections,
-    });
+      [...types],
+      [...categories],
+    );
   }
 
   /**
-   * Create a new IoCapabilities object that accepts any type or category.
+   * Create a new `IoCapabilities` object that accepts any type or category.
    * @beta
-   * @returns Returns a new IoCapabilities object.
+   * @param onlyAllowConduitConnections Only accept conduit connections?
+   * @returns Returns a new `IoCapabilities` object.
    */
   static acceptingAny(onlyAllowConduitConnections = false): IoCapabilities {
-    return new IoCapabilities({
-      onlyAllowConduitConnections,
-      acceptsAny: true,
-      types: [],
-      categories: [],
-    });
+    return new IoCapabilities(true, onlyAllowConduitConnections);
   }
 
   /**
    * Get the input/output capabilities of a machine.
    * @beta
    * @param machine The machine.
-   * @param side The side of the machine to check or "network_link" for linked connections
-   * @returns A IoCapabilities object.
+   * @param side The side of the machine to check or "network_link" for linked connections.
+   * @returns A new `IoCapabilities` object.
    */
   static fromMachine(
     machine: Block,

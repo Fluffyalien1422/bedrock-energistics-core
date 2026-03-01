@@ -7,7 +7,7 @@ import {
 import { SerializableContainerSlot } from "@/public_api/src/serialize_utils";
 import { InternalRegisteredStorageType } from "./storage_type_registry";
 import { InternalRegisteredItemMachine } from "./item_machine_registry";
-import { IoCapabilitiesData } from "@/public_api/src";
+import { ItemMachineGetIoResponse } from "@/public_api/src";
 
 export function getItemMachineStorageHandler(
   payloadRaw: ipc.SerializableValue,
@@ -61,7 +61,7 @@ export function setItemMachineStorageListener(
 
 export async function getItemMachineIoHandler(
   payloadRaw: ipc.SerializableValue,
-): Promise<IoCapabilitiesData> {
+): Promise<Required<ItemMachineGetIoResponse>> {
   const payload = payloadRaw as ItemMachineFuncPayload;
 
   const serializableContainerSlot = SerializableContainerSlot.fromJson(
@@ -86,7 +86,6 @@ export async function getItemMachineIoHandler(
       registeredItemMachineData.defaultIo?.acceptsAny)
   ) {
     return {
-      onlyAllowConduitConnections: false,
       acceptsAny: true,
       categories: [],
       types: [],
@@ -94,7 +93,6 @@ export async function getItemMachineIoHandler(
   }
 
   return {
-    onlyAllowConduitConnections: false,
     acceptsAny: false,
     categories:
       io.categories ?? registeredItemMachineData.defaultIo?.categories ?? [],

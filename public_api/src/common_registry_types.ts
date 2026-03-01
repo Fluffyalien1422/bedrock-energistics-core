@@ -1,4 +1,5 @@
 /**
+ * Base type for IPC callbacks.
  * @beta
  */
 export type BaseIpcCallback<TArg, TReturn> = (

@@ -179,7 +179,7 @@ export function registerItemMachine(definition: ItemMachineDefinition): void {
   };
   ownRegisteredItemMachines.set(
     payload.id,
-    // @ts-expect-error - internal use of private constructor
+    // @ts-expect-error internal use of private constructor
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     new RegisteredItemMachine(payload),
   );
