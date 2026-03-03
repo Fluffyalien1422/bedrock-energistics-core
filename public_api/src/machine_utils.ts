@@ -20,17 +20,41 @@ import { raise } from "./log.js";
  * If you destroy a machine from script, make sure you call this function.
  * This function will not remove the block or the entity, it only removes data.
  * If you want to remove the block and entity as well, use {@link destroyMachine} instead.
- * @param loc The machine block location.
- * @param destroyedPermutation The permutation of the block that was destroyed. If the block hasn't been destroyed, pass the current permutation of the block.
+ * @param loc The machine block OR its location (as a DimensionLocation).
+ * @param destroyedPermutation The permutation of the block that was destroyed.
+ * If the block hasn't been destroyed, pass the current permutation of the block.
+ * If `loc` is of type `Block`, this is optional and will default to `loc.permutation`, otherwise it is required.
+ * @throws Throws if arguments are invalid.
+ * @throws Throws if the permutation has no network connection type
+ * (if {@link getBlockNetworkConnectionType} returns `undefined`).
  */
 export async function removeMachineData(
   loc: DimensionLocation,
   destroyedPermutation: BlockPermutation,
+): Promise<void>;
+export async function removeMachineData(
+  loc: Block,
+  destroyedPermutation?: BlockPermutation,
+): Promise<void>;
+export async function removeMachineData(
+  loc: DimensionLocation | Block,
+  destroyedPermutation?: BlockPermutation,
 ): Promise<void> {
-  const connectionType = getBlockNetworkConnectionType(destroyedPermutation);
+  let permutation = destroyedPermutation;
+  if (!permutation) {
+    if (loc instanceof Block) {
+      permutation = loc.permutation;
+    } else {
+      raise(
+        "Invalid arguments passed to 'removeMachineData'. 'destroyedPermutation' must be defined if 'loc' is not of type 'Block'.",
+      );
+    }
+  }
+
+  const connectionType = getBlockNetworkConnectionType(permutation);
   if (!connectionType) {
     raise(
-      `Failed to remove machine data. Could not get network connection type for block '${destroyedPermutation.type.id}'.`,
+      `Failed to remove machine data. Could not get network connection type for block '${permutation.type.id}'.`,
     );
   }
   const payload: RemoveMachineDataPayload = {
