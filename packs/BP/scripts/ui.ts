@@ -67,7 +67,7 @@ const playersInUi = new Map<Entity, Player>();
  * key = block uid (see getBlockUniqueId)
  * value = array of slot IDs that have changed
  */
-export const machineChangedItemSlots = new Map<string, string[]>();
+export const machineChangedItemSlots = new Map<string, Set<string>>();
 
 /**
  * @returns whether anything was cleared or not
@@ -218,7 +218,7 @@ function handleItemSlot(
   const expectedMachineItem = getMachineSlotItem(block, elementId);
 
   const changedSlots = machineChangedItemSlots.get(getBlockUniqueId(block));
-  const slotChanged = changedSlots?.includes(elementId);
+  const slotChanged = changedSlots?.has(elementId);
 
   const containerSlot = inventory.getSlot(element.index);
 
@@ -242,6 +242,7 @@ function handleItemSlot(
   }
 
   const containerSlotItemStack = containerSlot.getItem()!;
+  if (!expectedMachineItem && isUiItem(containerSlotItemStack)) return;
   const containerSlotMachineItemStack = MachineItemStack.fromItemStack(
     containerSlotItemStack,
   );
@@ -420,6 +421,8 @@ async function updateEntityUi(
     );
   }
 
+  const uid = getBlockUniqueId(block);
+
   const updateUiResult = definition.hasCallback("updateUi")
     ? await definition.invokeUpdateUiHandler(block, entity.id)
     : null;
@@ -495,7 +498,7 @@ async function updateEntityUi(
     }
   }
 
-  machineChangedItemSlots.clear();
+  machineChangedItemSlots.delete(uid);
 }
 
 world.afterEvents.playerInteractWithEntity.subscribe((e) => {

@@ -137,9 +137,9 @@ export function setMachineSlotItem(
   if (setChanged) {
     const existingChangedItemSlotsArr = machineChangedItemSlots.get(uid);
     if (existingChangedItemSlotsArr) {
-      existingChangedItemSlotsArr.push(slotId);
+      existingChangedItemSlotsArr.add(slotId);
     } else {
-      machineChangedItemSlots.set(uid, [slotId]);
+      machineChangedItemSlots.set(uid, new Set([slotId]));
     }
   }
 

@@ -7,7 +7,7 @@ import {
   SetMachineSlotPayload,
 } from "./machine_data_internal.js";
 import { makeSerializableDimensionLocation } from "./serialize_utils.js";
-import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
+import { ipcInvoke } from "./ipc_wrapper.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
 import { raise } from "./log.js";
 import { RegisteredMachine } from "./machine_registry.js";
@@ -122,16 +122,16 @@ export async function getMachineSlotItem(
  * @param elementId The ID of the item slot element.
  * @param newItemStack The {@link MachineItemStack} to put in the slot. Pass `undefined` to remove the item in the slot.
  */
-export function setMachineSlotItem(
+export async function setMachineSlotItem(
   loc: DimensionLocation,
   elementId: string,
   newItemStack?: MachineItemStack,
-): void {
+): Promise<void> {
   const payload: SetMachineSlotPayload = {
     loc: makeSerializableDimensionLocation(loc),
     slot: elementId,
     item: newItemStack ? serializeMachineItemStack(newItemStack) : undefined,
   };
 
-  ipcSend(BecIpcListener.SetMachineSlot, payload);
+  await ipcInvoke(BecIpcListener.SetMachineSlot, payload);
 }
