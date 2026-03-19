@@ -6,13 +6,14 @@ import {
 import { enableDebugMode, isDebugModeEnabled } from "./debug_mode";
 import { logInfo } from "./utils/log";
 import { MachineNetwork } from "./network";
+import { toPrettyString } from "./utils/string";
 
 system.beforeEvents.startup.subscribe((e) => {
   e.customCommandRegistry.registerCommand(
     {
-      name: "fluffyalien_energisticscore:debug.enable_debug_mode",
+      name: "fluffyalien_energisticscore:becdebugmode",
       description:
-        "Enables debug mode for Bedrock Energistics Core. This applies to the entire world.",
+        "Enables debug mode for Bedrock Energistics Core. This applies to the entire world and can only be disabled with a reload.",
       permissionLevel: CommandPermissionLevel.GameDirectors,
     },
     () => {
@@ -32,27 +33,23 @@ system.beforeEvents.startup.subscribe((e) => {
 
   e.customCommandRegistry.registerCommand(
     {
-      name: "fluffyalien_energisticscore:debug.print_networks",
+      name: "fluffyalien_energisticscore:becprintnetworks",
       description:
-        "Prints debug information about all active machine network instances.",
+        "Returns debug information about all active machine network instances. The output is also logged to the console.",
       permissionLevel: CommandPermissionLevel.GameDirectors,
     },
     () => {
-      const networks = MachineNetwork.getAll();
-      const lines = [];
-      for (const [networkId, network] of networks) {
-        lines.push(
-          `{ §sid§r: §p${networkId.toString()}§r, §sioType§r: { §scategory§r: §p${network.ioType.category}§r, §sid§r: §p${network.ioType.id}§r } }`,
-        );
-      }
-      const result = `Networks: [\n${lines.join(",\n")}\n]`;
-      logInfo(
-        "The 'fluffyalien_energisticscore:debug.print_networks' command has been executed. Result: " +
-          result,
-      );
+      const networks = [...MachineNetwork.getAll()].map(([, network]) => ({
+        id: network.id,
+        dimension: network.dimension.id,
+        ioType: { id: network.ioType.id, category: network.ioType.category },
+      }));
+      const debugStr = JSON.stringify(networks);
+      const prettyStr = toPrettyString(networks);
+      logInfo("/becprintnetworks result: " + debugStr);
       return {
         status: CustomCommandStatus.Success,
-        message: result,
+        message: prettyStr,
       };
     },
   );
