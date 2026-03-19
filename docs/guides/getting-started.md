@@ -7,7 +7,7 @@ title: Getting Started
 > [!warning]
 > Bedrock Energistics Core is in beta. Minor updates may contain breaking changes. See [Versioning](versioning.md) for more information.
 
-This guide assumes that you have a basic understanding of [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript), [Node.js](https://nodejs.org/), [npm](https://www.npmjs.com/), and an advanced understanding of [Minecraft Bedrock add-on development](https://learn.microsoft.com/en-us/minecraft/creator/documents/gettingstarted).
+This guide assumes that you have a basic understanding of [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript), [Node.js](https://nodejs.org/), [npm](https://www.npmjs.com/), and [Minecraft Bedrock add-on development](https://learn.microsoft.com/en-us/minecraft/creator/documents/gettingstarted).
 
 Before getting started, ensure that you're using a Minecraft version that Bedrock Energistics Core supports. Each release will note which Minecraft versions it supports. Bedrock Energistics Core's latest release usually supports the latest Minecraft stable release. See [releases](https://github.com/Fluffyalien1422/bedrock-energistics-core/releases).
 
@@ -47,7 +47,7 @@ This is the full block JSON:
 
 ```json
 {
-  "format_version": "1.21.0",
+  "format_version": "1.26.0",
   "minecraft:block": {
     "description": {
       "identifier": "example:passive_generator",
@@ -56,31 +56,36 @@ This is the full block JSON:
       }
     },
     "components": {
-      "minecraft:custom_components": [
-        // Machines must have this custom component.
-        "fluffyalien_energisticscore:machine",
-        // This is our own custom component to add functionality.
-        "example:passive_generator"
-      ],
+      // Machines must have this custom component.
+      "fluffyalien_energisticscore:machine": {},
+      // This is our own custom component to add functionality.
+      "example:passive_generator": {},
+
       // Machines must have this tag.
       "tag:fluffyalien_energisticscore:machine": {},
+      // Tell Bedrock Energistics Core to connect our machines to energy networks.
       "tag:fluffyalien_energisticscore:io.type.energy": {},
 
+      // All Bedrock Energistics Core machines and conduits must be immovable.
+      "minecraft:movable": {
+        "movement_type": "immovable"
+      },
+
+      // Our block needs to tick. The interval range can be any value you want.
+      // Although, we recommend at least 5 ticks.
+      "minecraft:tick": {
+        "interval_range": [20, 20]
+      },
+
+      // Other components for our block.
       "minecraft:geometry": "minecraft:geometry.full_block",
       "minecraft:material_instances": {
         "*": {
           "texture": "cobblestone"
         }
       },
-      // We don't want our block to be destructible by explosions as that can cause some internal issues.
-      "minecraft:destructible_by_explosion": false,
       "minecraft:destructible_by_mining": {
         "seconds_to_destroy": 1
-      },
-      // Our block needs to tick. The interval range can be any value you want.
-      // Although, we recommend at least 5 ticks.
-      "minecraft:tick": {
-        "interval_range": [20, 20]
       }
     }
   }
@@ -95,10 +100,12 @@ This is the full entity JSON:
 
 ```json
 {
-  "format_version": "1.21.0",
+  "format_version": "1.26.0",
   "minecraft:entity": {
     "description": {
-      // Machine entities must have the same ID as their block.
+      // By default, Bedrock Energistics Core will expect the machine entity to have the same
+      // ID as the block. The entity ID can be specified as something else using the
+      // `description.entityId` property when registering the machine.
       "identifier": "example:passive_generator",
       // Machine entities must be summonable.
       "is_summonable": true,
@@ -110,12 +117,18 @@ This is the full entity JSON:
       }
     },
     "components": {
-      "minecraft:despawn": {
-        "despawn_from_distance": {
-          "min_distance": 10,
-          "max_distance": 20
-        }
+      // An inventory is required to display the UI.
+      "minecraft:inventory": {
+        "container_type": "container",
+        // Our machine UI is going to be just an energy bar, which takes up four
+        // inventory slots by default.
+        "inventory_size": 4
       },
+      "minecraft:type_family": {
+        // Machine entities must have this type family.
+        "family": ["fluffyalien_energisticscore:machine_entity"]
+      },
+
       // We want our entity to automatically despawn after some time.
       // This is not required, but recommended.
       "minecraft:timer": {
@@ -124,6 +137,20 @@ This is the full entity JSON:
           "event": "example:despawn"
         }
       },
+      "minecraft:despawn": {
+        "despawn_from_distance": {
+          "min_distance": 10,
+          "max_distance": 20
+        }
+      },
+
+      // 1x1 collision box so the UI can easily be opened.
+      "minecraft:collision_box": {
+        "width": 1,
+        "height": 1
+      },
+
+      // Other components to make our entity invulnerable and immovable.
       "minecraft:breathable": {
         "breathes_water": true
       },
@@ -133,7 +160,7 @@ This is the full entity JSON:
       },
       "minecraft:damage_sensor": {
         "triggers": {
-          "deals_damage": false
+          "deals_damage": "no"
         }
       },
       "minecraft:pushable": {
@@ -142,19 +169,6 @@ This is the full entity JSON:
       },
       "minecraft:knockback_resistance": {
         "value": 1
-      },
-      "minecraft:collision_box": {
-        "width": 1,
-        "height": 1
-      },
-      "minecraft:inventory": {
-        "container_type": "container",
-        // Our machine UI is going to be just an energy bar, which takes up four inventory slots.
-        "inventory_size": 4
-      },
-      "minecraft:type_family": {
-        // Machine entities must have this type family.
-        "family": ["fluffyalien_energisticscore:machine_entity"]
       }
     },
     "events": {
@@ -270,6 +284,7 @@ Copy this into `RP/ui/chest_screen.json`:
         "operation": "insert_back",
         "value": [
           {
+            // The container title will be the block ID.
             "requires": "($new_container_title = 'example:passive_generator')",
             "$screen_content": "example:passive_generator.root",
             "$screen_bg_content": "common.screen_background"
@@ -296,23 +311,26 @@ Now for the fun part, scripting!
 Copy the following script into your entry point file:
 
 ```js
-import { world } from "@minecraft/server";
-import * as beCore from "bedrock-energistics-core-api";
-
-// Initialize the Bedrock Energistics Core API.
-// Pass the namespace of your add-on to this function.
-beCore.init("example");
+import { world, system } from "@minecraft/server";
+import * as bec from "bedrock-energistics-core-api";
 
 const ENERGY_GENERATION = 20;
 
-// Divide by 20 because our block has a 20 tick interval.
-const ENERGY_GENERATION_PER_TICK = ENERGY_GENERATION / 20;
+world.afterEvents.worldLoad.subscribe(() => {
+  // Initialize the Bedrock Energistics Core API.
+  // Pass any unique ID to this function.
+  // This should be the first thing that is called in `worldLoad`.
+  bec.init("myExampleMachines");
 
-world.afterEvents.worldInitialize.subscribe(() => {
-  // We have to register every machine inside the `worldInitialize` after event.
-  beCore.registerMachine({
+  // We have to register every machine inside the `worldLoad` after event.
+  // This snippet only shows the important machine definition options.
+  // See full `MachineDefinition` interface: https://fluffyalien1422.github.io/bedrock-energistics-core/api/interfaces/API.MachineDefinition.html
+  bec.registerMachine({
     description: {
+      // The ID of the block.
       id: "example:passive_generator",
+      // Optionally add `entityId` if your entity ID is not the same as the block.
+      //entityId: "example:passive_generator_entity",
       ui: {
         elements: {
           // Elements can be named whatever you want.
@@ -323,37 +341,41 @@ world.afterEvents.worldInitialize.subscribe(() => {
             // (assuming the control extends `fluffyalien_energisticscore:common.machine_storage_bar`)
             // If `$start_index` wasn't defined, then this should be 0.
             startIndex: 0,
+            defaults: {
+              // Set the storage type of the bar.
+              type: "energy",
+            },
           },
         },
       },
     },
     handlers: {
-      // This handler is called whenever the UI needs to be updated.
-      // It can take an argument for the `DimensionLocation` of the machine.
-      // But, we don't need it for this machine.
-      updateUi() {
-        return {
-          storageBars: {
-            // Referencing the element we defined in `description.ui.elements`
-            energyBar: {
-              // Setting it's storage type to `energy`.
-              type: "energy",
-            },
-          },
-        };
-      },
+      // Handlers are functions that respond to certain Bedrock Energistics Core events.
+      // These functions return responses that tell Bedrock Energistics Core what to do.
+      // For example, the `updateUi` handler is called during UI updates and can dynamically
+      // modify the UI of the machine.
+      // All handlers are optional.
+      // See all handlers: https://fluffyalien1422.github.io/bedrock-energistics-core/api/interfaces/API.MachineDefinitionHandlers.html
+    },
+    events: {
+      // Events are functions that are called after Bedrock Energistics Core
+      // has done something.
+      // Unlike handlers, these functions cannot modify what Bedrock Energistics Core does since
+      // they are called after the event has been completed.
+      // All events are optional.
+      // See all events: https://fluffyalien1422.github.io/bedrock-energistics-core/api/interfaces/API.MachineDefinitionEvents.html
     },
   });
 });
 
-world.beforeEvents.worldInitialize.subscribe((e) => {
-  // Create our custom component.
+system.beforeEvents.startup.subscribe((e) => {
+  // Register our custom component.
   e.blockComponentRegistry.registerCustomComponent(
     "example:passive_generator",
     {
       onTick(e) {
-        // Generate energy.
-        beCore.generate(e.block, "energy", ENERGY_GENERATION);
+        // Generate energy every tick.
+        bec.generate(e.block, "energy", ENERGY_GENERATION);
       },
     },
   );

@@ -26,6 +26,10 @@ For example, use the `fluffyalien_energisticscore:io.type.energy.north` to only 
 
 The `network_link` value is used when the block is connected wirelessly via a [network link](./network-links.md).
 
+### Require Conduit Connections
+
+By default, machines will also connect to adjacent machines with the same I/O type. If you want your machine to ONLY connect to conduits, add the `fluffyalien_energisticscore:require_conduit_connection` tag.
+
 ## Consumer
 
 In order for machine networks to allocate something to your machine, you need to define it using the `fluffyalien_energistics:consumer.` tag.
@@ -36,3 +40,7 @@ For example, use the `fluffyalien_energisticscore:consumer.type.energy` tag to m
 
 > [!note]
 > Your machine must be connected to a network in the first place to have that network allocate storage types to it. For example, a machine that consumes `energy` must have both the `fluffyalien_energisticscore:io.type.energy` to connect to an `energy` network and `fluffyalien_energisticscore:consumer.type.energy` to tell that network to send `energy` to this machine.
+
+## Reading I/O From Script
+
+Use {@link IoCapabilities} to read the I/O of a machine or conduit from script.

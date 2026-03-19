@@ -24,13 +24,13 @@ Machine definitions can have an `updateUi` handler. This is a function that is c
 
 ## Storage Bars
 
-Storage bars indicate how much of a specific storage type are in the machine. These elements take up four slots. The storage type that each bar displays should be set using the `updateUi` handler. If the `updateUi` handler does not reference a storage bar, then it will show up as "Disabled".
+Storage bars indicate how much of a specific storage type are in the machine. These elements take up four slots (unless the `size` property is specified to something else). The storage type that each bar displays should be set using the `updateUi` handler or the `defaults` property. If the `updateUi` handler does not reference a storage bar and there is no default, then it will show up as "Disabled".
 
 ## Progress Indicators
 
-Progress indicators can be an arrow or a flame (the indicators from the Minecraft furnace). They take up one slot. The progress value should be set using the `updateUi` handler. Note that the minimum progress value is 0 and the maximum value varies depending on the indicator type.
+Progress indicators can be an arrow, a flame (the indicators from the Minecraft furnace), or a custom indicator. They take up one slot. The progress value should be set using the `updateUi` handler or the `defaults` property. Note that the minimum progress value is 0 and the maximum value varies depending on the indicator type.
 
-Indicator max progress values:
+Indicator preset max progress values:
 
 - Arrow: 16
 - Flame: 13

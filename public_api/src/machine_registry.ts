@@ -165,7 +165,7 @@ export class RegisteredMachine {
 }
 
 /**
- * Registers a machine. This function should be called in the `worldInitialize` after event.
+ * Registers a machine. This function should be called in the `worldLoad` after event.
  * @beta
  * @throws Throws if registration has been closed.
  */

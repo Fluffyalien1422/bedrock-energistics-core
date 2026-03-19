@@ -146,7 +146,7 @@
         <div class="feature-showcase" style="max-width: 400px">
           <h3>Storage Types</h3>
           <span>Create storage types that can be shared between add-ons.</span>
-          <pre><code class="language-js">world.afterEvents.worldInitialize.subscribe(() => {
+          <pre><code class="language-js">world.afterEvents.worldLoad.subscribe(() => {
   // Use a predefined storage type:
   useStandardStorageType(StandardStorageType.Oil);
 
