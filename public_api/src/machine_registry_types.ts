@@ -8,20 +8,6 @@ import {
 // ui
 
 /**
- * Base interface for UI element definitions.
- * @beta
- */
-export interface BaseUiElementDefinition {
-  /**
-   * Additional properties that can be read by other packs. Must be JSON serializable.
-   * @remarks
-   * This is useful for compatibility with other packs, or for storing any extra data. Data that is not JSON serializable will be lost.
-   * @beta
-   */
-  additionalProperties?: Record<string, unknown>;
-}
-
-/**
  * @beta
  */
 export interface UiStorageBarElementUpdateOptions {
@@ -51,7 +37,7 @@ export interface UiStorageBarElementUpdateOptions {
  * so ensure that the machine entity's inventory is properly sized.
  * @beta
  */
-export interface UiStorageBarElementDefinition extends BaseUiElementDefinition {
+export interface UiStorageBarElementDefinition {
   type: "storageBar";
   startIndex: number;
   /**
@@ -70,7 +56,7 @@ export interface UiStorageBarElementDefinition extends BaseUiElementDefinition {
  * accessing the entity's inventory directly rather than using this.
  * @beta
  */
-export interface UiItemSlotElementDefinition extends BaseUiElementDefinition {
+export interface UiItemSlotElementDefinition {
   type: "itemSlot";
   index: number;
   /**
@@ -110,8 +96,7 @@ export interface UiProgressIndicatorDescription {
  * Options for defining a progress indicator UI element.
  * @beta
  */
-export interface UiProgressIndicatorElementDefinition
-  extends BaseUiElementDefinition {
+export interface UiProgressIndicatorElementDefinition {
   type: "progressIndicator";
   indicator: UiProgressIndicatorDescription | UiProgressIndicatorPreset;
   index: number;
@@ -136,7 +121,7 @@ export interface UiButtonElementUpdateOptions {
  * Options for defining a button UI element.
  * @beta
  */
-export interface UiButtonElementDefinition extends BaseUiElementDefinition {
+export interface UiButtonElementDefinition {
   type: "button";
   index: number;
   /**
