@@ -355,11 +355,10 @@ export class MachineNetwork extends DestroyableObject {
       budget -= actualAmount;
       if (v.handleStorage ?? true) {
         const uid = getBlockUniqueId(machine);
-        if (generators.has(uid)) {
-          setMachineStorage(machine, type, actualAmount);
-        } else {
-          setMachineStorage(machine, type, currentStored + actualAmount);
-        }
+        const newAmount = generators.has(uid)
+          ? actualAmount
+          : currentStored + actualAmount;
+        setMachineStorage(machine, type, newAmount);
       }
 
       // give the scheduler a chance to breathe
