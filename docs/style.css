@@ -110,6 +110,7 @@ body {
   background-color: var(--color-background-secondary);
   text-decoration: none;
   padding: 5px 8px;
+  margin: 5px;
   border-radius: 5px;
   width: fit-content;
   transition-duration: 0.4s;
@@ -121,7 +122,7 @@ body {
   box-shadow: 0 0 10px var(--color-theme-light);
 }
 
-.center-container {
+.buttons-container {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -170,13 +171,14 @@ pre > code {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  text-align: left;
 }
 
 .featured-content {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  margin: 0 10px;
+  margin: 5px 10px;
   background-color: var(--color-background-secondary);
   border-radius: 10px;
   padding: 10px;
