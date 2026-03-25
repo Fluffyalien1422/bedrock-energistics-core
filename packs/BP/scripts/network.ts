@@ -117,8 +117,11 @@ export class MachineNetwork extends DestroyableObject {
 
     // Calculate the amount of each type that is available to send around.
     const distribution: Record<string, DistributionData> = {};
+    const generators = new Map<string, Block>();
 
     for (const send of this.sendQueue) {
+      generators.set(getBlockUniqueId(send.block), send.block);
+
       if (send.type in distribution) {
         const data = distribution[send.type];
         data.total += send.amount;
@@ -149,8 +152,9 @@ export class MachineNetwork extends DestroyableObject {
     // find and filter connections into their consumer groups.
     for (const machine of this.connections.machines.values()) {
       if (!machine.isValid) continue;
-      const tags = machine.getTags();
 
+      // Read the allocation priority.
+      const tags = machine.getTags();
       const priorityTags = tags
         .filter((t) => t.startsWith("fluffyalien_energisticscore:priority."))
         .map((t) => {
@@ -175,13 +179,11 @@ export class MachineNetwork extends DestroyableObject {
       const priority =
         priorityTags.length === 0 ? 0 : Math.max(...priorityTags);
 
+      // Check machine tags and sort into appropriate groups.
       const allowsAny = machine.hasTag(
         "fluffyalien_energisticscore:consumer.any",
       );
 
-      yield;
-
-      // Check machine tags and sort into appropriate groups.
       for (const consumerType of typesToDistribute) {
         const consumerCategory =
           InternalRegisteredStorageType.getInternal(consumerType)?.category;
@@ -203,8 +205,6 @@ export class MachineNetwork extends DestroyableObject {
         }
 
         consumers[consumerType].get(priority)!.push(machine);
-
-        yield;
       }
 
       // Check if the machine is listening for network stat events.
@@ -239,6 +239,7 @@ export class MachineNetwork extends DestroyableObject {
           consumers[type].get(key)!,
           type,
           budget,
+          generators,
         );
         if (budget <= 0) break;
       }
@@ -287,36 +288,17 @@ export class MachineNetwork extends DestroyableObject {
         machine.hasTag("fluffyalien_energisticscore:consumer.any") ||
         machine.hasTag(`fluffyalien_energisticscore:consumer.type.${type}`);
 
+      if (isConsumer) {
+        yield;
+        continue;
+      }
+
       let actualBudgetAllocation = allocation;
 
       // Divide any remainder between the generators. (E.g. splitting 11 into 3 would output: 4, 4, 3)
       if (remainder > 0) {
         actualBudgetAllocation++;
         remainder--;
-      }
-
-      if (actualBudgetAllocation <= 0 && !isConsumer) {
-        setMachineStorage(machine, type, 0);
-        yield;
-        continue;
-      }
-
-      if (isConsumer) {
-        actualBudgetAllocation = Math.min(
-          sendData.amount,
-          actualBudgetAllocation,
-        );
-
-        setMachineStorage(
-          machine,
-          type,
-          getMachineStorage(machine, type) +
-            actualBudgetAllocation -
-            sendData.amount,
-        );
-
-        yield;
-        continue;
       }
 
       const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
@@ -333,7 +315,6 @@ export class MachineNetwork extends DestroyableObject {
         machineDef.maxStorage,
         sendData.amount,
       );
-
       setMachineStorage(machine, type, newAmount);
 
       yield;
@@ -347,6 +328,7 @@ export class MachineNetwork extends DestroyableObject {
     machines: Block[],
     type: string,
     budget: number,
+    generators: Map<string, Block>,
   ): AsyncGenerator<void, number, void> {
     const budgetAllocation = Math.floor(budget / machines.length);
 
@@ -372,7 +354,11 @@ export class MachineNetwork extends DestroyableObject {
       const actualAmount = Math.max(v.amount ?? amountToAllocate, 0);
       budget -= actualAmount;
       if (v.handleStorage ?? true) {
-        setMachineStorage(machine, type, currentStored + actualAmount);
+        const uid = getBlockUniqueId(machine);
+        const newAmount = generators.has(uid)
+          ? actualAmount
+          : currentStored + actualAmount;
+        setMachineStorage(machine, type, newAmount);
       }
 
       // give the scheduler a chance to breathe
