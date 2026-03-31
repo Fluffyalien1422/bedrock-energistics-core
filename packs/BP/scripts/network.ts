@@ -186,7 +186,7 @@ export class MachineNetwork extends DestroyableObject {
         const consumerCategory =
           InternalRegisteredStorageType.getInternal(consumerType)?.category;
 
-        const allowsType =
+        const allowsType = !!(
           allowsAny ||
           machine.hasTag(
             `fluffyalien_energisticscore:consumer.type.${consumerType}`,
@@ -194,7 +194,8 @@ export class MachineNetwork extends DestroyableObject {
           (consumerCategory &&
             machine.hasTag(
               `fluffyalien_energisticscore:consumer.category.${consumerCategory}`,
-            ));
+            ))
+        );
 
         if (!allowsType) continue;
 
@@ -411,7 +412,7 @@ export class MachineNetwork extends DestroyableObject {
    */
   isBlockPartOfNetwork(block: Block): boolean {
     const type = getBlockNetworkConnectionType(block);
-    if (!type) return false;
+    if (type === undefined) return false;
     return this.isPartOfNetwork(block, type);
   }
 
@@ -593,7 +594,7 @@ export class MachineNetwork extends DestroyableObject {
     block: Block,
   ): MachineNetwork | undefined {
     const type = getBlockNetworkConnectionType(block);
-    if (!type) return;
+    if (type === undefined) return;
     return MachineNetwork.getWith(ioType, block, type);
   }
 
@@ -614,7 +615,7 @@ export class MachineNetwork extends DestroyableObject {
    */
   static getAllWithBlock(block: Block): MachineNetwork[] {
     const type = getBlockNetworkConnectionType(block);
-    if (!type) return [];
+    if (type === undefined) return [];
     return MachineNetwork.getAllWith(block, type);
   }
 

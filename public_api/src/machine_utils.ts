@@ -52,7 +52,7 @@ export async function removeMachineData(
   }
 
   const connectionType = getBlockNetworkConnectionType(permutation);
-  if (!connectionType) {
+  if (connectionType === undefined) {
     raise(
       `Failed to remove machine data. Could not get network connection type for block '${permutation.type.id}'.`,
     );

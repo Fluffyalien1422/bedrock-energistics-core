@@ -43,7 +43,7 @@ export function destroyMachine(
     destroyedPermutation.type.id,
   );
   const connectionType = getBlockNetworkConnectionType(destroyedPermutation);
-  if (!connectionType) {
+  if (connectionType === undefined) {
     raise(
       `Failed to destroy machine. Could not get network connection type for block '${destroyedPermutation.type.id}'.`,
     );
@@ -55,7 +55,7 @@ export function destroyMachine(
     .getEntitiesAtBlockLocation(block)
     .find((entity) => entity.typeId === definition.entityId)
     ?.remove();
-  if (newBlockType) block.setType(newBlockType);
+  if (newBlockType !== false) block.setType(newBlockType);
 }
 
 function spawnMachineEntity(block: Block, entityId: string): Entity {

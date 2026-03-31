@@ -71,7 +71,7 @@ export class MachineNetwork {
    */
   async isBlockPartOfNetwork(block: Block): Promise<boolean> {
     const type = getBlockNetworkConnectionType(block);
-    if (!type) return false;
+    if (type === undefined) return false;
     return this.isPartOfNetwork(block, type);
   }
 
@@ -118,7 +118,7 @@ export class MachineNetwork {
       | number
       | null;
 
-    if (id) {
+    if (id !== null) {
       return new MachineNetwork(id);
     }
   }
@@ -145,7 +145,7 @@ export class MachineNetwork {
       | number
       | null;
 
-    if (id) {
+    if (id !== null) {
       return new MachineNetwork(id);
     }
   }
@@ -159,7 +159,7 @@ export class MachineNetwork {
     block: Block,
   ): Promise<MachineNetwork | undefined> {
     const type = getBlockNetworkConnectionType(block);
-    if (!type) return;
+    if (type === undefined) return;
     return MachineNetwork.getWith(ioTypeId, block, type);
   }
 
@@ -190,7 +190,7 @@ export class MachineNetwork {
    */
   static async getAllWithBlock(block: Block): Promise<MachineNetwork[]> {
     const type = getBlockNetworkConnectionType(block);
-    if (!type) return [];
+    if (type === undefined) return [];
     return MachineNetwork.getAllWith(block, type);
   }
 
@@ -217,7 +217,7 @@ export class MachineNetwork {
       payload,
     )) as number | null;
 
-    if (id) {
+    if (id !== null) {
       return new MachineNetwork(id);
     }
   }

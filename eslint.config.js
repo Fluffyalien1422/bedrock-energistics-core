@@ -36,6 +36,13 @@ export default defineConfig(
       "@typescript-eslint/explicit-function-return-type": "error",
       "@typescript-eslint/prefer-readonly": "error",
       "@typescript-eslint/switch-exhaustiveness-check": "error",
+      "@typescript-eslint/strict-boolean-expressions": [
+        "error",
+        {
+          allowNullableBoolean: true,
+          allowNullableString: true,
+        },
+      ],
     },
   },
 );

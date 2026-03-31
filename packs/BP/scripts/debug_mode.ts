@@ -60,7 +60,7 @@ function showDebugUi(player: Player): void {
   }
 
   const networkConnectionType = getBlockNetworkConnectionType(block);
-  if (!networkConnectionType) {
+  if (networkConnectionType === undefined) {
     player.onScreenDisplay.setActionBar(
       `§sBlock§r: §p${block.typeId}\n§cNo network connection type.`,
     );
@@ -102,7 +102,7 @@ function showDebugUi(player: Player): void {
   }
   for (const dynamicProp of getBlockDynamicProperties(block)) {
     const value = getBlockDynamicProperty(block, dynamicProp);
-    line += `§uproperty§r.§s${dynamicProp}§r=§p${value ? JSON.stringify(value) : "undefined"} `;
+    line += `§uproperty§r.§s${dynamicProp}§r=§p${value !== undefined ? JSON.stringify(value) : "undefined"} `;
     if (line.length > DEBUG_ACTIONBAR_MAX_WIDTH_CHARS) {
       info += `\n${line}`;
       line = "";
