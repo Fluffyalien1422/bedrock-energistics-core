@@ -444,7 +444,7 @@ export class MachineNetwork extends DestroyableObject {
 
       if (!netLink) return;
 
-      const selfIo = IoCapabilities.fromMachine(block, "network_link");
+      const selfIo = IoCapabilities.fromBlock(block, "network_link");
 
       const selfIsConduit = block.hasTag("fluffyalien_energisticscore:conduit");
 
@@ -463,14 +463,11 @@ export class MachineNetwork extends DestroyableObject {
           "fluffyalien_energisticscore:conduit",
         );
 
-        if (!selfIo.acceptsType(ioType, linkedIsConduit)) continue;
+        if (!selfIo.acceptsTypeData(ioType, linkedIsConduit)) continue;
 
-        const linkedIO = IoCapabilities.fromMachine(
-          linkedBlock,
-          "network_link",
-        );
+        const linkedIO = IoCapabilities.fromBlock(linkedBlock, "network_link");
 
-        if (!linkedIO.acceptsType(ioType, selfIsConduit)) continue;
+        if (!linkedIO.acceptsTypeData(ioType, selfIsConduit)) continue;
 
         handleBlock(linkedBlock);
       }
@@ -513,20 +510,20 @@ export class MachineNetwork extends DestroyableObject {
       );
 
       // Check that this current block can send this type out this side.
-      const selfIo = IoCapabilities.fromMachine(
+      const selfIo = IoCapabilities.fromBlock(
         currentBlock,
         strDirectionToDirection(direction),
       );
 
-      if (!selfIo.acceptsType(ioType, nextIsConduit)) return;
+      if (!selfIo.acceptsTypeData(ioType, nextIsConduit)) return;
 
       // Check that the recieving block can take this type in too
-      const io = IoCapabilities.fromMachine(
+      const io = IoCapabilities.fromBlock(
         nextBlock,
         strDirectionToDirection(reverseDirection(direction)),
       );
 
-      if (!io.acceptsType(ioType, selfIsConduit)) return;
+      if (!io.acceptsTypeData(ioType, selfIsConduit)) return;
       handleBlock(nextBlock);
     }
 

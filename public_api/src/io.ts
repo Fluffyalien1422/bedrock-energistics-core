@@ -10,6 +10,28 @@ const IO_ANY_TAG = "fluffyalien_energisticscore:io.any";
 const IO_EXPLICIT_SIDES_TAG = "fluffyalien_energisticscore:explicit_sides";
 const IO_REQUIRE_CONDUIT_CONNECTIONS_TAG =
   "fluffyalien_energisticscore:require_conduit_connection";
+const CONDUIT_TAG = "fluffyalien_energisticscore:conduit";
+
+/**
+ * Additional options for creating a new {@link IoCapabilities} object.
+ * @beta
+ */
+export interface NewIoCapabilitiesOptions {
+  /**
+   * Does this object only accept connections from conduits?
+   * @beta
+   * @remarks
+   * This should be `true` for machines when they have the 'fluffyalien_energisticscore:require_conduit_connection' tag.
+   * @default false
+   */
+  onlyAllowsConduitConnections?: boolean;
+  /**
+   * Is this object a conduit?
+   * @beta
+   * @default false
+   */
+  isConduit?: boolean;
+}
 
 /**
  * Represents the input/output capabilities of a machine side or item machine.
@@ -28,7 +50,12 @@ export class IoCapabilities {
      * @remarks
      * This is `true` for machines when they have the 'fluffyalien_energisticscore:require_conduit_connection' tag.
      */
-    readonly onlyAllowsConduitConnections: boolean,
+    readonly onlyAllowsConduitConnections = false,
+    /**
+     * Is this object a conduit?
+     * @beta
+     */
+    readonly isConduit = false,
     private readonly internalTypes: readonly string[] = [],
     private readonly internalCategories: readonly string[] = [],
   ) {}
@@ -50,13 +77,38 @@ export class IoCapabilities {
   }
 
   /**
-   * Check if this object accepts the given storage type. Use {@link IoCapabilities.acceptsTypeWithId} to check by ID.
+   * Check if this object accepts the given storage type explicitly or accepts any.
    * @beta
+   * @remarks
+   * This returns true if any of the following conditions are true:
+   * - {@link IoCapabilities.acceptsAny} is true.
+   * - Accepted types includes the storage type.
+   * @param id The ID of the storage type.
+   * @param isFromConduit Is the source a conduit?
+   * @returns Whether this object accepts the storage type with the given ID.
+   */
+  acceptsTypeIdExplicit(id: string, isFromConduit = false): boolean {
+    if (!isFromConduit && this.onlyAllowsConduitConnections) return false;
+    return this.acceptsAny || this.internalTypes.includes(id);
+  }
+
+  /**
+   * Check if this object accepts the given storage type data, implicitly or explicitly.
+   * Use {@link IoCapabilities.acceptsTypeId} to check by ID.
+   * @beta
+   * @remarks
+   * This returns true if any of the following conditions are true:
+   * - {@link IoCapabilities.acceptsAny} is true.
+   * - Accepted categories includes the category of the storage type.
+   * - Accepted types includes the storage type.
    * @param storageType The storage type data to check.
    * @param isFromConduit Is the source a conduit?
    * @returns Whether this object accepts the given storage type.
    */
-  acceptsType(storageType: StorageTypeData, isFromConduit = false): boolean {
+  acceptsTypeData(
+    storageType: StorageTypeData,
+    isFromConduit = false,
+  ): boolean {
     if (!isFromConduit && this.onlyAllowsConduitConnections) return false;
 
     return (
@@ -67,25 +119,34 @@ export class IoCapabilities {
   }
 
   /**
-   * Get a storage type by it's ID and check if this object accepts it.
+   * Get a storage type by it's ID and check if this object accepts it, implicitly or explicitly.
    * @beta
+   * @remarks
+   * This returns true if any of the following conditions are true:
+   * - {@link IoCapabilities.acceptsAny} is true.
+   * - Accepted categories includes the category of the storage type.
+   * - Accepted types includes the storage type.
    * @param id The ID of the storage type.
    * @param isFromConduit Is the source a conduit?
    * @returns Whether this object accepts the storage type with the given ID.
    */
-  async acceptsTypeWithId(id: string, isFromConduit = false): Promise<boolean> {
+  async acceptsTypeId(id: string, isFromConduit = false): Promise<boolean> {
     if (!isFromConduit && this.onlyAllowsConduitConnections) return false;
     if (this.acceptsAny) return true;
 
     const storageType = await RegisteredStorageType.get(id);
     if (!storageType) return false;
 
-    return this.acceptsType(storageType, isFromConduit);
+    return this.acceptsTypeData(storageType, isFromConduit);
   }
 
   /**
-   * Check if this object accepts the given category.
+   * Check if this object accepts the given category, implicitly or explicitly.
    * @beta
+   * @remarks
+   * This returns true if any of the following conditions are true:
+   * - {@link IoCapabilities.acceptsAny} is true.
+   * - Accepted categories includes the given category.
    * @param category The category to check.
    * @param isFromConduit Is the source a conduit?
    * @returns Whether this object accepts the given category.
@@ -96,9 +157,15 @@ export class IoCapabilities {
   }
 
   /**
-   * Check if this object accepts any storage type of the given category.
+   * Check if this object accepts any storage type of the given category, implicitly or explicitly.
    * @beta
+   * @remarks
+   * This returns true if any of the following conditions are true:
+   * - {@link IoCapabilities.acceptsAny} is true.
+   * - Accepted categories includes the given category.
+   * - Any accepted type is of the given category.
    * @param category The category to check.
+   * @param isFromConduit Is the source a conduit?
    * @returns Whether this object accepts any storage type of the given category.
    */
   async acceptsAnyTypeOfCategory(
@@ -117,21 +184,52 @@ export class IoCapabilities {
   }
 
   /**
+   * Check if this object can connect to another {@link IoCapabilities} object.
+   * @beta
+   * @param other The other {@link IoCapabilities} object.
+   * @returns Whether the two objects can connect or not.
+   */
+  async canConnectTo(other: IoCapabilities): Promise<boolean> {
+    if (
+      (!this.isConduit && other.onlyAllowsConduitConnections) ||
+      (!other.isConduit && this.onlyAllowsConduitConnections)
+    ) {
+      return false;
+    }
+    if (this.acceptsAny || other.acceptsAny) return true;
+
+    for (const storageType of this.internalTypes) {
+      if (await other.acceptsTypeId(storageType, this.isConduit)) {
+        return true;
+      }
+    }
+
+    for (const category of this.internalCategories) {
+      if (await other.acceptsAnyTypeOfCategory(category, this.isConduit)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Create a new `IoCapabilities` object that accepts the given types and categories.
    * @beta
    * @param types Accepted type IDs.
    * @param categories Accepted categories.
-   * @param onlyAllowConduitConnections Only accept conduit connections?
+   * @param options Additional options.
    * @returns Returns a new `IoCapabilities` object.
    */
   static accepting(
     types: string[],
     categories: string[],
-    onlyAllowConduitConnections = false,
+    options?: NewIoCapabilitiesOptions,
   ): IoCapabilities {
     return new IoCapabilities(
       false,
-      onlyAllowConduitConnections,
+      options?.onlyAllowsConduitConnections,
+      options?.isConduit,
       [...types],
       [...categories],
     );
@@ -140,40 +238,49 @@ export class IoCapabilities {
   /**
    * Create a new `IoCapabilities` object that accepts any type or category.
    * @beta
-   * @param onlyAllowConduitConnections Only accept conduit connections?
+   * @param options Additional options.
    * @returns Returns a new `IoCapabilities` object.
    */
-  static acceptingAny(onlyAllowConduitConnections = false): IoCapabilities {
-    return new IoCapabilities(true, onlyAllowConduitConnections);
+  static acceptingAny(options?: NewIoCapabilitiesOptions): IoCapabilities {
+    return new IoCapabilities(
+      true,
+      options?.onlyAllowsConduitConnections,
+      options?.isConduit,
+    );
   }
 
   /**
-   * Get the input/output capabilities of a machine.
+   * Get the input/output capabilities of a block.
    * @beta
-   * @param machine The machine.
+   * @param block The block.
    * @param side The side of the machine to check or "network_link" for linked connections.
    * @returns A new `IoCapabilities` object.
    */
-  static fromMachine(
-    machine: Block,
+  static fromBlock(
+    block: Block,
     side: Direction | "network_link",
   ): IoCapabilities {
-    const tags = machine.getTags();
+    const tags = block.getTags();
     const onlyAllowsConduitConnections = tags.includes(
       IO_REQUIRE_CONDUIT_CONNECTIONS_TAG,
     );
+    const isConduit = tags.includes(CONDUIT_TAG);
+    const newOptions: NewIoCapabilitiesOptions = {
+      onlyAllowsConduitConnections,
+      isConduit,
+    };
 
     // Check if the machine uses explicit side IO.
     if (tags.includes(IO_EXPLICIT_SIDES_TAG)) {
       return IoCapabilities.fromMachineWithExplicitSides(
         tags,
         side,
-        onlyAllowsConduitConnections,
+        newOptions,
       );
     }
 
     if (tags.includes(IO_ANY_TAG)) {
-      return IoCapabilities.acceptingAny(onlyAllowsConduitConnections);
+      return IoCapabilities.acceptingAny(newOptions);
     }
 
     const types = tags
@@ -184,17 +291,13 @@ export class IoCapabilities {
       .filter((tag) => tag.startsWith(IO_CATEGORY_TAG_PREFIX))
       .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length));
 
-    return IoCapabilities.accepting(
-      types,
-      categories,
-      onlyAllowsConduitConnections,
-    );
+    return IoCapabilities.accepting(types, categories, newOptions);
   }
 
   private static fromMachineWithExplicitSides(
     tags: string[],
     side: Direction | "network_link",
-    onlyAllowsConduitConnections: boolean,
+    newOptions: NewIoCapabilitiesOptions,
   ): IoCapabilities {
     const strDirection = side.toLowerCase();
     const isSideDirection =
@@ -214,8 +317,7 @@ export class IoCapabilities {
       return tagMatchesSide(tag);
     });
 
-    if (allowsAny)
-      return IoCapabilities.acceptingAny(onlyAllowsConduitConnections);
+    if (allowsAny) return IoCapabilities.acceptingAny(newOptions);
 
     const types = tags
       .filter((tag) => {
@@ -231,10 +333,6 @@ export class IoCapabilities {
       })
       .map((tag) => tag.slice(IO_CATEGORY_TAG_PREFIX.length).split(".")[0]);
 
-    return IoCapabilities.accepting(
-      types,
-      categories,
-      onlyAllowsConduitConnections,
-    );
+    return IoCapabilities.accepting(types, categories, newOptions);
   }
 }
