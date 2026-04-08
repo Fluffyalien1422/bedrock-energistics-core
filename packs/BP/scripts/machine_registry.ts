@@ -2,9 +2,9 @@ import * as ipc from "mcbe-addon-ipc";
 import { DimensionLocation } from "@minecraft/server";
 import { logWarn, raise } from "./utils/log";
 import {
-  MachineUpdateUiHandlerResponse,
+  MachineUpdateUiHandlerRes,
   NetworkStorageTypeData,
-  RecieveHandlerResponse,
+  MachineReceiveHandlerRes,
   RegisteredMachine,
 } from "@/public_api/src";
 import {
@@ -35,7 +35,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
   invokeUpdateUiHandler(
     dimensionLocation: DimensionLocation,
     entityId: string,
-  ): Promise<MachineUpdateUiHandlerResponse> {
+  ): Promise<MachineUpdateUiHandlerRes> {
     if (!this.data.updateUiEvent) {
       raise("Trying to call the 'updateUi' handler but it is not defined.");
     }
@@ -48,14 +48,14 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     return ipcInvoke(
       this.data.updateUiEvent,
       payload,
-    ) as Promise<MachineUpdateUiHandlerResponse>;
+    ) as Promise<MachineUpdateUiHandlerRes>;
   }
 
   invokeRecieveHandler(
     blockLocation: DimensionLocation,
     recieveType: string,
     recieveAmount: number,
-  ): Promise<RecieveHandlerResponse> {
+  ): Promise<MachineReceiveHandlerRes> {
     if (!this.data.receiveHandlerEvent) {
       raise("Trying to call the 'recieve' handler but it is not defined.");
     }
@@ -69,7 +69,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     return ipcInvoke(
       this.data.receiveHandlerEvent,
       payload,
-    ) as Promise<RecieveHandlerResponse>;
+    ) as Promise<MachineReceiveHandlerRes>;
   }
 
   callOnNetworkAllocationCompletedEvent(

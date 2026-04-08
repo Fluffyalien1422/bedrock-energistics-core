@@ -16,7 +16,7 @@ import {
   IoCapabilities,
   NetworkConnectionType,
   NetworkStorageTypeData,
-  RecieveHandlerResponse,
+  MachineReceiveHandlerRes,
   StorageTypeData,
 } from "@/public_api/src";
 import { InternalRegisteredMachine } from "./machine_registry";
@@ -366,7 +366,7 @@ export class MachineNetwork extends DestroyableObject {
         0,
       );
 
-      const v: RecieveHandlerResponse = machineDef.hasCallback("receive")
+      const v: MachineReceiveHandlerRes = machineDef.hasCallback("receive")
         ? await machineDef.invokeRecieveHandler(machine, type, amountToAllocate)
         : {};
 

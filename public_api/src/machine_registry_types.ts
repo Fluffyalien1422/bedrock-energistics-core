@@ -5,27 +5,33 @@ import {
   StorageTypeTexturePreset,
 } from "./storage_type_registry_types.js";
 
-// ui
+// -- ui --
 
 /**
+ * Dynamic configuration options for a storage bar UI element.
  * @beta
+ * @see {@link MachineDefinitionHandlers.updateUi}.
  */
 export interface UiStorageBarElementUpdateOptions {
   /**
    * The type of this storage bar. Set to "_disabled" to disable the storage bar.
+   * @beta
    * @default "_disabled"
    */
   type?: string;
   /**
    * Use this property to override the label of the storage bar.
+   * @beta
    */
   label?: string;
   /**
-   * The max amount to display on this on storage bar. Defaults to {@link MachineDefinitionDescription.maxStorage}
+   * The max amount to display on this on storage bar. Defaults to {@link MachineDefinitionDescription.maxStorage}.
+   * @beta
    */
   max?: number;
   /**
-   * Use this property to override the {@link StorageTypeDefinition.texture} for this machine.
+   * Use this property to override the {@link StorageTypeDefinition.texture} for this storage bar.
+   * @beta
    */
   textureOverride?: StorageTypeTextureDescription | StorageTypeTexturePreset;
 }
@@ -39,12 +45,21 @@ export interface UiStorageBarElementUpdateOptions {
  */
 export interface UiStorageBarElementDefinition {
   type: "storageBar";
+  /**
+   * The starting slot index of this element in the JSON UI.
+   * @beta
+   */
   startIndex: number;
   /**
    * The amount of item slots to use.
+   * @beta
    * @default 4
    */
   size?: number;
+  /**
+   * Default values to fill in any `undefined` values returned by `updateUi`.
+   * @beta
+   */
   defaults?: UiStorageBarElementUpdateOptions;
 }
 
@@ -58,6 +73,10 @@ export interface UiStorageBarElementDefinition {
  */
 export interface UiItemSlotElementDefinition {
   type: "itemSlot";
+  /**
+   * The slot index of this element in the JSON UI.
+   * @beta
+   */
   index: number;
   /**
    * Only allow specific items in this slot.
@@ -67,7 +86,8 @@ export interface UiItemSlotElementDefinition {
 
   /**
    * The item ID to use when the slot is empty.
-   * - If not provided will fall back to "fluffyalien_energisticscore:ui_empty_slot"
+   * @beta
+   * @default "fluffyalien_energisticscore:ui_empty_slot"
    */
   emptyItemId?: string;
 }
@@ -98,21 +118,33 @@ export interface UiProgressIndicatorDescription {
  */
 export interface UiProgressIndicatorElementDefinition {
   type: "progressIndicator";
+  /**
+   * The indicator to display.
+   * @beta
+   */
   indicator: UiProgressIndicatorDescription | UiProgressIndicatorPreset;
+  /**
+   * The slot index of this element in the JSON UI.
+   * @beta
+   */
   index: number;
 }
 
 /**
+ * Dynamic configuration options for a button UI element.
  * @beta
+ * @see {@link MachineDefinitionHandlers.updateUi}.
  */
 export interface UiButtonElementUpdateOptions {
   /**
    * The item to use as the button. This item must have the `fluffyalien_energisticscore:ui_item` tag.
+   * @beta
    * @default "fluffyalien_energisticscore:ui_empty_slot"
    */
   itemId?: string;
   /**
    * The name tag for the item.
+   * @beta
    */
   name?: string;
 }
@@ -123,9 +155,14 @@ export interface UiButtonElementUpdateOptions {
  */
 export interface UiButtonElementDefinition {
   type: "button";
+  /**
+   * The slot index of this element in the JSON UI.
+   * @beta
+   */
   index: number;
   /**
-   * The default options for this button if nothing is specified in `updateUi`.
+   * Default values to fill in any `undefined` values returned by `updateUi`.
+   * @beta
    */
   defaults?: UiButtonElementUpdateOptions;
 }
@@ -141,65 +178,97 @@ export type UiElementDefinition =
   | UiButtonElementDefinition;
 
 /**
+ * Defines UI elements and their configuration for a machine.
  * @beta
  */
 export interface UiOptions {
   elements: Record<string, UiElementDefinition>;
 }
 
+// -- end ui --
+
+// -- description --
+
 /**
+ * Describes the core attributes of a machine.
  * @beta
  */
 export interface MachineDefinitionDescription {
+  /**
+   * The ID of the machine block.
+   * @beta
+   */
   id: string;
   /**
    * The ID of the machine entity. Defaults to the value of `id`.
+   * @beta
    */
   entityId?: string;
   /**
    * Is the machine entity persistent?
+   * @beta
+   * @remarks
    * See [Persistent Entities](https://fluffyalien1422.github.io/bedrock-energistics-core/api/documents/Guides.Persistent_Entities.html).
    */
   persistentEntity?: boolean;
   /**
    * Max amount of each storage type in this machine.
+   * @beta
    * @default 6400
    */
   maxStorage?: number;
   /**
-   * UI options for your machine.
-   * If this is undefined, then Bedrock Energistics Core will skip UI handling for this machine entity.
+   * UI options for the machine.
+   * @beta
+   * @remarks
+   * If this is `undefined`, then Bedrock Energistics Core will skip UI handling for this machine entity.
    */
   ui?: UiOptions;
 }
 
-// common callback types
+// -- end description --
+
+// -- common callback types --
 
 /**
+ * Base argument for machine callbacks.
  * @beta
  */
 export interface MachineCallbackArg {
+  /**
+   * The dimension location of the machine.
+   * @beta
+   */
   blockLocation: DimensionLocation;
 }
 
 /**
+ * Base type for machine callbacks.
  * @beta
+ * @template TArg The argument type passed to the callback.
+ * @template TReturn The return type of the callback.
  */
 export type MachineCallback<
   TArg extends MachineCallbackArg,
   TReturn,
 > = BaseIpcCallback<TArg, TReturn>;
 
-// events
+// -- end common callback types --
+
+// -- events --
 
 /**
+ * Base type for machine event callbacks.
  * @beta
+ * @template TArg The argument type passed to the callback.
  */
 export type MachineEventCallback<TArg extends MachineCallbackArg> =
   BaseIpcCallback<TArg, void>;
 
 /**
+ * Arguments for the `onButtonPressed` event callback.
  * @beta
+ * @see {@link MachineDefinitionEvents.onButtonPressed}.
  */
 export interface MachineOnButtonPressedEventArg extends MachineCallbackArg {
   /**
@@ -220,140 +289,241 @@ export interface MachineOnButtonPressedEventArg extends MachineCallbackArg {
 }
 
 /**
+ * Arguments for the `onStorageSet` event callback.
  * @beta
+ * @see {@link MachineDefinitionEvents.onStorageSet}.
  */
-export interface MachineOnStorageSetEvent extends MachineCallbackArg {
+export interface MachineOnStorageSetEventArg extends MachineCallbackArg {
+  /**
+   * The storage type ID that was set.
+   * @beta
+   */
   type: string;
+  /**
+   * The new amount of this storage type.
+   * @beta
+   */
   value: number;
 }
 
 /**
+ * Event callbacks for a machine.
  * @beta
+ * @remarks
+ * Events are called after a certain trigger has happened. Unlike handlers, these callbacks cannot modify what Bedrock Energistics Core does since they are called after the event has already occured.
  */
 export interface MachineDefinitionEvents {
   /**
    * Called after a UI button has been pressed.
-   * @see {@link UiButtonElementDefinition}
+   * @beta
+   * @see {@link UiButtonElementDefinition}.
    */
   onButtonPressed?: MachineEventCallback<MachineOnButtonPressedEventArg>;
-
   /**
-   * Called after a network has completed sending machine storage allocations
-   * contains information on each category sent in that pass with the starting and remaining budget.
+   * Called after a network has completed sending machine storage allocations.
+   * @beta
    */
-  onNetworkAllocationCompleted?: MachineEventCallback<NetworkStatsEventArg>;
-
+  onNetworkAllocationCompleted?: MachineEventCallback<MachineNetworkStatsEventArg>;
   /**
-   * Called after the machine's storage is set via setMachineStorage.
+   * Called after the machine's storage has been set via `setMachineStorage`.
+   * @beta
    */
-  onStorageSet?: MachineEventCallback<MachineOnStorageSetEvent>;
+  onStorageSet?: MachineEventCallback<MachineOnStorageSetEventArg>;
 }
 
 /**
+ * Union type of all machine event names.
  * @beta
+ * @see {@link MachineDefinitionEvents}.
  */
 export type MachineEventName = keyof MachineDefinitionEvents;
 
-// handlers
+// -- end events --
+
+// -- handlers --
 
 /**
+ * Arguments passed to the `receive` handler callback.
+ * @see {@link MachineDefinitionHandlers.receive}.
  * @beta
  */
-export interface MachineRecieveHandlerArg extends MachineCallbackArg {
+export interface MachineReceiveHandlerArg extends MachineCallbackArg {
+  /**
+   * The ID of the storage type being received.
+   * @beta
+   */
   receiveType: string;
+  /**
+   * The amount of the storage type being received.
+   * @beta
+   */
   receiveAmount: number;
 }
 
 /**
+ * The return type of the `receive` handler callback.
+ * @see {@link MachineDefinitionHandlers.receive}.
  * @beta
  */
-export interface MachineUpdateUiHandlerArg extends MachineCallbackArg {
-  entityId: string;
-}
-
-/**
- * @beta
- */
-export interface MachineUpdateUiHandlerResponse {
-  storageBars?: Record<string, UiStorageBarElementUpdateOptions>;
-  progressIndicators?: Record<string, number>;
-  buttons?: Record<string, UiButtonElementUpdateOptions>;
-}
-
-/**
- * @beta
- */
-export interface NetworkStorageTypeData {
+export interface MachineReceiveHandlerRes {
   /**
-   * The amount of this storage type that was available on this network *before* distribution
-   */
-  before: number;
-
-  /**
-   * The amount of this storage type that was available on this network *after* distribution
-   */
-  after: number;
-}
-
-/**
- * @beta
- */
-export interface NetworkStatsEventArg extends MachineCallbackArg {
-  /**
-   * Contains an object where each key is a storage type ID and the value contains the amount that was available on this network
-   */
-  networkData: Record<string, NetworkStorageTypeData>;
-}
-
-/**
- * @beta
- */
-export interface MachineDefinitionHandlers {
-  updateUi?: MachineCallback<
-    MachineUpdateUiHandlerArg,
-    MachineUpdateUiHandlerResponse
-  >;
-  /**
-   * Called before a machine recieves a storage type.
-   * @returns a number that overrides the amount that was received
-   * (must be a non-negative integer),
-   * or `undefined` to not change anything.
-   */
-  receive?: MachineCallback<MachineRecieveHandlerArg, RecieveHandlerResponse>;
-}
-
-/**
- * @beta
- */
-export type MachineHandlerName = keyof MachineDefinitionHandlers;
-
-// registered machine
-
-/**
- * @beta
- */
-export type MachineCallbackName = MachineEventName | MachineHandlerName;
-
-/**
- * @beta
- */
-export interface MachineDefinition {
-  description: MachineDefinitionDescription;
-  handlers?: MachineDefinitionHandlers;
-  events?: MachineDefinitionEvents;
-}
-
-export interface RecieveHandlerResponse {
-  /**
-   * Override the amount to recieve.
+   * Override the amount to receive.
+   * @beta
    */
   amount?: number;
 
   /**
    * Should the API handle setting machine storage?
-   * - Note the API setting incurs a tick delay, for blocks where the tick order is important, this can help avoid race-conditions.
-   *
+   * @beta
+   * @remarks
+   * Note that the API setting incurs a tick delay. For blocks where the tick order is important, this can help avoid race-conditions.
    * @default true
    */
   handleStorage?: boolean;
 }
+
+/**
+ * Arguments passed to the `updateUi` handler callback.
+ * @beta
+ * @see {@link MachineDefinitionHandlers.updateUi}.
+ */
+export interface MachineUpdateUiHandlerArg extends MachineCallbackArg {
+  /**
+   * The ID of the machine entity whose UI is being updated.
+   * @beta
+   */
+  entityId: string;
+}
+
+/**
+ * The return type of the `updateUi` handler callback.
+ * @beta
+ * @remarks
+ * Any `undefined` values will be filled with the values provided in the `defaults` property in the element definition (if applicable).
+ * @see {@link MachineDefinitionHandlers.updateUi}.
+ */
+export interface MachineUpdateUiHandlerRes {
+  /**
+   * Updates for storage bar elements, keyed by element ID.
+   * @beta
+   */
+  storageBars?: Record<string, UiStorageBarElementUpdateOptions>;
+  /**
+   * Updates for progress indicator elements, keyed by element ID. The value indicates the frame of the progress indicator.
+   * @beta
+   */
+  progressIndicators?: Record<string, number>;
+  /**
+   * Updates for button elements, keyed by element ID.
+   * @beta
+   */
+  buttons?: Record<string, UiButtonElementUpdateOptions>;
+}
+
+/**
+ * Statistics about a storage type's availability on a network before and after distribution.
+ * @beta
+ * @see {@link MachineDefinitionEvents.onNetworkAllocationCompleted}.
+ */
+export interface NetworkStorageTypeData {
+  /**
+   * The amount of this storage type that was available on this network *before* distribution.
+   * @beta
+   */
+  before: number;
+
+  /**
+   * The amount of this storage type that was available on this network *after* distribution.
+   * @beta
+   */
+  after: number;
+}
+
+/**
+ * Arguments passed to the `onNetworkAllocationCompleted` event callback.
+ * @beta
+ * @see {@link MachineDefinitionEvents.onNetworkAllocationCompleted}.
+ */
+export interface MachineNetworkStatsEventArg extends MachineCallbackArg {
+  /**
+   * Statistics for each storage type on the network.
+   * @beta
+   */
+  networkData: Record<string, NetworkStorageTypeData>;
+}
+
+/**
+ * Handler callbacks for a machine.
+ * @beta
+ * @remarks
+ * Handlers are callbacks that respond to certain Bedrock Energistics Core events.
+ * These callbacks return responses that tell Bedrock Energistics Core what to do.
+ */
+export interface MachineDefinitionHandlers {
+  /**
+   * Called during machine UI updates.
+   * @beta
+   * @remarks
+   * This handler may be used to set any dynamic options for a machine UI.
+   */
+  updateUi?: MachineCallback<
+    MachineUpdateUiHandlerArg,
+    MachineUpdateUiHandlerRes
+  >;
+  /**
+   * Called before a machine receives a storage type during allocation.
+   * @beta
+   * @remarks
+   * This is called during allocation and may override the amount that the machine gets allocated.
+   * This is not called when `setMachineStorage` is called.
+   * Use {@link MachineDefinitionEvents.onStorageSet} for that event.
+   */
+  receive?: MachineCallback<MachineReceiveHandlerArg, MachineReceiveHandlerRes>;
+}
+
+/**
+ * Union type of all machine handler names.
+ * @beta
+ * @see {@link MachineDefinitionHandlers}.
+ */
+export type MachineHandlerName = keyof MachineDefinitionHandlers;
+
+// -- end handlers --
+
+// -- registered machine --
+
+/**
+ * Union type of all machine callback names.
+ * @beta
+ * @see {@link MachineEventName}, {@link MachineDefinitionEvents}, {@link MachineHandlerName}, {@link MachineDefinitionHandlers}.
+ */
+export type MachineCallbackName = MachineEventName | MachineHandlerName;
+
+/**
+ * Complete machine definition.
+ * @beta
+ */
+export interface MachineDefinition {
+  /**
+   * Describes the core attributes of the machine.
+   * @beta
+   */
+  description: MachineDefinitionDescription;
+  /**
+   * Handler callbacks for the machine.
+   * @beta
+   * @remarks
+   * Handlers are callbacks that respond to certain Bedrock Energistics Core events.
+   * These callbacks return responses that tell Bedrock Energistics Core what to do.
+   */
+  handlers?: MachineDefinitionHandlers;
+  /**
+   * Event callbacks for the machine.
+   * @beta
+   * @remarks
+   * Events are called after a certain trigger has happened. Unlike handlers, these callbacks cannot modify what Bedrock Energistics Core does since they are called after the event has already occured.
+   */
+  events?: MachineDefinitionEvents;
+}
+
+// -- end registered machine --
