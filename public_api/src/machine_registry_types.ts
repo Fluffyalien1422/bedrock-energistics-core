@@ -421,6 +421,15 @@ export interface MachineUpdateUiHandlerRes {
 }
 
 /**
+ * Statistics for each storage type on a network.
+ * @beta
+ */
+export type NetworkStorageTypeDataRecord = Record<
+  string,
+  NetworkStorageTypeData
+>;
+
+/**
  * Statistics about a storage type's availability on a network before and after distribution.
  * @beta
  * @see {@link MachineDefinitionEvents.onNetworkAllocationCompleted}.
@@ -449,7 +458,7 @@ export interface MachineNetworkStatsEventArg extends MachineCallbackArg {
    * Statistics for each storage type on the network.
    * @beta
    */
-  networkData: Record<string, NetworkStorageTypeData>;
+  networkData: NetworkStorageTypeDataRecord;
 }
 
 /**

@@ -12,6 +12,7 @@ import {
 import { MachineNetwork } from "./network";
 import { getMachineStorage } from "./data";
 import { InternalRegisteredStorageType } from "./storage_type_registry";
+import { NetworkStorageTypeDataRecord } from "@/public_api/src";
 
 export function networkDestroyListener(payload: ipc.SerializableValue): null {
   const data = payload as NetworkInstanceMethodPayload;
@@ -128,4 +129,13 @@ export function generateListener(payload: ipc.SerializableValue): null {
   );
 
   return null;
+}
+
+export function networkGetStatsHandler(
+  payload: ipc.SerializableValue,
+): NetworkStorageTypeDataRecord {
+  const data = payload as NetworkInstanceMethodPayload;
+  const networkId = data.networkId;
+  const network = MachineNetwork.getFromId(networkId);
+  return network?.latestNetworkStats ?? {};
 }

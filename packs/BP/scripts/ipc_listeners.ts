@@ -12,6 +12,7 @@ import {
   networkEstablishHandler,
   networkGetAllWithHandler,
   networkGetOrEstablishHandler,
+  networkGetStatsHandler,
   networkGetWithHandler,
   networkIsPartOfNetworkHandler,
   networkQueueSendListener,
@@ -120,3 +121,4 @@ registerListener(
 registerListener(BecIpcListener.GetItemMachineIo, getItemMachineIoHandler);
 registerListener(BecIpcListener.RemoveMachineData, removeMachineDataListener);
 registerListener(BecIpcListener.DestroyMachine, destroyMachineListener);
+registerListener(BecIpcListener.GetNetworkStats, networkGetStatsHandler);

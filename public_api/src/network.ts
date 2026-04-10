@@ -16,6 +16,7 @@ import {
 import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
+import { NetworkStorageTypeDataRecord } from "./machine_registry_types.js";
 
 /**
  * A network of machines with a certain I/O type.
@@ -43,6 +44,27 @@ export class MachineNetwork {
     };
 
     ipcSend(BecIpcListener.DestroyNetwork, payload);
+  }
+
+  /**
+   * Get the statistics from the latest network allocation.
+   * @beta
+   * @remarks
+   * Contains statistics about each storage type's availability on the network before and after distribution,
+   * as of the latest network allocation. This is equivalent to the data passed to the `onNetworkAllocationCompleted`
+   * machine event.
+   * @returns Returns an object where each key is a storage type and each value is an object containing information
+   * about the availability of that storage type on the network.
+   */
+  getLatestAllocationData(): Promise<NetworkStorageTypeDataRecord> {
+    const payload: NetworkInstanceMethodPayload = {
+      networkId: this.id,
+    };
+
+    return ipcInvoke(
+      BecIpcListener.GetNetworkStats,
+      payload,
+    ) as Promise<NetworkStorageTypeDataRecord>;
   }
 
   /**

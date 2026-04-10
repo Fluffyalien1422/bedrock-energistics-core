@@ -15,9 +15,9 @@ import {
   getBlockNetworkConnectionType,
   IoCapabilities,
   NetworkConnectionType,
-  NetworkStorageTypeData,
   MachineReceiveHandlerRes,
   StorageTypeData,
+  NetworkStorageTypeDataRecord,
 } from "@/public_api/src";
 import { InternalRegisteredMachine } from "./machine_registry";
 import { InternalRegisteredStorageType } from "./storage_type_registry";
@@ -50,6 +50,8 @@ export class MachineNetwork extends DestroyableObject {
   private allocateJob: AsyncGenerator<void, void, void> | undefined;
   private sendQueue: SendQueueItem[] = [];
   private readonly intervalId: number;
+
+  latestNetworkStats: NetworkStorageTypeDataRecord = {};
 
   /**
    * Unique ID for this network.
@@ -224,7 +226,7 @@ export class MachineNetwork extends DestroyableObject {
       yield;
     }
 
-    const networkStats: Record<string, NetworkStorageTypeData> = {};
+    const networkStats: NetworkStorageTypeDataRecord = {};
 
     for (const type of typesToDistribute) {
       const distributionData = distribution[type];
@@ -253,6 +255,7 @@ export class MachineNetwork extends DestroyableObject {
       yield* this.returnToGenerators(distributionData, type, budget);
     }
 
+    this.latestNetworkStats = networkStats;
     for (const [block, machineDef] of networkStatListeners) {
       machineDef.callOnNetworkAllocationCompletedEvent(block, networkStats);
     }
