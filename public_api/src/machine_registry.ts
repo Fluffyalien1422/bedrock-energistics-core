@@ -18,6 +18,7 @@ import { getIpcRouter } from "./init.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
 import { IpcListenerType, makeIpcListenerName } from "./ipc_listener_type.js";
 import { MachineUiElements } from "./machine_ui_elements.js";
+import { MachineNetwork } from "./network.js";
 
 /**
  * value should be `undefined` if the machine does not exist
@@ -252,7 +253,9 @@ export function registerMachine(definition: MachineDefinition): void {
 
       void callback({
         blockLocation: deserializeDimensionLocation(data.blockLocation),
-        networkData: data.networkData,
+        // @ts-expect-error internal use of @internal private method
+        network: MachineNetwork.fromDataPayload(data.network),
+        allocationData: data.allocationData,
       });
 
       return null;

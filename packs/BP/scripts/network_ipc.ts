@@ -15,7 +15,9 @@ import { getMachineStorage } from "./data";
 import { InternalRegisteredStorageType } from "./storage_type_registry";
 import { NetworkStorageTypeData } from "@/public_api/src";
 
-function createNetworkDataPayload(network: MachineNetwork): NetworkDataPayload {
+export function createNetworkDataPayload(
+  network: MachineNetwork,
+): NetworkDataPayload {
   return {
     id: network.id,
     ioType: {

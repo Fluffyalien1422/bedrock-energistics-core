@@ -10,6 +10,7 @@ import {
 import { raise } from "./log.js";
 import { RegisteredMachine } from "./machine_registry.js";
 import { ipcSendAny } from "./ipc_wrapper.js";
+import { NetworkDataPayload } from "./network_internal.js";
 
 /**
  * @internal
@@ -57,7 +58,8 @@ export interface IpcOnButtonPressedPayload extends IpcMachineCallbackArg {
  * @internal
  */
 export interface IpcNetworkStatsEventArg extends IpcMachineCallbackArg {
-  networkData: NetworkStorageTypeData;
+  network: NetworkDataPayload;
+  allocationData: NetworkStorageTypeData;
 }
 
 /**

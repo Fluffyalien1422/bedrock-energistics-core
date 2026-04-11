@@ -17,6 +17,8 @@ import {
 } from "@/public_api/src/machine_registry_internal";
 import { makeSerializableDimensionLocation } from "@/public_api/src/serialize_utils";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper";
+import { MachineNetwork } from "./network";
+import { createNetworkDataPayload } from "./network_ipc";
 
 const machineRegistry = new Map<string, InternalRegisteredMachine>();
 const machineEntityToBlockIdMap = new Map<string, string>();
@@ -74,6 +76,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
 
   callOnNetworkAllocationCompletedEvent(
     dimensionLocation: DimensionLocation,
+    network: MachineNetwork,
     data: NetworkStorageTypeData,
   ): void {
     if (!this.data.networkStatEvent)
@@ -83,7 +86,8 @@ export class InternalRegisteredMachine extends RegisteredMachine {
 
     const payload: IpcNetworkStatsEventArg = {
       blockLocation: makeSerializableDimensionLocation(dimensionLocation),
-      networkData: data,
+      network: createNetworkDataPayload(network),
+      allocationData: data,
     };
 
     ipcSend(this.data.networkStatEvent, payload);

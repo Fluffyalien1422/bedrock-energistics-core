@@ -4,6 +4,7 @@ import {
   StorageTypeTextureDescription,
   StorageTypeTexturePreset,
 } from "./storage_type_registry_types.js";
+import { MachineNetwork } from "./network.js";
 
 // -- ui --
 
@@ -446,10 +447,15 @@ export interface NetworkStorageTypeData {
  */
 export interface MachineNetworkStatsEventArg extends MachineCallbackArg {
   /**
-   * Statistics about a storage type's availability on a network before and after distribution.
+   * The network that has triggered this event.
    * @beta
    */
-  networkData: NetworkStorageTypeData;
+  network: MachineNetwork;
+  /**
+   * Statistics about the network's storage type's availability on a network before and after distribution.
+   * @beta
+   */
+  allocationData: NetworkStorageTypeData;
 }
 
 /**

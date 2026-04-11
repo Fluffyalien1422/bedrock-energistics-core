@@ -226,6 +226,7 @@ export class MachineNetwork extends DestroyableObject {
     for (const [block, machineDef] of networkStatListeners) {
       machineDef.callOnNetworkAllocationCompletedEvent(
         block,
+        this,
         this.latestNetworkStats,
       );
     }

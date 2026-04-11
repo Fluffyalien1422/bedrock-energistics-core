@@ -43,7 +43,7 @@ export class MachineNetwork {
   ) {}
 
   /**
-   * @private
+   * @internal
    */
   private static fromDataPayload(data: NetworkDataPayload): MachineNetwork {
     return new MachineNetwork(data.id, data.ioType);
