@@ -57,7 +57,7 @@ export interface IpcOnButtonPressedPayload extends IpcMachineCallbackArg {
  * @internal
  */
 export interface IpcNetworkStatsEventArg extends IpcMachineCallbackArg {
-  networkData: Record<string, NetworkStorageTypeData>;
+  networkData: NetworkStorageTypeData;
 }
 
 /**

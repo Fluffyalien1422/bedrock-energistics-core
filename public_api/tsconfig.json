@@ -4,6 +4,7 @@
   "compilerOptions": {
     "noEmit": false,
     "declaration": true,
+    "rootDir": "./src",
     "outDir": "./dist",
     "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": false

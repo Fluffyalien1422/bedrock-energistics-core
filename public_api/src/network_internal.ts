@@ -1,5 +1,6 @@
 import { NetworkConnectionType } from "./network_utils.js";
 import { SerializableDimensionLocation } from "./serialize_utils.js";
+import { StorageTypeData } from "./storage_type_registry.js";
 
 /**
  * @internal
@@ -13,7 +14,6 @@ export interface NetworkInstanceMethodPayload {
  */
 export interface NetworkQueueSendPayload extends NetworkInstanceMethodPayload {
   loc: SerializableDimensionLocation;
-  type: string;
   amount: number;
 }
 
@@ -43,8 +43,7 @@ export interface NetworkGetAllWithPayload {
 /**
  * @internal
  */
-export interface NetworkIsPartOfNetworkPayload
-  extends NetworkInstanceMethodPayload {
+export interface NetworkIsPartOfNetworkPayload extends NetworkInstanceMethodPayload {
   loc: SerializableDimensionLocation;
   type: NetworkConnectionType;
 }
@@ -56,4 +55,12 @@ export interface GeneratePayload {
   loc: SerializableDimensionLocation;
   type: string;
   amount: number;
+}
+
+/**
+ * @internal
+ */
+export interface NetworkDataPayload {
+  id: number;
+  ioType: StorageTypeData;
 }

@@ -95,10 +95,7 @@ export class ItemMachine {
       type,
     };
 
-    return ipcInvoke(
-      BecIpcListener.GetItemMachineStorage,
-      payload,
-    ) as Promise<number>;
+    return ipcInvoke<number>(BecIpcListener.GetItemMachineStorage, payload);
   }
 
   /**
@@ -132,10 +129,10 @@ export class ItemMachine {
       slot: this.containerSlotJson,
     };
 
-    const ioData = (await ipcInvoke(
+    const ioData = await ipcInvoke<Required<ItemMachineGetIoResponse>>(
       BecIpcListener.GetItemMachineIo,
       payload,
-    )) as Required<ItemMachineGetIoResponse>;
+    );
 
     if (ioData.acceptsAny) {
       return IoCapabilities.acceptingAny();

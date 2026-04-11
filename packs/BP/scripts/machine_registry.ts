@@ -74,7 +74,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
 
   callOnNetworkAllocationCompletedEvent(
     dimensionLocation: DimensionLocation,
-    data: Record<string, NetworkStorageTypeData>,
+    data: NetworkStorageTypeData,
   ): void {
     if (!this.data.networkStatEvent)
       raise(

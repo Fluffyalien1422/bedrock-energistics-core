@@ -40,10 +40,10 @@ export class NetworkLinkNode {
       }),
     };
 
-    const res = (await ipcInvoke(
+    const res = await ipcInvoke<NetworkLinkGetResponse>(
       BecIpcListener.GetNetworkLink,
       payload,
-    )) as NetworkLinkGetResponse;
+    );
 
     return res.locations;
   }

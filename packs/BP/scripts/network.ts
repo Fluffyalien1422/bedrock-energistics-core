@@ -17,15 +17,13 @@ import {
   NetworkConnectionType,
   MachineReceiveHandlerRes,
   StorageTypeData,
-  NetworkStorageTypeDataRecord,
+  NetworkStorageTypeData,
 } from "@/public_api/src";
 import { InternalRegisteredMachine } from "./machine_registry";
-import { InternalRegisteredStorageType } from "./storage_type_registry";
 
 interface SendQueueItem {
   block: Block;
   amount: number;
-  type: string;
 }
 
 interface NetworkConnections {
@@ -51,7 +49,10 @@ export class MachineNetwork extends DestroyableObject {
   private sendQueue: SendQueueItem[] = [];
   private readonly intervalId: number;
 
-  latestNetworkStats: NetworkStorageTypeDataRecord = {};
+  latestNetworkStats: NetworkStorageTypeData = {
+    before: 0,
+    after: 0,
+  };
 
   /**
    * Unique ID for this network.
@@ -117,38 +118,24 @@ export class MachineNetwork extends DestroyableObject {
   private async *allocate(): AsyncGenerator<void, void, void> {
     if (!this.isValid) return;
 
-    // Calculate the amount of each type that is available to send around.
-    const distribution: Record<string, DistributionData> = {};
-
+    // Calculate the amount that is available to send around.
+    const distribution: DistributionData = {
+      total: 0,
+      queueItems: [],
+    };
     for (const send of this.sendQueue) {
-      if (send.type in distribution) {
-        const data = distribution[send.type];
-        data.total += send.amount;
-        data.queueItems.push(send);
-        continue;
-      }
-
-      distribution[send.type] = {
-        total: send.amount,
-        queueItems: [send],
-      };
+      distribution.total += send.amount;
+      distribution.queueItems.push(send);
     }
 
     this.sendQueue = [];
 
-    const typesToDistribute = Object.keys(distribution);
-
-    // initialize consumers keys.      <priority>
-    const consumers: Record<string, Map<number, Block[]>> = {};
+    // initialize consumers keys.
+    // key: priority
+    const consumers = new Map<number, Block[]>();
     const networkStatListeners: [Block, InternalRegisteredMachine][] = [];
 
-    for (const key of typesToDistribute) {
-      consumers[key] = new Map();
-    }
-
-    yield;
-
-    // find and filter connections into their consumer groups.
+    // find and filter connections into groups.
     for (const machine of this.connections.machines.values()) {
       if (!machine.isValid) continue;
       const tags = machine.getTags();
@@ -181,34 +168,22 @@ export class MachineNetwork extends DestroyableObject {
         "fluffyalien_energisticscore:consumer.any",
       );
 
-      yield;
-
-      // Check machine tags and sort into appropriate groups.
-      for (const consumerType of typesToDistribute) {
-        const consumerCategory =
-          InternalRegisteredStorageType.getInternal(consumerType)?.category;
-
-        const allowsType = !!(
-          allowsAny ||
-          machine.hasTag(
-            `fluffyalien_energisticscore:consumer.type.${consumerType}`,
-          ) ||
-          (consumerCategory &&
-            machine.hasTag(
-              `fluffyalien_energisticscore:consumer.category.${consumerCategory}`,
-            ))
+      // Is it a consumer?
+      const consumesType =
+        allowsAny ||
+        machine.hasTag(
+          `fluffyalien_energisticscore:consumer.type.${this.ioType.id}`,
+        ) ||
+        machine.hasTag(
+          `fluffyalien_energisticscore:consumer.category.${this.ioType.category}`,
         );
 
-        if (!allowsType) continue;
+      if (!consumesType) continue;
 
-        if (!consumers[consumerType].has(priority)) {
-          consumers[consumerType].set(priority, []);
-        }
-
-        consumers[consumerType].get(priority)!.push(machine);
-
-        yield;
+      if (!consumers.has(priority)) {
+        consumers.set(priority, []);
       }
+      consumers.get(priority)!.push(machine);
 
       // Check if the machine is listening for network stat events.
       const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
@@ -226,44 +201,38 @@ export class MachineNetwork extends DestroyableObject {
       yield;
     }
 
-    const networkStats: NetworkStorageTypeDataRecord = {};
+    // Now begin allocation.
+    let budget = distribution.total;
+    const machinePriorities = Array.from(consumers.keys()).sort(
+      (a, b) => b - a,
+    );
 
-    for (const type of typesToDistribute) {
-      const distributionData = distribution[type];
-      let budget = distributionData.total;
-
-      const machinePriorities = Array.from(consumers[type].keys()).sort(
-        (a, b) => b - a,
-      );
-
-      // Distribute to each consumer group in order of priority.
-      for (const key of machinePriorities) {
-        budget = yield* this.distributeToGroup(
-          consumers[type].get(key)!,
-          type,
-          budget,
-        );
-        if (budget <= 0) break;
-      }
-
-      networkStats[type] = {
-        before: distributionData.total,
-        after: budget,
-      };
-
-      // Then return any left-over budget to the generators.
-      yield* this.returnToGenerators(distributionData, type, budget);
+    // Distribute to each consumer group in order of priority.
+    for (const key of machinePriorities) {
+      budget = yield* this.distributeToGroup(consumers.get(key)!, budget);
+      if (budget <= 0) break;
     }
 
-    this.latestNetworkStats = networkStats;
+    // Save network stat data.
+    this.latestNetworkStats = {
+      before: distribution.total,
+      after: budget,
+    };
+
+    // Then return any left-over budget to the generators.
+    yield* this.returnToGenerators(distribution, budget);
+
+    // Call network stat events.
     for (const [block, machineDef] of networkStatListeners) {
-      machineDef.callOnNetworkAllocationCompletedEvent(block, networkStats);
+      machineDef.callOnNetworkAllocationCompletedEvent(
+        block,
+        this.latestNetworkStats,
+      );
     }
   }
 
   private *returnToGenerators(
     distributionData: DistributionData,
-    type: string,
     leftOverBudget: number,
   ): Generator<void, void, void> {
     if (distributionData.queueItems.length === 0) return;
@@ -273,18 +242,16 @@ export class MachineNetwork extends DestroyableObject {
     );
     let remainder = leftOverBudget % distributionData.queueItems.length;
 
-    const typeCategory =
-      InternalRegisteredStorageType.getInternal(type)?.category;
+    const type = this.ioType.id;
+    const typeCategory = this.ioType.category;
 
     for (const sendData of distributionData.queueItems) {
       const machine = sendData.block;
       if (!machine.isValid) continue;
 
-      const consumesCategory =
-        typeCategory !== undefined &&
-        machine.hasTag(
-          `fluffyalien_energisticscore:consumer.category.${typeCategory}`,
-        );
+      const consumesCategory = machine.hasTag(
+        `fluffyalien_energisticscore:consumer.category.${typeCategory}`,
+      );
 
       const isConsumer =
         consumesCategory ||
@@ -349,9 +316,9 @@ export class MachineNetwork extends DestroyableObject {
    */
   private async *distributeToGroup(
     machines: Block[],
-    type: string,
     budget: number,
   ): AsyncGenerator<void, number, void> {
+    const type = this.ioType.id;
     const budgetAllocation = Math.floor(budget / machines.length);
 
     for (const machine of machines) {
@@ -419,9 +386,9 @@ export class MachineNetwork extends DestroyableObject {
     return this.isPartOfNetwork(block, type);
   }
 
-  queueSend(block: Block, type: string, amount: number): void {
+  queueSend(block: Block, amount: number): void {
     if (amount <= 0) return;
-    this.sendQueue.push({ block, type, amount: Math.floor(amount) });
+    this.sendQueue.push({ block, amount: Math.floor(amount) });
   }
 
   private static discoverConnections(

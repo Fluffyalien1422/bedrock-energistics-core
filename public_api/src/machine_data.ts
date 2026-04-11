@@ -108,9 +108,10 @@ export async function getMachineSlotItem(
     slot: elementId,
   };
 
-  const data = (await ipcInvoke(BecIpcListener.GetMachineSlot, payload)) as
-    | string
-    | null;
+  const data = await ipcInvoke<string | null>(
+    BecIpcListener.GetMachineSlot,
+    payload,
+  );
 
   return data ? deserializeMachineItemStack(data) : undefined;
 }

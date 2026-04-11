@@ -25,10 +25,24 @@ export function ipcSend(
 /**
  * @internal
  */
-export function ipcInvoke(
+export function ipcInvoke<TResult extends ipc.SerializableValue>(
+  event: BecIpcListener,
+  payload: ipc.SerializableValue,
+  throwFailures?: true,
+): Promise<TResult>;
+export function ipcInvoke<TResult extends ipc.SerializableValue>(
+  event: BecIpcListener,
+  payload: ipc.SerializableValue,
+  throwFailures: false,
+): Promise<TResult | ipc.Failure>;
+export function ipcInvoke<TResult extends ipc.SerializableValue>(
   event: BecIpcListener,
   payload: ipc.SerializableValue,
   throwFailures = true,
-): Promise<ipc.SerializableValue> {
-  return getIpcRouter().invokeAuto({ event, payload, throwFailures });
+): Promise<TResult> {
+  return getIpcRouter().invokeAuto({
+    event,
+    payload,
+    throwFailures,
+  }) as Promise<TResult>;
 }

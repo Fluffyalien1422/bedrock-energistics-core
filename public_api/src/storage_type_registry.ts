@@ -111,10 +111,10 @@ export class RegisteredStorageType implements StorageTypeData {
       return ownRegisteredStorageTypes.get(id);
     }
 
-    const def = (await ipcInvoke(
+    const def = await ipcInvoke<StorageTypeDefinition | null>(
       BecIpcListener.GetRegisteredStorageType,
       id,
-    )) as StorageTypeDefinition | null;
+    );
 
     const result = def ? new RegisteredStorageType(def) : undefined;
 
@@ -135,10 +135,10 @@ export class RegisteredStorageType implements StorageTypeData {
       return [...storageTypeIdCache];
     }
 
-    const ids = (await ipcInvoke(
+    const ids = await ipcInvoke<string[]>(
       BecIpcListener.GetAllRegisteredStorageTypes,
       null,
-    )) as string[];
+    );
 
     if (!isRegistrationAllowed()) {
       storageTypeIdCache = [...ids];

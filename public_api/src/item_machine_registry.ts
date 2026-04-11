@@ -91,10 +91,10 @@ export class RegisteredItemMachine {
       return ownRegisteredItemMachines.get(id);
     }
 
-    const data = (await ipcInvoke(
+    const data = await ipcInvoke<RegisteredItemMachineData | null>(
       BecIpcListener.GetRegisteredItemMachine,
       id,
-    )) as RegisteredItemMachineData | null;
+    );
 
     const result = data ? new RegisteredItemMachine(data) : undefined;
 

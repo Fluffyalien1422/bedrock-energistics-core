@@ -6,6 +6,7 @@ import {
   NetworkQueueSendPayload,
   NetworkEstablishPayload,
   NetworkGetWithPayload,
+  NetworkDataPayload,
 } from "./network_internal.js";
 import { DIRECTION_VECTORS } from "./misc_internal.js";
 import { Vector3Utils } from "@minecraft/math";
@@ -16,20 +17,37 @@ import {
 import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
-import { NetworkStorageTypeDataRecord } from "./machine_registry_types.js";
+import { NetworkStorageTypeData } from "./machine_registry_types.js";
+import { StorageTypeData } from "./storage_type_registry.js";
 
 /**
  * A network of machines with a certain I/O type.
  * @beta
  */
 export class MachineNetwork {
+  /**
+   * @private
+   */
   private constructor(
     /**
      * Unique ID for this network.
      * @beta
      */
     readonly id: number,
+
+    /**
+     * The I/O type of this network.
+     * @beta
+     */
+    readonly ioType: Readonly<StorageTypeData>,
   ) {}
+
+  /**
+   * @private
+   */
+  private static fromDataPayload(data: NetworkDataPayload): MachineNetwork {
+    return new MachineNetwork(data.id, data.ioType);
+  }
 
   /**
    * Destroy this object.
@@ -56,15 +74,17 @@ export class MachineNetwork {
    * @returns Returns an object where each key is a storage type and each value is an object containing information
    * about the availability of that storage type on the network.
    */
-  getLatestAllocationData(): Promise<NetworkStorageTypeDataRecord> {
+  async getLatestAllocationData(): Promise<NetworkStorageTypeData> {
     const payload: NetworkInstanceMethodPayload = {
       networkId: this.id,
     };
 
-    return ipcInvoke(
+    const response = await ipcInvoke<NetworkStorageTypeData | null>(
       BecIpcListener.GetNetworkStats,
       payload,
-    ) as Promise<NetworkStorageTypeDataRecord>;
+    );
+
+    return response ?? { before: 0, after: 0 };
   }
 
   /**
@@ -81,10 +101,7 @@ export class MachineNetwork {
       type,
     };
 
-    return ipcInvoke(
-      BecIpcListener.IsPartOfNetwork,
-      payload,
-    ) as Promise<boolean>;
+    return ipcInvoke<boolean>(BecIpcListener.IsPartOfNetwork, payload);
   }
 
   /**
@@ -104,19 +121,13 @@ export class MachineNetwork {
    * - Note: in most cases, prefer {@link generate} over this function.
    * - Automatically sets the machine's reserve storage to the amount that was not received.
    * @param blockLocation The location of the machine that is sending the storage type.
-   * @param type The storage type to send.
    * @param amount The amount to send. Must be greater than zero.
    * @see {@link generate}
    */
-  queueSend(
-    blockLocation: DimensionLocation,
-    type: string,
-    amount: number,
-  ): void {
+  queueSend(blockLocation: DimensionLocation, amount: number): void {
     const payload: NetworkQueueSendPayload = {
       networkId: this.id,
       loc: makeSerializableDimensionLocation(blockLocation),
-      type,
       amount,
     };
 
@@ -136,12 +147,13 @@ export class MachineNetwork {
       location: makeSerializableDimensionLocation(location),
     };
 
-    const id = (await ipcInvoke(BecIpcListener.EstablishNetwork, payload)) as
-      | number
-      | null;
+    const data = await ipcInvoke<NetworkDataPayload | null>(
+      BecIpcListener.EstablishNetwork,
+      payload,
+    );
 
-    if (id !== null) {
-      return new MachineNetwork(id);
+    if (data !== null) {
+      return MachineNetwork.fromDataPayload(data);
     }
   }
 
@@ -163,12 +175,13 @@ export class MachineNetwork {
       location: makeSerializableDimensionLocation(location),
     };
 
-    const id = (await ipcInvoke(BecIpcListener.GetNetworkWith, payload)) as
-      | number
-      | null;
+    const data = await ipcInvoke<NetworkDataPayload | null>(
+      BecIpcListener.GetNetworkWith,
+      payload,
+    );
 
-    if (id !== null) {
-      return new MachineNetwork(id);
+    if (data !== null) {
+      return MachineNetwork.fromDataPayload(data);
     }
   }
 
@@ -198,12 +211,12 @@ export class MachineNetwork {
       type,
     };
 
-    const ids = (await ipcInvoke(
+    const networks = await ipcInvoke<NetworkDataPayload[]>(
       BecIpcListener.GetAllNetworksWith,
       payload,
-    )) as number[];
+    );
 
-    return ids.map((id) => new MachineNetwork(id));
+    return networks.map((network) => MachineNetwork.fromDataPayload(network));
   }
 
   /**
@@ -234,13 +247,13 @@ export class MachineNetwork {
       location: makeSerializableDimensionLocation(location),
     };
 
-    const id = (await ipcInvoke(
+    const data = await ipcInvoke<NetworkDataPayload | null>(
       BecIpcListener.GetOrEstablishNetwork,
       payload,
-    )) as number | null;
+    );
 
-    if (id !== null) {
-      return new MachineNetwork(id);
+    if (data !== null) {
+      return MachineNetwork.fromDataPayload(data);
     }
   }
 
