@@ -503,6 +503,7 @@ async function updateEntityUi(
 
 world.afterEvents.playerInteractWithEntity.subscribe((e) => {
   if (
+    !e.target.isValid ||
     !e.target.matches({
       families: ["fluffyalien_energisticscore:machine_entity"],
     })
