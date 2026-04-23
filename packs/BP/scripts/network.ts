@@ -1,7 +1,7 @@
 import { Block, Dimension, DimensionLocation, system } from "@minecraft/server";
 import { Vector3Utils } from "@minecraft/math";
 import { DestroyableObject } from "./utils/destroyable";
-import { logWarn } from "./utils/log";
+import { logInfo, logWarn } from "./utils/log";
 import { getBlockUniqueId, getMachineStorage, setMachineStorage } from "./data";
 import {
   DIRECTION_VECTORS,
@@ -136,8 +136,16 @@ export class MachineNetwork extends DestroyableObject {
     const networkStatListeners: [Block, InternalRegisteredMachine][] = [];
 
     // find and filter connections into groups.
-    for (const machine of this.connections.machines.values()) {
+    for (const [machineUid, machine] of this.connections.machines) {
       if (!machine.isValid) continue;
+      if (machine.typeId === "minecraft:air") {
+        // Don't log a warning because this is a common occurence.
+        // We still log it as info for debugging purposes though.
+        logInfo(
+          `The block with UID '${machineUid}' is air, but a registered machine was expected. Skipping allocation. This may occur if a machine is destroyed while allocation is still in progress.`,
+        );
+        continue;
+      }
       const tags = machine.getTags();
 
       const priorityTags = tags
