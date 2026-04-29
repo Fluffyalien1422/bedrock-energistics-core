@@ -19,6 +19,7 @@ export interface RegisteredMachineData {
   // definition
   id: string;
   entityId?: string;
+  defaultEntityNameTag?: string;
   persistentEntity?: boolean;
   maxStorage?: number;
   uiElements?: Record<string, UiElementDefinition>;

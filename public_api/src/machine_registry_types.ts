@@ -206,6 +206,11 @@ export interface MachineDefinitionDescription {
    */
   entityId?: string;
   /**
+   * The name tag to give the machine entity when spawned. Defaults to the value of `id`.
+   * @beta
+   */
+  defaultEntityNameTag?: string;
+  /**
    * Is the machine entity persistent?
    * @beta
    * @remarks

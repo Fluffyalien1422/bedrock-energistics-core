@@ -118,6 +118,6 @@ export async function spawnMachineEntity(block: Block): Promise<Entity> {
     definition.entityId,
     block.bottomCenter(),
   );
-  newEntity.nameTag = block.typeId;
+  newEntity.nameTag = definition.defaultEntityNameTag;
   return newEntity;
 }

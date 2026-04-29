@@ -66,6 +66,14 @@ export class RegisteredMachine {
   }
 
   /**
+   * @returns The default name tag for this machine's entity.
+   * @beta
+   */
+  get defaultEntityNameTag(): string {
+    return this.data.defaultEntityNameTag ?? this.data.id;
+  }
+
+  /**
    * @returns Whether this machine has a persistent entity or not
    * @beta
    */
@@ -286,6 +294,7 @@ export function registerMachine(definition: MachineDefinition): void {
     // definition
     id: definition.description.id,
     entityId: definition.description.entityId,
+    defaultEntityNameTag: definition.description.defaultEntityNameTag,
     persistentEntity: definition.description.persistentEntity,
     maxStorage: definition.description.maxStorage,
     uiElements: definition.description.ui?.elements,

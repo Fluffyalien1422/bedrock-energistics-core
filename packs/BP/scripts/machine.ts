@@ -58,12 +58,18 @@ export function destroyMachine(
   if (newBlockType !== false) block.setType(newBlockType);
 }
 
-function spawnMachineEntity(block: Block, entityId: string): Entity {
+function spawnMachineEntity(
+  block: Block,
+  definition: RegisteredMachine,
+): Entity {
   // there is a similar function to this one in the public api.
   // if this is changed, then ensure the public api function is
   // changed as well.
-  const entity = block.dimension.spawnEntity(entityId, block.bottomCenter());
-  entity.nameTag = block.typeId;
+  const entity = block.dimension.spawnEntity(
+    definition.entityId,
+    block.bottomCenter(),
+  );
+  entity.nameTag = definition.defaultEntityNameTag;
   return entity;
 }
 
@@ -96,7 +102,7 @@ export const machineNoInteractComponent: BlockCustomComponent = {
       e.block.typeId,
     );
     if (definition.persistentEntity) {
-      spawnMachineEntity(e.block, definition.entityId);
+      spawnMachineEntity(e.block, definition);
     }
   },
   onBreak(e) {
@@ -114,7 +120,7 @@ export const machineComponent: BlockCustomComponent = {
       return;
     }
 
-    spawnMachineEntity(e.block, definition.entityId);
+    spawnMachineEntity(e.block, definition);
   },
 };
 

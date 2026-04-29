@@ -49,6 +49,16 @@
           }
         ]
       },
+      "dev_localexport": {
+        "export": {
+          "target": "local"
+        },
+        "filters": [
+          {
+            "profile": "default"
+          }
+        ]
+      },
       "prod": {
         "export": {
           "target": "local"
