@@ -5,6 +5,8 @@ import {
   RegisteredStorageType,
   STANDARD_STORAGE_TYPE_DEFINITIONS,
   StorageTypeDefinition,
+  StorageTypeTextureDescription,
+  StorageTypeTexturePreset,
 } from "@/public_api/src";
 
 const storageTypeRegistry = new Map<string, InternalRegisteredStorageType>();
@@ -44,6 +46,16 @@ world.afterEvents.worldLoad.subscribe(() => {
   registerStorageType(STANDARD_STORAGE_TYPE_DEFINITIONS.energy);
 });
 
+function prettifyStorageTypeTexture(
+  texture: StorageTypeTextureDescription | StorageTypeTexturePreset,
+): string {
+  const typeName =
+    typeof texture === "string"
+      ? "StorageTypeTexturePreset"
+      : "StorageTypeTextureDescription";
+  return `${typeName} ${JSON.stringify(texture)}`;
+}
+
 function registerStorageType(data: StorageTypeDefinition): void {
   const existing = storageTypeRegistry.get(data.id);
 
@@ -56,7 +68,7 @@ function registerStorageType(data: StorageTypeDefinition): void {
 
     if (existing.texture !== data.texture) {
       logWarn(
-        `Overrode texture of storage type '${data.id}', originally was '${JSON.stringify(existing.texture)}', now is '${JSON.stringify(data.texture)}'.`,
+        `Overrode texture of storage type '${data.id}', originally was ${prettifyStorageTypeTexture(existing.texture)}, now is ${prettifyStorageTypeTexture(data.texture)}.`,
       );
     }
 
