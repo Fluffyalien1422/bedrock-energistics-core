@@ -94,11 +94,15 @@ function clearUiItemsFromPlayer(player: Player): boolean {
   return anythingCleared;
 }
 
-function fillDisabledUiBar(inventory: Container, startIndex: number): void {
+function fillDisabledUiBar(
+  inventory: Container,
+  startIndex: number,
+  label?: string,
+): void {
   const itemStack = new ItemStack(
     "fluffyalien_energisticscore:ui_disabled_storage_bar_segment",
   );
-  itemStack.nameTag = "§rDisabled";
+  itemStack.nameTag = "§r" + (label ?? "Disabled");
 
   inventory.setItem(startIndex, itemStack);
   inventory.setItem(startIndex + 1, itemStack);
@@ -180,7 +184,7 @@ function handleBarItems(
   }
 
   if (type === "_disabled") {
-    fillDisabledUiBar(inventory, startIndex);
+    fillDisabledUiBar(inventory, startIndex, label);
     return;
   }
 
