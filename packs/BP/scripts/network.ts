@@ -328,9 +328,9 @@ export class MachineNetwork extends DestroyableObject {
     budget: number,
   ): AsyncGenerator<void, number, void> {
     const type = this.ioType.id;
-    const budgetAllocation = Math.floor(budget / machines.length);
 
-    for (const machine of machines) {
+    for (let i = 0; i < machines.length; i++) {
+      const machine = machines[i];
       const currentStored = getMachineStorage(machine, type);
       const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
       if (!machineDef) {
@@ -340,8 +340,17 @@ export class MachineNetwork extends DestroyableObject {
         continue;
       }
 
+      // Spread the remaining budget across the machines that haven't been
+      // processed yet, recomputing each iteration. This ensures any budget a
+      // machine doesn't take (because the 'receive' handler reduced/refused it,
+      // or the machine is full) rolls forward to the remaining machines instead
+      // of being lost. Rounding up keeps the budget distributing even when it
+      // doesn't divide evenly. (E.g. splitting 11 into 3 would output: 4, 4, 3)
+      const machinesLeft = machines.length - i;
+      const allocation = Math.ceil(budget / machinesLeft);
+
       const amountToAllocate = Math.max(
-        Math.min(budgetAllocation, machineDef.maxStorage - currentStored),
+        Math.min(allocation, machineDef.maxStorage - currentStored),
         0,
       );
 

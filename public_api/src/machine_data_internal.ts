@@ -5,6 +5,7 @@ import {
 } from "@minecraft/server";
 import { SerializableDimensionLocation } from "./serialize_utils.js";
 import { NetworkConnectionType } from "./network_utils.js";
+import { logWarn } from "./log.js";
 
 /**
  * @internal
@@ -66,4 +67,21 @@ export function getScore(
   }
 
   return objective.getScore(participant);
+}
+
+/**
+ * @internal
+ */
+export function setScore(
+  objective: ScoreboardObjective,
+  participant: string,
+  value: number,
+): boolean {
+  try {
+    objective.setScore(participant, value);
+    return true;
+  } catch (e) {
+    logWarn(`Failed to set objective score for '${participant}': ${String(e)}`);
+    return false;
+  }
 }

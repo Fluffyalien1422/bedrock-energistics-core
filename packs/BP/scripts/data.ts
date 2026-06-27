@@ -4,6 +4,7 @@ import { MachineItemStack, getMachineStorage } from "@/public_api/src";
 import {
   getBlockUniqueId,
   getStorageScoreboardObjective,
+  setScore,
 } from "@/public_api/src/machine_data_internal";
 import { logWarn, raise } from "./utils/log";
 import { InternalRegisteredMachine } from "./machine_registry";
@@ -65,7 +66,10 @@ export function setMachineStorage(
 
   const registered = InternalRegisteredMachine.forceGetInternal(block.typeId);
 
-  objective.setScore(getBlockUniqueId(block), value);
+  if (!setScore(objective, getBlockUniqueId(block), value)) {
+    logWarn("Failed to set machine storage: Failed to set objective score.");
+    return;
+  }
 
   if (callOnStorageSet && registered.hasCallback("onStorageSet")) {
     registered.callOnStorageSetEvent(block, type, value);

@@ -5,11 +5,12 @@ import {
   getScore,
   getStorageScoreboardObjective,
   SetMachineSlotPayload,
+  setScore,
 } from "./machine_data_internal.js";
 import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 import { ipcInvoke } from "./ipc_wrapper.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
-import { raise } from "./log.js";
+import { logWarn, raise } from "./log.js";
 import { RegisteredMachine } from "./machine_registry.js";
 import { callMachineOnStorageSetEvent } from "./machine_registry_internal.js";
 import { MachineItemStack } from "./machine_item_stack.js";
@@ -85,7 +86,10 @@ export async function setMachineStorage(
 
   const registered = await RegisteredMachine.forceGet(block.typeId);
 
-  objective.setScore(getBlockUniqueId(block), value);
+  if (!setScore(objective, getBlockUniqueId(block), value)) {
+    logWarn("Failed to set machine storage: Failed to set objective score.");
+    return;
+  }
 
   if (callOnStorageSet && registered.hasCallback("onStorageSet")) {
     callMachineOnStorageSetEvent(registered, block, type, value);
