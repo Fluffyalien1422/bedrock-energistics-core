@@ -81,7 +81,9 @@ export function setScore(
     objective.setScore(participant, value);
     return true;
   } catch (e) {
-    logWarn(`Failed to set objective score for '${participant}': ${String(e)}`);
+    logWarn(
+      `Failed to set objective '${objective.id}' score for '${participant}': ${String(e)}`,
+    );
     return false;
   }
 }

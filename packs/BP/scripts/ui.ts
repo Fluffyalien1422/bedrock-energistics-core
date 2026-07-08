@@ -591,4 +591,4 @@ system.runInterval(() => {
 
     void updateEntityUi(definition, entity, player, false);
   }
-}, 5);
+}, 4);
