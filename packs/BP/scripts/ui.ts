@@ -70,15 +70,16 @@ const playersInUi = new Map<Entity, Player>();
 export const machineChangedItemSlots = new Map<string, Set<string>>();
 
 /**
- * @returns whether anything was cleared or not
+ * Removes any leftover UI item from the player's cursor or inventory. Only the
+ * first one found is removed, since at most one UI item can leak per
+ * interaction (the player can only take one slot at a time); the
+ * playerInventoryItemChange handler sweeps up anything else.
  */
-function clearUiItemsFromPlayer(player: Player): boolean {
-  let anythingCleared = false;
-
+function clearUiItemsFromPlayer(player: Player): void {
   const playerCursorInventory = player.getComponent("cursor_inventory")!;
   if (playerCursorInventory.item && isUiItem(playerCursorInventory.item)) {
     playerCursorInventory.clear();
-    anythingCleared = true;
+    return;
   }
 
   const playerInventory = player.getComponent("inventory")!.container;
@@ -87,11 +88,9 @@ function clearUiItemsFromPlayer(player: Player): boolean {
 
     if (item && isUiItem(item)) {
       playerInventory.setItem(i);
-      anythingCleared = true;
+      return;
     }
   }
-
-  return anythingCleared;
 }
 
 function fillDisabledUiBar(
@@ -123,6 +122,11 @@ function fillUiBar(
 ): void {
   let remainingSegments = Math.floor(amount / (maxStorage / (size * 16)));
 
+  const formattingCodes = "§r§" + labelColorCode.split("").join("§");
+  const nameTag =
+    formattingCodes +
+    (label ?? `${amount.toString()}/${maxStorage.toString()} ${name}`);
+
   for (let i = startIndex + (size - 1); i >= startIndex; i--) {
     const segments = Math.min(16, remainingSegments);
     remainingSegments -= segments;
@@ -148,10 +152,7 @@ function fillUiBar(
       );
     }
 
-    const formattingCodes = "§r§" + labelColorCode.split("").join("§");
-    itemStack.nameTag =
-      formattingCodes +
-      (label ?? `${amount.toString()}/${maxStorage.toString()} ${name}`);
+    itemStack.nameTag = nameTag;
 
     inventory.setItem(i, itemStack);
   }
@@ -505,27 +506,60 @@ async function updateEntityUi(
   machineChangedItemSlots.delete(uid);
 }
 
-world.afterEvents.playerInteractWithEntity.subscribe((e) => {
-  if (
-    !e.target.isValid ||
-    !e.target.matches({
+// A machine's UI is its entity's container. Track the player who opened it so
+// the interval below can keep the UI up to date, and stop tracking as soon as
+// the container closes. The engine-side filters ensure the callbacks only run
+// for machine entities opened by a player, avoiding per-event checks in script.
+world.afterEvents.entityContainerOpened.subscribe(
+  (e) => {
+    const entity = e.entity;
+    const player = e.openSource.entity as Player;
+
+    const machineId = getMachineIdFromEntityId(entity.typeId);
+    if (!machineId) {
+      raise(
+        `The entity '${entity.typeId}' has the 'fluffyalien_energisticscore:machine_entity' type family but it is not attached to a machine block.`,
+      );
+    }
+
+    playersInUi.set(entity, player);
+    const definition = InternalRegisteredMachine.forceGetInternal(machineId);
+    void updateEntityUi(definition, entity, player, true);
+  },
+  {
+    entityFilter: {
       families: ["fluffyalien_energisticscore:machine_entity"],
-    })
-  ) {
-    return;
-  }
+    },
+    accessSourceFilter: {
+      entityFilter: { type: "minecraft:player" },
+    },
+  },
+);
 
-  const machineId = getMachineIdFromEntityId(e.target.typeId);
-  if (!machineId) {
-    raise(
-      `The entity '${e.target.typeId}' has the 'fluffyalien_energisticscore:machine_entity' type family but it is not attached to a machine block.`,
-    );
-  }
+world.afterEvents.entityContainerClosed.subscribe(
+  (e) => {
+    const entity = e.entity;
+    const player = playersInUi.get(entity);
+    playersInUi.delete(entity);
 
-  playersInUi.set(e.target, e.player);
-  const definition = InternalRegisteredMachine.forceGetInternal(machineId);
-  void updateEntityUi(definition, e.target, e.player, true);
-});
+    // Run one final UI update so the machine block captures any item-slot change
+    // the player made right before closing. Item slots are only synced back to
+    // the block during a UI update, and the periodic interval may not have run
+    // between the player's last action and the container closing.
+    if (!player?.isValid || !entity.isValid) return;
+
+    const machineId = getMachineIdFromEntityId(entity.typeId);
+    if (!machineId) return;
+
+    const definition = InternalRegisteredMachine.forceGetInternal(machineId);
+    void updateEntityUi(definition, entity, player, false);
+  },
+  {
+    entityFilter: {
+      families: ["fluffyalien_energisticscore:machine_entity"],
+    },
+  },
+);
 
 world.afterEvents.entitySpawn.subscribe((e) => {
   if (e.entity.typeId !== "minecraft:item" || !e.entity.isValid) return;
@@ -537,26 +571,23 @@ world.afterEvents.entitySpawn.subscribe((e) => {
   }
 });
 
+world.afterEvents.playerInventoryItemChange.subscribe((e) => {
+  if (!e.itemStack || !isUiItem(e.itemStack)) return;
+  e.player.getComponent("inventory")?.container.setItem(e.slot);
+});
+
 system.runInterval(() => {
   for (const [entity, player] of playersInUi) {
-    if (!entity.isValid) {
+    // entityContainerClosed handles the common case, but the entity may despawn
+    // (non-persistent machines) or the player may leave while the UI is open, so
+    // drop any stale entries here as well.
+    if (!entity.isValid || !player.isValid) {
       playersInUi.delete(entity);
       continue;
     }
 
     const machineId = getMachineIdFromEntityId(entity.typeId)!;
     const definition = InternalRegisteredMachine.forceGetInternal(machineId);
-
-    if (definition.persistentEntity) {
-      const players = entity.dimension.getPlayers({
-        location: entity.location,
-        maxDistance: 10,
-      });
-      if (!players.length) {
-        playersInUi.delete(entity);
-        continue;
-      }
-    }
 
     void updateEntityUi(definition, entity, player, false);
   }

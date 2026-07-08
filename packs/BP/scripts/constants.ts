@@ -1,4 +1,2 @@
-import { version as VERSION } from "@/packs/data/simple_manifest.json";
-export { VERSION };
-
+export const VERSION = [0, 11, 0];
 export const VERSION_STR = VERSION.join(".");
