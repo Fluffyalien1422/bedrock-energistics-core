@@ -1,3 +1,11 @@
+/**
+ * Debug mode (enabled via the /becdebugmode command) is a world-wide developer
+ * aid. While a player holds a stick, the block they're looking at has its
+ * network, storage, and dynamic-property state shown on their action bar; a
+ * machine block can also be sneaked-at to open a form for setting a variable.
+ * It stays on until the world reloads.
+ */
+
 import { Block, EquipmentSlot, Player, system, world } from "@minecraft/server";
 import { ModalFormData } from "@minecraft/server-ui";
 import { getMachineStorage, setMachineStorage } from "./data";
@@ -24,6 +32,11 @@ export function isDebugModeEnabled(): boolean {
   return debugMode;
 }
 
+/**
+ * Turns on debug mode: announces it and starts the interval that shows the
+ * held-stick block readout. No-op if already enabled; there is intentionally no
+ * way to disable it short of a reload.
+ */
 export function enableDebugMode(): void {
   if (debugMode) return;
   debugMode = true;
@@ -52,6 +65,12 @@ export function enableDebugMode(): void {
   }, 2);
 }
 
+/**
+ * Shows debug info for the block the player is looking at on their action bar:
+ * its connection type, the networks it belongs to, and every non-zero storage
+ * value and dynamic property. Sneaking while looking at a machine opens the
+ * set-variable form instead.
+ */
 function showDebugUi(player: Player): void {
   const block = player.getBlockFromViewDirection({ maxDistance: 7 })?.block;
   if (!block) {
@@ -114,6 +133,11 @@ function showDebugUi(player: Player): void {
   player.onScreenDisplay.setActionBar(info);
 }
 
+/**
+ * Opens a form to set a machine variable by name: `storage.<type>` writes a
+ * storage amount, `property.<name>` writes a block dynamic property. The value
+ * is parsed as JSON and must be a number/string/boolean.
+ */
 function showSetStorageForm(block: Block, player: Player): void {
   playersInSetStorageForm.add(player.id);
 

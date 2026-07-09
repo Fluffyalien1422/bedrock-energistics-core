@@ -21,8 +21,20 @@ import { MachineNetwork } from "./network";
 import { createNetworkDataPayload } from "./network_ipc";
 
 const machineRegistry = new Map<string, InternalRegisteredMachine>();
+// Maps a machine's UI-entity type id back to its block type id, so entity
+// events (container opened, hit, etc.) can resolve the owning machine.
 const machineEntityToBlockIdMap = new Map<string, string>();
 
+/**
+ * Core-side view of a registered machine. Extends the public {@link
+ * RegisteredMachine} to expose its internal data and to add the "invoke"/"call"
+ * helpers that dispatch a machine's event handlers back to the add-on that
+ * registered them, over IPC.
+ * @remarks
+ * "invoke" helpers expect a response (request/response); "call" helpers are
+ * fire-and-forget notifications. A handler only exists on the owning add-on's
+ * side, hence the IPC hop.
+ */
 // @ts-expect-error extending private class for internal use
 export class InternalRegisteredMachine extends RegisteredMachine {
   // override to make it public
@@ -143,6 +155,11 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     return machineRegistry.get(id);
   }
 
+  /**
+   * Like {@link InternalRegisteredMachine.getInternal} but throws instead of
+   * returning `undefined`. Use when the machine is expected to exist (e.g. in a
+   * block event for a machine block) and a missing entry is a bug.
+   */
   static forceGetInternal(id: string): InternalRegisteredMachine {
     const registered = InternalRegisteredMachine.getInternal(id);
     if (!registered) {
@@ -154,10 +171,19 @@ export class InternalRegisteredMachine extends RegisteredMachine {
   }
 }
 
+/**
+ * Resolves a machine's UI-entity type id to its block type id, or `undefined`
+ * if the entity isn't a registered machine entity.
+ */
 export function getMachineIdFromEntityId(entityId: string): string | undefined {
   return machineEntityToBlockIdMap.get(entityId);
 }
 
+/**
+ * IPC listener that registers (or overrides) a machine. Invoked when a
+ * dependent add-on calls the public registration API. Populates both the
+ * machine registry and the entity-to-block lookup.
+ */
 export function registerMachineListener(payload: ipc.SerializableValue): null {
   const data = new InternalRegisteredMachine(payload as RegisteredMachineData);
 

@@ -11,6 +11,9 @@ import {
 
 const storageTypeRegistry = new Map<string, InternalRegisteredStorageType>();
 
+/**
+ * Core-side view of a registered storage type (energy, lava, water, etc.). Similar pattern to the machine registry.
+ */
 // @ts-expect-error extending private class for internal use
 export class InternalRegisteredStorageType extends RegisteredStorageType {
   // override to make it public
@@ -41,7 +44,8 @@ export class InternalRegisteredStorageType extends RegisteredStorageType {
   }
 }
 
-// register energy by default
+// Energy is always available, so the core registers it itself on world load
+// rather than requiring a dependent add-on to do so.
 world.afterEvents.worldLoad.subscribe(() => {
   registerStorageType(STANDARD_STORAGE_TYPE_DEFINITIONS.energy);
 });
@@ -56,6 +60,11 @@ function prettifyStorageTypeTexture(
   return `${typeName} ${JSON.stringify(texture)}`;
 }
 
+/**
+ * Registers a storage type and ensures its backing scoreboard objective exists.
+ * Re-registering an existing id overrides it, warning about any field (category,
+ * texture, name) that changed so accidental clashes between add-ons are visible.
+ */
 function registerStorageType(data: StorageTypeDefinition): void {
   const existing = storageTypeRegistry.get(data.id);
 
@@ -82,6 +91,8 @@ function registerStorageType(data: StorageTypeDefinition): void {
   const registered = new InternalRegisteredStorageType(data);
   storageTypeRegistry.set(data.id, registered);
 
+  // Each storage type gets its own scoreboard objective; machine storage
+  // amounts of this type are stored as participant scores on it (see data.ts).
   const objectiveId = `fluffyalien_energisticscore:storage${data.id}`;
 
   if (!world.scoreboard.getObjective(objectiveId)) {

@@ -1,3 +1,11 @@
+/**
+ * Blocks have no dynamic-property storage of their own, so per-block data is
+ * emulated with world dynamic properties. Each key is `_bdp<blockUid><id>`: the
+ * `_bdp` prefix namespaces block data, the block uid ties it to a location, and
+ * `<id>` is the caller's property name. This scheme also lets us enumerate or
+ * wipe all properties for a block by prefix (see below).
+ */
+
 import { getBlockUniqueId } from "@/public_api/src/machine_data_internal";
 import { DimensionLocation, Vector3, world } from "@minecraft/server";
 
@@ -22,6 +30,7 @@ export function setBlockDynamicProperty(
   world.setDynamicProperty(makeBlockBaseDynamicPropertyId(loc) + id, value);
 }
 
+/** Lists the ids of all dynamic properties stored for a block. */
 export function getBlockDynamicProperties(loc: DimensionLocation): string[] {
   const blockBaseId = makeBlockBaseDynamicPropertyId(loc);
 
@@ -31,6 +40,7 @@ export function getBlockDynamicProperties(loc: DimensionLocation): string[] {
     .map((id) => id.slice(blockBaseId.length));
 }
 
+/** Removes every dynamic property stored for a block (used on teardown). */
 export function removeAllDynamicPropertiesForBlock(
   loc: DimensionLocation,
 ): void {

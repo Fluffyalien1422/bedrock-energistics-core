@@ -46,7 +46,15 @@ let totalNetworkCount = 0; // used to create a unique id
 const networks = new Map<number, MachineNetwork>();
 
 /**
- * A network of machines with a certain I/O type.
+ * A network of machines that share a single I/O type (e.g. one energy network).
+ * @remarks
+ * A network is a cached view of connected blocks, discovered by flood fill (see
+ * {@link MachineNetwork.discoverConnections}). Each network runs its own
+ * per-tick interval that, when there's queued output, distributes storage to
+ * consumers by priority and returns the remainder to the senders
+ * ({@link MachineNetwork.allocate}). Networks are disposable: any topology
+ * change destroys the affected networks and a fresh one is discovered on demand
+ * rather than being edited in place.
  */
 export class MachineNetwork extends DestroyableObject {
   private allocateTickRunning = false;
@@ -80,6 +88,9 @@ export class MachineNetwork extends DestroyableObject {
     this.id = totalNetworkCount++;
     networks.set(this.id, this);
 
+    // Drive allocation once per tick. Skip when there's nothing queued, or when
+    // the previous tick's allocation job is still running (allocation is
+    // chunked across ticks, see allocateTick), so jobs never overlap.
     this.intervalId = system.runInterval(() => {
       if (this.allocateTickRunning || !this.sendQueue.length) return;
       this.allocateTickRunning = true;
@@ -99,6 +110,14 @@ export class MachineNetwork extends DestroyableObject {
     networks.delete(this.id);
   }
 
+  /**
+   * Advances the allocation job, running as many of its steps as fit in the
+   * current tick. `allocate` is a generator that yields between machines; this
+   * pumps it while the tick hasn't rolled over, then pauses until the next
+   * interval fire. Large networks are therefore spread across multiple ticks
+   * instead of blocking one. The job is kept in `allocateJob` so it resumes
+   * where it left off.
+   */
   private async allocateTick(): Promise<void> {
     const startTick = system.currentTick;
     this.allocateJob ??= this.allocate();
@@ -247,6 +266,13 @@ export class MachineNetwork extends DestroyableObject {
     }
   }
 
+  /**
+   * Settles storage back onto the machines that queued sends, once distribution
+   * to consumers is done. `leftOverBudget` (whatever consumers didn't take) is
+   * split as evenly as possible across the queued senders - so a generator gets
+   * back exactly the portion of its offering that went unused, and a queued
+   * consumer's storage is reconciled against what it ended up with.
+   */
   private *returnToGenerators(
     distributionData: DistributionData,
     leftOverBudget: number,
@@ -428,11 +454,25 @@ export class MachineNetwork extends DestroyableObject {
     return this.isPartOfNetwork(block, type);
   }
 
+  /**
+   * Queues an amount to be distributed across the network on the next
+   * allocation tick. Batching sends this way lets a whole tick's worth of
+   * generation be allocated together, in one pass, by priority.
+   */
   queueSend(block: Block, amount: number): void {
     if (amount <= 0) return;
     this.sendQueue.push({ block, amount: Math.floor(amount) });
   }
 
+  /**
+   * Flood-fills outward from `origin` to find every block reachable through
+   * valid I/O connections for `ioType`, grouping them into conduits, machines,
+   * and network links. This is how a network's membership is (re)built.
+   * @remarks
+   * Two blocks connect only if both sides accept the type across the shared
+   * face (or link); conduits terminate a branch's data collection, machines are
+   * recorded as endpoints, and network links jump to their linked positions.
+   */
   private static discoverConnections(
     origin: Block,
     ioType: StorageTypeData,
@@ -443,9 +483,15 @@ export class MachineNetwork extends DestroyableObject {
       networkLinks: new Map(),
     };
 
+    // Iterative flood fill: `stack` holds blocks left to expand, and
+    // `visitedLocations` guards against revisiting a block reached via multiple
+    // paths (and against cycles, which conduit loops and network links create).
     const stack: Block[] = [];
     const visitedLocations = new Set<string>();
 
+    // Follows a network link's stored connections to their target blocks,
+    // continuing the flood fill across the (possibly distant) jump. Both ends
+    // must accept the type for the link to carry it.
     function handleNetworkLink(block: Block): void {
       connections.networkLinks.set(getBlockUniqueId(block), block);
 
@@ -485,6 +531,9 @@ export class MachineNetwork extends DestroyableObject {
       }
     }
 
+    // Records a reachable block into the right group and marks it visited. A
+    // block can be both a machine and a network link, but a conduit is only
+    // ever a conduit, so that case returns early.
     function handleBlock(block: Block): void {
       stack.push(block);
       visitedLocations.add(Vector3Utils.toString(block.location));
@@ -503,6 +552,9 @@ export class MachineNetwork extends DestroyableObject {
       }
     }
 
+    // Probes the neighbour of `currentBlock` in one direction and, if the two
+    // sides accept the type across that face, hands it to handleBlock to
+    // continue the fill.
     function next(
       currentBlock: Block,
       direction: StrDirection,
@@ -642,7 +694,9 @@ export class MachineNetwork extends DestroyableObject {
   }
 
   /**
-   * Get all {@link MachineNetwork}s that contain a machine that matches the arguments.
+   * Gets every network that contains a matching block. A single location can
+   * belong to more than one network when it carries multiple I/O types (one
+   * network per type).
    */
   static getAllWith(
     location: DimensionLocation,

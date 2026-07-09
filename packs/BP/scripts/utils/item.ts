@@ -1,6 +1,11 @@
 import { ItemStack } from "@minecraft/server";
 import { logWarn } from "./log";
 
+/**
+ * Creates an `ItemStack`, returning `undefined` (and logging a warning) instead
+ * of throwing if the id is invalid. Used for UI items whose ids come from
+ * machine definitions and may be misconfigured by a dependent add-on.
+ */
 export function tryCreateItemStack(
   id: string,
   amount?: number,

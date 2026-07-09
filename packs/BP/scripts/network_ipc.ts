@@ -1,3 +1,10 @@
+/**
+ * IPC boundary for the network API. Dependent add-ons don't hold MachineNetwork
+ * instances directly (those live only in this core pack); they hold lightweight
+ * network data objects and call these handlers over IPC, which
+ * re-resolve the live network by id. Functions named "*Listener" don't return a response; "*Handler" return a value to the caller.
+ */
+
 import * as ipc from "mcbe-addon-ipc";
 import { deserializeDimensionLocation } from "@/public_api/src/serialize_utils";
 import {
@@ -15,6 +22,10 @@ import { getMachineStorage } from "./data";
 import { InternalRegisteredStorageType } from "./storage_type_registry";
 import { NetworkStorageTypeData } from "@/public_api/src";
 
+/**
+ * Builds the serializable handle a dependent add-on holds to refer to a
+ * network across the IPC boundary.
+ */
 export function createNetworkDataPayload(
   network: MachineNetwork,
 ): NetworkDataPayload {
@@ -125,6 +136,12 @@ export function networkIsPartOfNetworkHandler(
   );
 }
 
+/**
+ * IPC entry point for a machine generating/emitting storage into its network.
+ * Queues the machine's already-stored amount plus the newly generated amount to
+ * be distributed on the network's next allocation tick, establishing the
+ * network if one doesn't exist yet.
+ */
 export function generateListener(payload: ipc.SerializableValue): null {
   const data = payload as GeneratePayload;
   const location = deserializeDimensionLocation(data.loc);
@@ -134,6 +151,9 @@ export function generateListener(payload: ipc.SerializableValue): null {
   const block = location.dimension.getBlock(location);
   if (!block) return null;
 
+  // Send the full stored amount (existing + generated). Whatever isn't consumed
+  // this tick is returned to the machine's storage by the allocator, so this
+  // effectively re-offers leftover storage each tick.
   const fullAmount = amount + getMachineStorage(location, type);
   if (!fullAmount) return null;
 

@@ -1,3 +1,9 @@
+/**
+ * Network links connect two blocks that aren't physically adjacent, letting a
+ * network span a gap. Each link block has a backing entity that stores its
+ * linked positions (see network_link_internal.ts).
+ */
+
 import { BlockCustomComponent } from "@minecraft/server";
 import { MachineNetwork } from "../network";
 import {
@@ -30,6 +36,11 @@ export const networkLinkComponent: BlockCustomComponent = {
   },
 };
 
+/**
+ * Resolves a network link node from a serialized location sent over IPC.
+ * Dependent add-ons manage links (add/remove/query connections) through the
+ * public API, which routes to here.
+ */
 export function getNetworkLinkNode(
   self: SerializableDimensionLocation,
 ): InternalNetworkLinkNode {

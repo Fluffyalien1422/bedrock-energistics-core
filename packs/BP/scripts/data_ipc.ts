@@ -1,3 +1,9 @@
+/**
+ * IPC boundary for machine data. Dependent add-ons can't
+ * touch this core pack's dynamic properties directly, so these
+ * listeners perform the reads/writes on their behalf.
+ */
+
 import {
   GetMachineSlotPayload,
   RemoveMachineDataPayload,

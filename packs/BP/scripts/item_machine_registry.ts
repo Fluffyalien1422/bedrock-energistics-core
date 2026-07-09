@@ -13,6 +13,13 @@ import {
 
 const itemMachineRegistry = new Map<string, InternalRegisteredItemMachine>();
 
+/**
+ * Core-side view of a registered item machine (a machine that lives as an item
+ * in a container slot rather than as a placed block). Like
+ * {@link InternalRegisteredMachine}, it caches registration data and exposes
+ * helpers that dispatch the machine's handlers back to its owning add-on over
+ * IPC.
+ */
 // @ts-expect-error extending private class for internal use
 export class InternalRegisteredItemMachine extends RegisteredItemMachine {
   // override to make public

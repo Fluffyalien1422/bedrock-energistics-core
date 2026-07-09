@@ -1,3 +1,8 @@
+/**
+ * Recursively renders a value as a human-readable string with Minecraft
+ * formatting codes (colored keys/values), for debug output such as the debug
+ * commands. Objects and arrays are expanded inline.
+ */
 export function toPrettyString(obj: unknown): string {
   if (obj === null) return "§pnull§r";
 
@@ -16,4 +21,3 @@ export function toPrettyString(obj: unknown): string {
   // eslint-disable-next-line @typescript-eslint/no-base-to-string
   return `§p${String(obj)}§r`;
 }
-

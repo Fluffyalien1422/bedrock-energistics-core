@@ -1,3 +1,13 @@
+/**
+ * How machine data is stored:
+ * - Storage amounts (energy, etc.) live on scoreboards, one objective per
+ *   storage type, with each machine block as a participant keyed by its unique
+ *   location id (see getBlockUniqueId). This is what getMachineStorage /
+ *   setMachineStorage read and write.
+ * - Item-slot contents live in world dynamic properties keyed per block+slot
+ *   (see the `item<slotId>` properties below and utils/dynamic_property.ts).
+ */
+
 import { Block, DimensionLocation, ItemStack, world } from "@minecraft/server";
 import { machineChangedItemSlots } from "./ui";
 import { MachineItemStack, getMachineStorage } from "@/public_api/src";
@@ -19,6 +29,10 @@ import {
 
 export { getBlockUniqueId, getMachineStorage };
 
+/**
+ * Removes a machine location's score from every storage objective, clearing all
+ * of its stored amounts. Called when a machine's data is torn down.
+ */
 export function removeBlockFromScoreboards(loc: DimensionLocation): void {
   const participantId = getBlockUniqueId(loc);
 
@@ -76,6 +90,11 @@ export function setMachineStorage(
   }
 }
 
+/**
+ * Gets the raw (still-serialized) contents of a machine item slot, or
+ * `undefined` if the slot is empty. Item slots are stored as serialized strings
+ * in block dynamic properties named `item<slotId>`.
+ */
 export function getMachineSlotItemRaw(
   loc: DimensionLocation,
   slotId: string,
@@ -83,6 +102,11 @@ export function getMachineSlotItemRaw(
   return getBlockDynamicProperty(loc, `item${slotId}`) as string | undefined;
 }
 
+/**
+ * Deserializes a machine slot item without validating that `slotId` is actually
+ * an item-slot UI element. "Unsafe" because it skips that check - prefer
+ * {@link getMachineSlotItem} unless the slot is already known to be valid.
+ */
 export function getMachineSlotItemUnsafe(
   loc: DimensionLocation,
   slotId: string,
@@ -138,6 +162,10 @@ export function setMachineSlotItem(
   const uid = getBlockUniqueId(block);
   const propertyId = `item${slotId}`;
 
+  // Record that this slot changed so the UI update loop knows to push the new
+  // contents into the open container. Callers syncing *from* the container back
+  // to the block (i.e. reflecting a change the UI already shows) pass
+  // `setChanged = false` to avoid a redundant round-trip.
   if (setChanged) {
     const existingChangedItemSlotsArr = machineChangedItemSlots.get(uid);
     if (existingChangedItemSlotsArr) {
@@ -147,6 +175,7 @@ export function setMachineSlotItem(
     }
   }
 
+  // An empty/zero-amount stack clears the slot's dynamic property entirely.
   if (!newItemStack || newItemStack.amount <= 0) {
     setBlockDynamicProperty(block, propertyId);
     return;
@@ -159,10 +188,20 @@ export function setMachineSlotItem(
   );
 }
 
+/**
+ * Whether an item is one of the add-on's UI filler items (storage-bar segments,
+ * buttons, empty-slot placeholders, etc.). These are tagged so they can be told
+ * apart from real items a player places into a machine slot.
+ */
 export function isUiItem(item: ItemStack): boolean {
   return item.hasTag("fluffyalien_energisticscore:ui_item");
 }
 
+/**
+ * Converts an optional {@link MachineItemStack} to an `ItemStack`, falling back
+ * to an empty-slot placeholder item when there is no stack. Validates that the
+ * placeholder is a real UI item, warning and using the default if not.
+ */
 export function optionalMachineItemStackToItemStack(
   machineItem?: MachineItemStack,
   emptyItemId = "fluffyalien_energisticscore:ui_empty_slot",

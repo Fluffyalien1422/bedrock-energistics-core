@@ -1,3 +1,10 @@
+/**
+ * IPC boundary for "item machines" - machines that exist as an item in a
+ * container slot rather than a placed block. Their state is stored in dynamic
+ * properties on the item's ContainerSlot (keyed `item_machine_storage_<type>`),
+ * so these handlers operate on a SerializableContainerSlot sent by the caller.
+ */
+
 import * as ipc from "mcbe-addon-ipc";
 import {
   GetItemMachineStoragePayload,
@@ -9,6 +16,10 @@ import { InternalRegisteredStorageType } from "./storage_type_registry";
 import { InternalRegisteredItemMachine } from "./item_machine_registry";
 import { ItemMachineGetIoResponse } from "@/public_api/src";
 
+/**
+ * Reads an item machine's stored amount of a given storage type from the slot's
+ * dynamic property, defaulting to 0 when unset.
+ */
 export function getItemMachineStorageHandler(
   payloadRaw: ipc.SerializableValue,
 ): number {
@@ -59,6 +70,12 @@ export function setItemMachineStorageListener(
   return null;
 }
 
+/**
+ * Resolves an item machine's I/O capabilities. Invokes the machine's optional
+ * `getIo` handler (over IPC), then fills any unspecified fields from the
+ * machine's registered `defaultIo`. `acceptsAny` short-circuits to an
+ * accept-everything response.
+ */
 export async function getItemMachineIoHandler(
   payloadRaw: ipc.SerializableValue,
 ): Promise<Required<ItemMachineGetIoResponse>> {

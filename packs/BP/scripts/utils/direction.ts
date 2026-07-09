@@ -1,3 +1,9 @@
+/**
+ * Direction helpers used by network traversal. Both the Minecraft `Direction`
+ * enum and the string form are accepted so callers can use whichever they have
+ * without converting first.
+ */
+
 import {
   VECTOR3_DOWN,
   VECTOR3_EAST,
@@ -29,6 +35,7 @@ export const STR_DIRECTIONS = [
 ] as const;
 export type StrDirection = (typeof STR_DIRECTIONS)[number];
 
+/** Unit vector pointing in the given direction. */
 export function getDirectionVector(
   direction: Direction | StrDirection,
 ): Vector3 {
@@ -56,6 +63,7 @@ export function getDirectionVector(
   }
 }
 
+/** The neighbouring block in the given direction, or `undefined` if unloaded. */
 export function getBlockInDirection(
   block: Block,
   direction: Direction | StrDirection,
@@ -101,7 +109,7 @@ export function reverseDirection(
     case Direction.South:
       return Direction.North;
     case Direction.West:
-      return Direction.West;
+      return Direction.East;
     case Direction.Up:
       return Direction.Down;
     case Direction.Down:

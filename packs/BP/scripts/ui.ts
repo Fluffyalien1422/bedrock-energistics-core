@@ -1,3 +1,11 @@
+/**
+ * A machine's UI is the container of its backing entity (see machine.ts). Each
+ * UI element (storage bar, item slot, progress indicator, button) occupies one
+ * or more container slots and is (re)rendered from the machine's current state
+ * on every UI update. Filler slots hold tagged "UI items" so real items placed
+ * by the player can be told apart and removed.
+ */
+
 import {
   MachineItemStack,
   StorageTypeTextureDescription,
@@ -93,6 +101,7 @@ function clearUiItemsFromPlayer(player: Player): void {
   }
 }
 
+/** Fills a storage bar's slots with the greyed-out "disabled" segment. */
 function fillDisabledUiBar(
   inventory: Container,
   startIndex: number,
@@ -109,6 +118,13 @@ function fillDisabledUiBar(
   inventory.setItem(startIndex + 3, itemStack);
 }
 
+/**
+ * Renders a filled storage bar across `size` slots. A bar has `size * 16`
+ * pips total; each slot shows 0-16 of them via a per-count segment item
+ * (`<baseId><count>`). The fill amount is converted to a pip count and laid out
+ * from the bottom slot up. Every segment shares one name tag showing the label
+ * (or the `amount/maxStorage` readout) tinted with the storage type's colour.
+ */
 function fillUiBar(
   segmentItemBaseId: string,
   labelColorCode: string,
@@ -120,6 +136,7 @@ function fillUiBar(
   size: number,
   label?: string,
 ): void {
+  // How many 1/16 pips are filled in total, across all slots of the bar.
   let remainingSegments = Math.floor(amount / (maxStorage / (size * 16)));
 
   const formattingCodes = "§r§" + labelColorCode.split("").join("§");
@@ -158,6 +175,11 @@ function fillUiBar(
   }
 }
 
+/**
+ * Renders a storage bar element: reclaims any real item a player slipped into
+ * the bar's slots, then draws either the disabled bar or the type's filled bar.
+ * The special type `"_disabled"` draws the greyed-out bar.
+ */
 function handleBarItems(
   location: DimensionLocation,
   inventory: Container,
@@ -169,6 +191,9 @@ function handleBarItems(
   label?: string,
   textureOverride?: StorageTypeTextureDescription | StorageTypeTexturePreset,
 ): void {
+  // If any bar slot holds something that isn't a UI item, the player managed to
+  // drop a real item in - give it back and clear it before redrawing. One stray
+  // item is enough to trigger the cleanup, hence the break.
   for (let i = startIndex; i < startIndex + size; i++) {
     const inventoryItem = inventory.getItem(i);
     if (inventoryItem && isUiItem(inventoryItem)) {
@@ -212,6 +237,15 @@ function handleBarItems(
   );
 }
 
+/**
+ * Reconciles an item-slot element between the block's stored item and what's
+ * physically in the container slot. Direction depends on the situation:
+ * - On init, or when the stored item changed elsewhere (tracked in
+ *   {@link machineChangedItemSlots}), push the stored item into the slot.
+ * - Otherwise the container is the source of truth for player edits: write the
+ *   player's changes back to the block, rejecting disallowed items (spawned
+ *   back to the player) and ignoring UI filler items.
+ */
 function handleItemSlot(
   block: Block,
   inventory: Container,
@@ -227,6 +261,8 @@ function handleItemSlot(
 
   const containerSlot = inventory.getSlot(element.index);
 
+  // Block -> UI: the stored item is authoritative on init or after an
+  // out-of-band change, so overwrite whatever is in the slot.
   if (slotChanged || init) {
     containerSlot.setItem(
       optionalMachineItemStackToItemStack(
@@ -237,6 +273,8 @@ function handleItemSlot(
     return;
   }
 
+  // UI -> block from here on. An empty slot means the player took the item out;
+  // clear the stored item and drop the empty-slot placeholder back in.
   if (!containerSlot.hasItem()) {
     clearUiItemsFromPlayer(player);
     setMachineSlotItem(block, elementId, undefined, false);
@@ -247,11 +285,14 @@ function handleItemSlot(
   }
 
   const containerSlotItemStack = containerSlot.getItem()!;
+  // Empty-but-showing-a-placeholder: nothing stored and the slot holds filler.
   if (!expectedMachineItem && isUiItem(containerSlotItemStack)) return;
   const containerSlotMachineItemStack = MachineItemStack.fromItemStack(
     containerSlotItemStack,
   );
 
+  // Same item as stored: only the amount can differ (player added/removed some
+  // of the stack), so just sync the count.
   if (
     expectedMachineItem &&
     containerSlotMachineItemStack.isSimilarTo(expectedMachineItem)
@@ -287,6 +328,11 @@ function handleItemSlot(
   setMachineSlotItem(block, elementId, containerSlotMachineItemStack, false);
 }
 
+/**
+ * Renders a progress indicator (e.g. an arrow or flame) at its frame
+ * for `value`. Presets have a fixed frame count; custom indicators list their
+ * frames. An out-of-range or non-integer value renders the error item.
+ */
 function handleProgressIndicator(
   inventory: Container,
   element: UiProgressIndicatorElementDefinition,
@@ -346,6 +392,12 @@ function handleProgressIndicator(
   inventory.setItem(element.index, item);
 }
 
+/**
+ * Renders a button element and detects presses. A press is inferred when the
+ * button item is missing or has been swapped for a non-button item (the player
+ * "took" it): the machine's `onButtonPressed` event fires and the button item
+ * is restored. On init the button is simply placed.
+ */
 function handleButton(
   inventory: Container,
   machine: InternalRegisteredMachine,
@@ -407,6 +459,14 @@ function handleButton(
   inventory.setItem(index, btnItem);
 }
 
+/**
+ * Redraws every element of a machine's UI into its entity container. Calls the
+ * machine's optional `updateUi` handler (over IPC) for dynamic per-element
+ * options, then dispatches each configured element to its handler. Cleared at
+ * the end: the block's changed-item-slot set, now that it's been rendered.
+ * @param init `true` for the first draw when the UI opens, which forces item
+ * slots to be seeded from the block rather than read from the container.
+ */
 async function updateEntityUi(
   definition: InternalRegisteredMachine,
   entity: Entity,
@@ -447,8 +507,7 @@ async function updateEntityUi(
     switch (options.type) {
       case "storageBar": {
         const updateOptions = storageBars[id] as
-          | UiStorageBarElementUpdateOptions
-          | undefined;
+          UiStorageBarElementUpdateOptions | undefined;
 
         handleBarItems(
           block,
@@ -476,8 +535,7 @@ async function updateEntityUi(
         break;
       case "button": {
         const updateOptions = buttons[id] as
-          | UiButtonElementUpdateOptions
-          | undefined;
+          UiButtonElementUpdateOptions | undefined;
 
         const itemId =
           updateOptions?.itemId ??
@@ -508,7 +566,7 @@ async function updateEntityUi(
 
 // A machine's UI is its entity's container. Track the player who opened it so
 // the interval below can keep the UI up to date, and stop tracking as soon as
-// the container closes. The engine-side filters ensure the callbacks only run
+// the container closes. The Minecraft engine-side filters ensure the callbacks only run
 // for machine entities opened by a player, avoiding per-event checks in script.
 world.afterEvents.entityContainerOpened.subscribe(
   (e) => {

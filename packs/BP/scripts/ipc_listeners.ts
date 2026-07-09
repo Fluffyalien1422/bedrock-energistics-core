@@ -1,3 +1,7 @@
+/**
+ * Central wiring of every IPC event the core pack exposes to dependent add-ons.
+ */
+
 import {
   NetworkLinkGetRequest,
   NetworkLinkGetResponse,

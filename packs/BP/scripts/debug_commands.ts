@@ -1,3 +1,9 @@
+/**
+ * Registers the add-on's custom slash commands (game-director permission):
+ * `/becdebugmode` enables debug mode (see debug_mode.ts) and
+ * `/becprintnetworks` dumps info about all live networks.
+ */
+
 import {
   CommandPermissionLevel,
   CustomCommandStatus,

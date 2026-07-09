@@ -27,6 +27,10 @@ export class InternalNetworkLinkNode {
     return new InternalNetworkLinkNode(entity, entity.location);
   }
 
+  /**
+   * Gets the link node for a block, spawning its backing data entity if one
+   * doesn't exist yet. The entity is what persists the node's connections.
+   */
   public static fromBlock(block: Block): InternalNetworkLinkNode {
     let dataStorageEntity = block.dimension
       .getEntitiesAtBlockLocation(block.location)
@@ -47,6 +51,11 @@ export class InternalNetworkLinkNode {
     return new InternalNetworkLinkNode(dataStorageEntity, block.location);
   }
 
+  /**
+   * Gets the link node at a location, or `undefined` if there is no backing
+   * entity there. Unlike {@link InternalNetworkLinkNode.fromBlock}, never
+   * spawns one - use when the node may legitimately not exist.
+   */
   public static tryGetAt(
     dimension: Dimension,
     location: Vector3,
@@ -59,6 +68,7 @@ export class InternalNetworkLinkNode {
     return new InternalNetworkLinkNode(dataStorageEntity, location);
   }
 
+  /** The positions this node links to, decoded from the entity's storage. */
   public getConnections(): Vector3[] {
     this.ensureValid();
     const rawData = this.entity.getDynamicProperty(
@@ -67,6 +77,11 @@ export class InternalNetworkLinkNode {
     return JSON.parse(rawData ?? "[]") as Vector3[];
   }
 
+  /**
+   * Links this node to another, writing the connection on *both* nodes (links
+   * are two-way), then rebuilds the networks of both ends so the new link takes
+   * effect.
+   */
   public addConnection(location: Vector3): void {
     const otherBlock = this.entity.dimension.getBlock(location)!;
     const other = InternalNetworkLinkNode.fromBlock(otherBlock);
@@ -79,6 +94,7 @@ export class InternalNetworkLinkNode {
     MachineNetwork.updateWithBlock(otherBlock);
   }
 
+  /** Inverse of {@link InternalNetworkLinkNode.addConnection}. */
   public removeConnection(location: Vector3): void {
     const otherBlock = this.entity.dimension.getBlock(location)!;
     const other = InternalNetworkLinkNode.fromBlock(otherBlock);
@@ -91,6 +107,10 @@ export class InternalNetworkLinkNode {
     MachineNetwork.updateWithBlock(otherBlock);
   }
 
+  /**
+   * Tears down this node: removes it from every node it links to (so no dangling
+   * one-way links remain), then removes its backing entity.
+   */
   public destroyNode(): void {
     const outboundConnections = this.getConnections();
 
@@ -107,6 +127,10 @@ export class InternalNetworkLinkNode {
   public isValid(): boolean {
     return this.entity.isValid;
   }
+
+  // The `self*` helpers update only this node's stored connections (one side of
+  // the two-way link). The public add/removeConnection methods call them on
+  // both ends to keep the two directions consistent.
 
   private selfRemoveConnection(location: Vector3): void {
     const filtered = this.getConnections().filter(
