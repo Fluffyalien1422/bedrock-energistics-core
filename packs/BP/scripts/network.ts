@@ -37,6 +37,11 @@ interface DistributionData {
   queueItems: SendQueueItem[];
 }
 
+interface NetworkConsumer {
+  block: Block;
+  definition: InternalRegisteredMachine;
+}
+
 let totalNetworkCount = 0; // used to create a unique id
 const networks = new Map<number, MachineNetwork>();
 
@@ -132,7 +137,7 @@ export class MachineNetwork extends DestroyableObject {
 
     // initialize consumers keys.
     // key: priority
-    const consumers = new Map<number, Block[]>();
+    const consumers = new Map<number, NetworkConsumer[]>();
     const networkStatListeners: [Block, InternalRegisteredMachine][] = [];
 
     // find and filter connections into groups.
@@ -172,28 +177,24 @@ export class MachineNetwork extends DestroyableObject {
       const priority =
         priorityTags.length === 0 ? 0 : Math.max(...priorityTags);
 
-      const allowsAny = machine.hasTag(
+      const allowsAny = tags.includes(
         "fluffyalien_energisticscore:consumer.any",
       );
 
       // Is it a consumer?
       const consumesType =
         allowsAny ||
-        machine.hasTag(
+        tags.includes(
           `fluffyalien_energisticscore:consumer.type.${this.ioType.id}`,
         ) ||
-        machine.hasTag(
+        tags.includes(
           `fluffyalien_energisticscore:consumer.category.${this.ioType.category}`,
         );
 
       if (!consumesType) continue;
 
-      if (!consumers.has(priority)) {
-        consumers.set(priority, []);
-      }
-      consumers.get(priority)!.push(machine);
-
-      // Check if the machine is listening for network stat events.
+      // Look up the machine definition once and carry it through to
+      // distribution so `distributeToGroup` doesn't have to look it up again.
       const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
       if (!machineDef) {
         logWarn(
@@ -202,6 +203,12 @@ export class MachineNetwork extends DestroyableObject {
         continue;
       }
 
+      if (!consumers.has(priority)) {
+        consumers.set(priority, []);
+      }
+      consumers.get(priority)!.push({ block: machine, definition: machineDef });
+
+      // Check if the machine is listening for network stat events.
       if (machineDef.hasCallback("onNetworkAllocationCompleted")) {
         networkStatListeners.push([machine, machineDef]);
       }
@@ -324,21 +331,13 @@ export class MachineNetwork extends DestroyableObject {
    * @returns How much of the budget was left-over
    */
   private async *distributeToGroup(
-    machines: Block[],
+    consumers: NetworkConsumer[],
     budget: number,
   ): AsyncGenerator<void, number, void> {
     const type = this.ioType.id;
 
-    for (let i = 0; i < machines.length; i++) {
-      const machine = machines[i];
-      const currentStored = getMachineStorage(machine, type);
-      const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
-      if (!machineDef) {
-        logWarn(
-          `Machine with ID '${machine.typeId}' not found in MachineNetwork#distributeToGroup.`,
-        );
-        continue;
-      }
+    for (let i = 0; i < consumers.length; i++) {
+      const { block: machine, definition: machineDef } = consumers[i];
 
       // Spread the remaining budget across the machines that haven't been
       // processed yet, recomputing each iteration. This ensures any budget a
@@ -346,11 +345,14 @@ export class MachineNetwork extends DestroyableObject {
       // or the machine is full) rolls forward to the remaining machines instead
       // of being lost. Rounding up keeps the budget distributing even when it
       // doesn't divide evenly. (E.g. splitting 11 into 3 would output: 4, 4, 3)
-      const machinesLeft = machines.length - i;
+      const machinesLeft = consumers.length - i;
       const allocation = Math.ceil(budget / machinesLeft);
 
       const amountToAllocate = Math.max(
-        Math.min(allocation, machineDef.maxStorage - currentStored),
+        Math.min(
+          allocation,
+          machineDef.maxStorage - getMachineStorage(machine, type),
+        ),
         0,
       );
 
@@ -361,7 +363,14 @@ export class MachineNetwork extends DestroyableObject {
       const actualAmount = Math.max(v.amount ?? amountToAllocate, 0);
       budget -= actualAmount;
       if (v.handleStorage ?? true) {
-        setMachineStorage(machine, type, currentStored + actualAmount);
+        // Re-read the stored amount because the receive handler is an IPC
+        // call that can span ticks, and the machine's storage may be changed
+        // elsewhere in that window.
+        setMachineStorage(
+          machine,
+          type,
+          getMachineStorage(machine, type) + actualAmount,
+        );
       }
 
       // give the scheduler a chance to breathe
@@ -369,6 +378,27 @@ export class MachineNetwork extends DestroyableObject {
     }
 
     return budget;
+  }
+
+  /**
+   * Core network membership test using a pre-computed block UID. The static
+   * lookups that scan every network for a single location use this directly so
+   * the UID and dimension ID are computed once, not once per network.
+   */
+  private hasConnection(
+    dimensionId: string,
+    locationUid: string,
+    connectionType: NetworkConnectionType,
+  ): boolean {
+    if (dimensionId !== this.dimension.id) return false;
+
+    if (connectionType === NetworkConnectionType.Conduit) {
+      return this.connections.conduits.has(locationUid);
+    }
+    if (connectionType === NetworkConnectionType.NetworkLink) {
+      return this.connections.networkLinks.has(locationUid);
+    }
+    return this.connections.machines.has(locationUid);
   }
 
   /**
@@ -381,17 +411,11 @@ export class MachineNetwork extends DestroyableObject {
   ): boolean {
     this.ensureValidity();
 
-    if (location.dimension.id !== this.dimension.id) return false;
-
-    const locationUid = getBlockUniqueId(location);
-
-    if (connectionType === NetworkConnectionType.Conduit) {
-      return this.connections.conduits.has(locationUid);
-    }
-    if (connectionType === NetworkConnectionType.NetworkLink) {
-      return this.connections.networkLinks.has(locationUid);
-    }
-    return this.connections.machines.has(locationUid);
+    return this.hasConnection(
+      location.dimension.id,
+      getBlockUniqueId(location),
+      connectionType,
+    );
   }
 
   /**
@@ -479,7 +503,12 @@ export class MachineNetwork extends DestroyableObject {
       }
     }
 
-    function next(currentBlock: Block, direction: StrDirection): void {
+    function next(
+      currentBlock: Block,
+      direction: StrDirection,
+      selfIsConduit: boolean,
+      sharedSelfIo: IoCapabilities | undefined,
+    ): void {
       const nextBlock = getBlockInDirection(currentBlock, direction);
       if (!nextBlock) return;
 
@@ -489,19 +518,20 @@ export class MachineNetwork extends DestroyableObject {
 
       if (isHandled) return;
 
-      const selfIsConduit = currentBlock.hasTag(
-        "fluffyalien_energisticscore:conduit",
-      );
-
       const nextIsConduit = nextBlock.hasTag(
         "fluffyalien_energisticscore:conduit",
       );
 
       // Check that this current block can send this type out this side.
-      const selfIo = IoCapabilities.fromBlock(
-        currentBlock,
-        strDirectionToDirection(direction),
-      );
+      // `sharedSelfIo` is passed in when the current block doesn't use
+      // explicit-side IO (its capabilities are identical on every side);
+      // otherwise the side-specific capabilities are computed here.
+      const selfIo =
+        sharedSelfIo ??
+        IoCapabilities.fromBlock(
+          currentBlock,
+          strDirectionToDirection(direction),
+        );
 
       if (!selfIo.acceptsTypeData(ioType, nextIsConduit)) return;
 
@@ -519,12 +549,32 @@ export class MachineNetwork extends DestroyableObject {
 
     while (stack.length) {
       const block = stack.pop()!;
-      next(block, "north");
-      next(block, "east");
-      next(block, "south");
-      next(block, "west");
-      next(block, "up");
-      next(block, "down");
+
+      // Compute the values that depend only on `block` once here, instead of
+      // recomputing them inside next() for each of the 6 directions. Reading
+      // the tags and building the IO capabilities is the bulk of discovery's
+      // cost, and conduits (the most common block) are probed from all sides.
+      const blockTags = block.getTags();
+      const selfIsConduit = blockTags.includes(
+        "fluffyalien_energisticscore:conduit",
+      );
+
+      // For blocks that don't use explicit-side IO, IoCapabilities.fromBlock
+      // ignores the side and returns identical capabilities for every
+      // direction, so it can be built once and reused. Explicit-side machines
+      // must still be evaluated per direction (sharedSelfIo stays undefined).
+      const sharedSelfIo = blockTags.includes(
+        "fluffyalien_energisticscore:explicit_sides",
+      )
+        ? undefined
+        : IoCapabilities.fromBlock(block, strDirectionToDirection("north"));
+
+      next(block, "north", selfIsConduit, sharedSelfIo);
+      next(block, "east", selfIsConduit, sharedSelfIo);
+      next(block, "south", selfIsConduit, sharedSelfIo);
+      next(block, "west", selfIsConduit, sharedSelfIo);
+      next(block, "up", selfIsConduit, sharedSelfIo);
+      next(block, "down", selfIsConduit, sharedSelfIo);
     }
 
     return connections;
@@ -564,11 +614,19 @@ export class MachineNetwork extends DestroyableObject {
     location: DimensionLocation,
     connectionType: NetworkConnectionType,
   ): MachineNetwork | undefined {
-    return [...networks.values()].find(
-      (network) =>
+    const dimensionId = location.dimension.id;
+    const locationUid = getBlockUniqueId(location);
+
+    for (const network of networks.values()) {
+      if (
         network.ioType.id === ioType.id &&
-        network.isPartOfNetwork(location, connectionType),
-    );
+        network.hasConnection(dimensionId, locationUid, connectionType)
+      ) {
+        return network;
+      }
+    }
+
+    return undefined;
   }
 
   /**
@@ -590,9 +648,17 @@ export class MachineNetwork extends DestroyableObject {
     location: DimensionLocation,
     type: NetworkConnectionType,
   ): MachineNetwork[] {
-    return [...networks.values()].filter((network) =>
-      network.isPartOfNetwork(location, type),
-    );
+    const dimensionId = location.dimension.id;
+    const locationUid = getBlockUniqueId(location);
+
+    const result: MachineNetwork[] = [];
+    for (const network of networks.values()) {
+      if (network.hasConnection(dimensionId, locationUid, type)) {
+        result.push(network);
+      }
+    }
+
+    return result;
   }
 
   /**
