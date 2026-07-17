@@ -15,6 +15,7 @@ import {
   UiProgressIndicatorElementDefinition,
   UiProgressIndicatorPreset,
   UiStorageBarElementUpdateOptions,
+  MACHINE_ENTITY_NO_UPDATE_UI_TAG,
 } from "@/public_api/src";
 import {
   Block,
@@ -473,6 +474,10 @@ async function updateEntityUi(
   player: Player,
   init: boolean,
 ): Promise<void> {
+  if (entity.hasTag(MACHINE_ENTITY_NO_UPDATE_UI_TAG)) {
+    return;
+  }
+
   if (!definition.uiElements) {
     raise(
       `Failed to update UI for entity '${entity.typeId}' (machine: '${definition.id}'). It does not have 'description.ui' defined.`,
@@ -639,7 +644,11 @@ system.runInterval(() => {
     // entityContainerClosed handles the common case, but the entity may despawn
     // (non-persistent machines) or the player may leave while the UI is open, so
     // drop any stale entries here as well.
-    if (!entity.isValid || !player.isValid) {
+    if (
+      !entity.isValid ||
+      !player.isValid ||
+      entity.hasTag(MACHINE_ENTITY_NO_UPDATE_UI_TAG)
+    ) {
       playersInUi.delete(entity);
       continue;
     }

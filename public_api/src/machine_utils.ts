@@ -13,6 +13,14 @@ import { getBlockNetworkConnectionType } from "./network_utils.js";
 import { raise } from "./log.js";
 
 /**
+ * If this tag is on a machine entity, no UI updates will be triggered.
+ * Only use if you know what you're doing.
+ * @beta
+ */
+export const MACHINE_ENTITY_NO_UPDATE_UI_TAG =
+  "fluffyalien_energisticscore:no_update_ui";
+
+/**
  * Cleans up machine data and updates networks.
  * @beta
  * @remarks
