@@ -17,8 +17,8 @@ import {
 } from "@/public_api/src/serialize_utils";
 import { deserializeMachineItemStack } from "@/public_api/src/serialize_machine_item_stack";
 import { raise } from "./utils/log";
-import { Vector3Utils } from "@minecraft/math";
 import { destroyMachine, removeMachineData } from "./machine";
+import { stringifyDimensionLocation } from "./utils/string";
 
 export function getMachineSlotListener(
   payload: ipc.SerializableValue,
@@ -36,7 +36,7 @@ export function setMachineSlotListener(payload: ipc.SerializableValue): null {
   const block = loc.dimension.getBlock(loc);
   if (!block) {
     raise(
-      `Failed to set machine slot item. Block not found at ${Vector3Utils.toString(loc)} in '${loc.dimension.id}'.`,
+      `Failed to set machine slot item. Block not found at ${stringifyDimensionLocation(loc)}.`,
     );
   }
 
@@ -65,9 +65,7 @@ export function destroyMachineListener(payload: ipc.SerializableValue): null {
   const loc = deserializeDimensionLocation(data);
   const block = loc.dimension.getBlock(loc);
   if (!block) {
-    raise(
-      `Expected a block at (${Vector3Utils.toString(loc)}) in '${loc.dimension.id}'.`,
-    );
+    raise(`Expected a block at ${stringifyDimensionLocation(loc)}.`);
   }
 
   destroyMachine(block);

@@ -1,3 +1,5 @@
+export { stringifyDimensionLocation } from "@/public_api/src/misc_internal";
+
 /**
  * Recursively renders a value as a human-readable string with Minecraft
  * formatting codes (colored keys/values), for debug output such as the debug

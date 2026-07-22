@@ -1,4 +1,4 @@
-import { Vector3 } from "@minecraft/server";
+import { Vector3, DimensionLocation } from "@minecraft/server";
 import {
   VECTOR3_EAST,
   VECTOR3_WEST,
@@ -17,3 +17,12 @@ export const DIRECTION_VECTORS: Vector3[] = [
   VECTOR3_UP,
   VECTOR3_DOWN,
 ];
+
+/**
+ * Converts a `DimensionLocation` to a human-readable string for debug output.
+ * @internal
+ * @param loc The `DimensionLocation` to stringify.
+ */
+export function stringifyDimensionLocation(loc: DimensionLocation): string {
+  return `DimensionLocation {${loc.dimension.id} (${loc.x.toString()}, ${loc.y.toString()}, ${loc.z.toString()})}`;
+}

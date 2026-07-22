@@ -9,7 +9,7 @@ import {
   world,
 } from "@minecraft/server";
 import { raise } from "./log.js";
-import { Vector3Utils } from "@minecraft/math";
+import { stringifyDimensionLocation } from "./misc_internal.js";
 
 /**
  * @internal
@@ -117,9 +117,7 @@ export class SerializableContainerSlot {
       const loc = deserializeDimensionLocation(obj.actor.loc);
       const block = loc.dimension.getBlock(loc);
       if (!block) {
-        raise(
-          `Could not get block at ${Vector3Utils.toString(loc)} in '${loc.dimension.id}'.`,
-        );
+        raise(`Could not get block at ${stringifyDimensionLocation(loc)}.`);
       }
 
       const inv = block.getComponent(BlockComponentTypes.Inventory)!;

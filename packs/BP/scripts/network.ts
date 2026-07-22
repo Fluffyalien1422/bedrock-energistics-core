@@ -20,6 +20,7 @@ import {
   NetworkStorageTypeData,
 } from "@/public_api/src";
 import { InternalRegisteredMachine } from "./machine_registry";
+import { stringifyDimensionLocation } from "./utils/string";
 
 interface SendQueueItem {
   block: Block;
@@ -166,7 +167,7 @@ export class MachineNetwork extends DestroyableObject {
         // Don't log a warning because this is a common occurence.
         // We still log it as info for debugging purposes though.
         logInfo(
-          `The block with UID '${machineUid}' is air, but a registered machine was expected. Skipping allocation. This may occur if a machine is destroyed while allocation is still in progress.`,
+          `The block with UID '${machineUid}' is air, but a registered machine was expected during allocation (allocate). Skipping. This may occur if a machine is destroyed while allocation is still in progress.`,
         );
         continue;
       }
@@ -217,7 +218,7 @@ export class MachineNetwork extends DestroyableObject {
       const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
       if (!machineDef) {
         logWarn(
-          `Machine with ID '${machine.typeId}' not found in MachineNetwork#allocate.`,
+          `Machine with ID '${machine.typeId}' not found during allocation (allocate).`,
         );
         continue;
       }
@@ -290,6 +291,14 @@ export class MachineNetwork extends DestroyableObject {
     for (const sendData of distributionData.queueItems) {
       const machine = sendData.block;
       if (!machine.isValid) continue;
+      if (machine.typeId === "minecraft:air") {
+        // Don't log a warning because this is a common occurence.
+        // We still log it as info for debugging purposes though.
+        logInfo(
+          `The block at ${stringifyDimensionLocation(machine)} is air, but a registered machine was expected during allocation (returnToGenerators). Skipping. This may occur if a machine is destroyed while allocation is still in progress.`,
+        );
+        continue;
+      }
 
       const consumesCategory = machine.hasTag(
         `fluffyalien_energisticscore:consumer.category.${typeCategory}`,
@@ -335,7 +344,7 @@ export class MachineNetwork extends DestroyableObject {
       const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
       if (!machineDef) {
         logWarn(
-          `Machine with ID '${machine.typeId}' not found in MachineNetwork#returnToGenerators.`,
+          `Machine with ID '${machine.typeId}' not found during allocation (returnToGenerators).`,
         );
         yield;
         continue;
