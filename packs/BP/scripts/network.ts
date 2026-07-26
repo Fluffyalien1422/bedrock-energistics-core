@@ -409,7 +409,7 @@ export class MachineNetwork extends DestroyableObject {
       // (i.e. "take the offered amount") instead of dereferencing null below.
       const v: MachineReceiveHandlerRes =
         (machineDef.hasCallback("receive")
-          ? await machineDef.invokeRecieveHandler(machine, type, amountToAllocate)
+          ? await machineDef.invokeReceiveHandler(machine, type, amountToAllocate)
           : {}) ?? {};
 
       const actualAmount = Math.max(v.amount ?? amountToAllocate, 0);
@@ -613,7 +613,7 @@ export class MachineNetwork extends DestroyableObject {
 
       if (!selfIo.acceptsTypeData(ioType, nextIsConduit)) return;
 
-      // Check that the recieving block can take this type in too
+      // Check that the receiving block can take this type in too
       const io = IoCapabilities.fromBlock(
         nextBlock,
         strDirectionToDirection(reverseDirection(direction)),

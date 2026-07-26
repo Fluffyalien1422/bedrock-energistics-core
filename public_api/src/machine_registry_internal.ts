@@ -41,9 +41,9 @@ export interface IpcMachineCallbackArg {
 /**
  * @internal
  */
-export interface IpcRecieveHandlerPayload extends IpcMachineCallbackArg {
-  recieveType: string;
-  recieveAmount: number;
+export interface IpcReceiveHandlerPayload extends IpcMachineCallbackArg {
+  receiveType: string;
+  receiveAmount: number;
 }
 
 /**

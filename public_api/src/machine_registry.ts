@@ -7,7 +7,7 @@ import {
   IpcMachineUpdateUiHandlerArg,
   IpcNetworkStatsEventArg,
   IpcOnButtonPressedPayload,
-  IpcRecieveHandlerPayload,
+  IpcReceiveHandlerPayload,
   RegisteredMachineData,
 } from "./machine_registry_internal.js";
 import { deserializeDimensionLocation } from "./serialize_utils.js";
@@ -210,18 +210,18 @@ export function registerMachine(definition: MachineDefinition): void {
   if (definition.handlers?.receive) {
     receiveHandlerEvent = makeIpcListenerName(
       definition.description.id,
-      IpcListenerType.MachineRecieveHandler,
+      IpcListenerType.MachineReceiveHandler,
     );
 
     const callback = definition.handlers.receive.bind(null);
 
     ipcRouter.registerListener(receiveHandlerEvent, (payload) => {
-      const data = payload as IpcRecieveHandlerPayload;
+      const data = payload as IpcReceiveHandlerPayload;
 
       return callback({
         blockLocation: deserializeDimensionLocation(data.blockLocation),
-        receiveType: data.recieveType,
-        receiveAmount: data.recieveAmount,
+        receiveType: data.receiveType,
+        receiveAmount: data.receiveAmount,
       });
     });
   }

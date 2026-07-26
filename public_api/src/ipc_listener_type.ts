@@ -3,7 +3,7 @@
  */
 export enum IpcListenerType {
   MachineUpdateUiHandler,
-  MachineRecieveHandler,
+  MachineReceiveHandler,
   MachineOnButtonPressedEvent,
   MachineNetworkStatEvent,
   MachineOnStorageSetEvent,

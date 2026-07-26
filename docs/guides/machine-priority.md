@@ -11,6 +11,6 @@ A machine's priority during network allocation can be changed using the `fluffya
 
 **Examples:** `fluffyalien_energisticscore:priority.-1`, `fluffyalien_energisticscore:priority.0`, `fluffyalien_energisticscore:priority.1`
 
-All machines in the same priority group will recieve an equal amount of remaining budget at the time of allocation. Groups with higher priorities will recieve allocations first.
+All machines in the same priority group will receive an equal amount of remaining budget at the time of allocation. Groups with higher priorities will receive allocations first.
 
-For example, if the priority groups are `0` and `-1`, then the machines in group `0` will each recieve an equal split of the budget and the machines in group `-1` will each recieve an equal split of the remaining budget (if applicable) **after** group `0` have received their allocations.
+For example, if the priority groups are `0` and `-1`, then the machines in group `0` will each receive an equal split of the budget and the machines in group `-1` will each receive an equal split of the remaining budget (if applicable) **after** group `0` have received their allocations.

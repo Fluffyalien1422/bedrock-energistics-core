@@ -12,7 +12,7 @@ import {
   IpcMachineUpdateUiHandlerArg,
   IpcNetworkStatsEventArg,
   IpcOnButtonPressedPayload,
-  IpcRecieveHandlerPayload,
+  IpcReceiveHandlerPayload,
   RegisteredMachineData,
 } from "@/public_api/src/machine_registry_internal";
 import { makeSerializableDimensionLocation } from "@/public_api/src/serialize_utils";
@@ -70,19 +70,19 @@ export class InternalRegisteredMachine extends RegisteredMachine {
    * catches the throw and sends back null (see the null coalesce in the network
    * allocator). The return type reflects that so callers must handle it.
    */
-  invokeRecieveHandler(
+  invokeReceiveHandler(
     blockLocation: DimensionLocation,
-    recieveType: string,
-    recieveAmount: number,
+    receiveType: string,
+    receiveAmount: number,
   ): Promise<MachineReceiveHandlerRes | null> {
     if (!this.data.receiveHandlerEvent) {
-      raise("Trying to call the 'recieve' handler but it is not defined.");
+      raise("Trying to call the 'receive' handler but it is not defined.");
     }
 
-    const payload: IpcRecieveHandlerPayload = {
+    const payload: IpcReceiveHandlerPayload = {
       blockLocation: makeSerializableDimensionLocation(blockLocation),
-      recieveType,
-      recieveAmount,
+      receiveType,
+      receiveAmount,
     };
 
     return ipcInvoke(
