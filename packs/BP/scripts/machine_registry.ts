@@ -65,11 +65,16 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     ) as Promise<MachineUpdateUiHandlerRes>;
   }
 
+  /**
+   * Resolves to null if the handler throws in the owning add-on: the IPC layer
+   * catches the throw and sends back null (see the null coalesce in the network
+   * allocator). The return type reflects that so callers must handle it.
+   */
   invokeRecieveHandler(
     blockLocation: DimensionLocation,
     recieveType: string,
     recieveAmount: number,
-  ): Promise<MachineReceiveHandlerRes> {
+  ): Promise<MachineReceiveHandlerRes | null> {
     if (!this.data.receiveHandlerEvent) {
       raise("Trying to call the 'recieve' handler but it is not defined.");
     }
@@ -83,7 +88,7 @@ export class InternalRegisteredMachine extends RegisteredMachine {
     return ipcInvoke(
       this.data.receiveHandlerEvent,
       payload,
-    ) as Promise<MachineReceiveHandlerRes>;
+    ) as Promise<MachineReceiveHandlerRes | null>;
   }
 
   callOnNetworkAllocationCompletedEvent(
@@ -188,14 +193,25 @@ export function registerMachineListener(payload: ipc.SerializableValue): null {
   const data = new InternalRegisteredMachine(payload as RegisteredMachineData);
 
   const entityExistingAttachment = machineEntityToBlockIdMap.get(data.entityId);
-  if (entityExistingAttachment && entityExistingAttachment !== data.entityId) {
+  // The map stores entityId -> machineId, so the existing attachment is a
+  // machine id and must be compared against this machine's id.
+  // A *different* machine already using this entity is a real conflict;
+  // the same machine re-registering (an override) is allowed and falls through.
+  if (entityExistingAttachment && entityExistingAttachment !== data.id) {
     raise(
       `Failed to register machine '${data.id}'. The attached machine entity '${data.entityId}' is already attached to the machine '${entityExistingAttachment}'.`,
     );
   }
 
-  if (machineRegistry.has(data.id)) {
+  const existing = machineRegistry.get(data.id);
+  if (existing) {
     logWarn(`Overrode machine '${data.id}'.`);
+    // If the override switched to a different entity id, drop the stale
+    // entityId -> machineId entry so getMachineIdFromEntityId doesn't keep
+    // resolving the now-unused entity to this machine.
+    if (existing.entityId !== data.entityId) {
+      machineEntityToBlockIdMap.delete(existing.entityId);
+    }
   }
 
   machineRegistry.set(data.id, data);

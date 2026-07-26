@@ -123,15 +123,28 @@ export class MachineNetwork extends DestroyableObject {
     const startTick = system.currentTick;
     this.allocateJob ??= this.allocate();
 
-    while (system.currentTick === startTick) {
-      const result = await this.allocateJob.next();
-      if (result.done) {
-        this.allocateJob = undefined;
-        break;
+    try {
+      while (system.currentTick === startTick) {
+        const result = await this.allocateJob.next();
+        if (result.done) {
+          this.allocateJob = undefined;
+          break;
+        }
       }
+    } catch (e) {
+      // A step of the allocation job threw - typically a machine's 'receive'
+      // handler failing or timing out over IPC. Discard the broken job so the
+      // next tick starts a fresh allocate() rather than resuming a job that can
+      // never complete.
+      logWarn(
+        `Allocation failed for network ${this.id.toString()}: ${String(e)}`,
+      );
+      this.allocateJob = undefined;
+    } finally {
+      // Always release the lock. If this stayed true the interval (which skips
+      // while allocation is running) would never allocate this network again.
+      this.allocateTickRunning = false;
     }
-
-    this.allocateTickRunning = false;
   }
 
   /**
@@ -391,9 +404,13 @@ export class MachineNetwork extends DestroyableObject {
         0,
       );
 
-      const v: MachineReceiveHandlerRes = machineDef.hasCallback("receive")
-        ? await machineDef.invokeRecieveHandler(machine, type, amountToAllocate)
-        : {};
+      // The receive handler runs in the owning add-on over IPC. If it throws,
+      // the IPC layer resolves the response to null, so coalesce back to {}
+      // (i.e. "take the offered amount") instead of dereferencing null below.
+      const v: MachineReceiveHandlerRes =
+        (machineDef.hasCallback("receive")
+          ? await machineDef.invokeRecieveHandler(machine, type, amountToAllocate)
+          : {}) ?? {};
 
       const actualAmount = Math.max(v.amount ?? amountToAllocate, 0);
       budget -= actualAmount;

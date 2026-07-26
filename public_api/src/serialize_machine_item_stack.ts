@@ -37,7 +37,16 @@ export function deserializeMachineItemStack(data: string): MachineItemStack {
 }
 
 function serializeString(str: string): string {
-  return '"' + str.replaceAll('"', '\\"').replaceAll("\n", "\\n") + '"';
+  return (
+    '"' +
+    str
+      // Escape backslashes first, otherwise the escape sequences introduced by
+      // the replacements below would be escaped again on the next pass.
+      .replaceAll("\\", "\\\\")
+      .replaceAll('"', '\\"')
+      .replaceAll("\n", "\\n") +
+    '"'
+  );
 }
 
 /**
@@ -109,6 +118,8 @@ class DeserializeParser {
           s += '"';
         } else if (char === "n") {
           s += "\n";
+        } else if (char === "\\") {
+          s += "\\";
         } else {
           raise(
             `Failed to deserialize data: Could not read string: Illegal escape code: '\\${char}'.`,
@@ -166,7 +177,7 @@ class DeserializeParser {
       this.readLore(lore);
     } else if (char !== " ") {
       raise(
-        `Failed to deserialize data: Could not read lore: Reached illegal character: '${char}'.S`,
+        `Failed to deserialize data: Could not read lore: Reached illegal character: '${char}'.`,
       );
     }
 

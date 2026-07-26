@@ -83,27 +83,37 @@ export class InternalNetworkLinkNode {
    * effect.
    */
   public addConnection(location: Vector3): void {
-    const otherBlock = this.entity.dimension.getBlock(location)!;
+    const otherBlock = this.entity.dimension.getBlock(location);
+    if (!otherBlock) {
+      raise(
+        `Failed to add network link connection: the target block at ${Vector3Utils.toString(location)} is not loaded.`,
+      );
+    }
     const other = InternalNetworkLinkNode.fromBlock(otherBlock);
 
     other.selfAddConnection(this.blockPos);
     this.selfAddConnection(other.blockPos);
 
-    const thisBlock = this.entity.dimension.getBlock(this.blockPos)!;
-    MachineNetwork.updateWithBlock(thisBlock);
+    const thisBlock = this.entity.dimension.getBlock(this.blockPos);
+    if (thisBlock) MachineNetwork.updateWithBlock(thisBlock);
     MachineNetwork.updateWithBlock(otherBlock);
   }
 
   /** Inverse of {@link InternalNetworkLinkNode.addConnection}. */
   public removeConnection(location: Vector3): void {
-    const otherBlock = this.entity.dimension.getBlock(location)!;
+    const otherBlock = this.entity.dimension.getBlock(location);
+    if (!otherBlock) {
+      raise(
+        `Failed to remove network link connection: the target block at ${Vector3Utils.toString(location)} is not loaded.`,
+      );
+    }
     const other = InternalNetworkLinkNode.fromBlock(otherBlock);
 
     other.selfRemoveConnection(this.blockPos);
     this.selfRemoveConnection(other.blockPos);
 
-    const thisBlock = this.entity.dimension.getBlock(this.blockPos)!;
-    MachineNetwork.updateWithBlock(thisBlock);
+    const thisBlock = this.entity.dimension.getBlock(this.blockPos);
+    if (thisBlock) MachineNetwork.updateWithBlock(thisBlock);
     MachineNetwork.updateWithBlock(otherBlock);
   }
 
@@ -116,7 +126,12 @@ export class InternalNetworkLinkNode {
 
     // links are two way, remove the inbound links to this block.
     for (const connection of outboundConnections) {
-      const block = this.entity.dimension.getBlock(connection)!;
+      const block = this.entity.dimension.getBlock(connection);
+      // If the partner's chunk is unloaded we can't clean up its side right now;
+      // skip it (leaving a transient one-way link that the next network rebuild
+      // at that location resolves) rather than throwing and orphaning this
+      // node's backing entity, which must still be removed below.
+      if (!block) continue;
       const node = InternalNetworkLinkNode.fromBlock(block);
       node.removeConnection(this.blockPos);
     }
