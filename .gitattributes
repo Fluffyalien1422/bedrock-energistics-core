@@ -1,0 +1,9 @@
+# Normalize line endings so every contributor's working tree matches what is
+# stored in the repository, regardless of their `core.autocrlf` setting.
+# Without this, a Windows checkout produces CRLF files that fail `prettier
+# --check` while CI (which checks out LF) passes, or vice versa.
+* text=auto eol=lf
+
+# Binary files must never be line-ending converted. `text=auto` detects these
+# on its own, but being explicit avoids relying on that heuristic.
+*.png binary

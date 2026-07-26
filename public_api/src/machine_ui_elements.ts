@@ -4,9 +4,9 @@ import { UiElementDefinition } from "./machine_registry_types.js";
  * Represents the UI elements of a machine.
  * @beta
  */
-export class MachineUiElements
-  implements Iterable<[string, UiElementDefinition]>
-{
+export class MachineUiElements implements Iterable<
+  [string, UiElementDefinition]
+> {
   constructor(private readonly elements: Record<string, UiElementDefinition>) {}
 
   /**

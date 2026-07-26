@@ -23,5 +23,18 @@ jobs:
           npm ci
           cd scripts
           npm ci
-      - name: Check
-        run: npm run check
+      # Each check is its own step so the GitHub UI attributes a failure to the
+      # tool that reported it. `!cancelled()` keeps the later steps running
+      # after an earlier one fails, so a single run reports every problem
+      # instead of stopping at the first.
+      - name: Prettier
+        run: npm run check-prettier
+      - name: TypeScript
+        if: ${{ !cancelled() }}
+        run: npm run check-tsc
+      - name: ESLint
+        if: ${{ !cancelled() }}
+        run: npm run check-eslint
+      - name: TypeDoc
+        if: ${{ !cancelled() }}
+        run: npm run check-typedoc

@@ -4,10 +4,11 @@
   "type": "module",
   "scripts": {
     "fmt": "prettier . -w",
+    "check-prettier": "prettier . --check",
     "check-tsc": "tsc && tsc -p scripts && tsc -p public_api --noEmit",
     "check-eslint": "eslint .",
     "check-typedoc": "typedoc --emit none --treatWarningsAsErrors",
-    "check": "npm run check-tsc && npm run check-eslint && npm run check-typedoc",
+    "check": "npm run check-prettier && npm run check-tsc && npm run check-eslint && npm run check-typedoc",
     "docs": "typedoc"
   },
   "devDependencies": {
