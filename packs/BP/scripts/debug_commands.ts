@@ -10,7 +10,7 @@ import {
   system,
 } from "@minecraft/server";
 import { enableDebugMode, isDebugModeEnabled } from "./debug_mode";
-import { logInfo } from "./utils/log";
+import { logInfo } from "./log";
 import { MachineNetwork } from "./network";
 import { toPrettyString } from "./utils/string";
 

@@ -8,7 +8,8 @@ import {
   ItemMachineCallbackName,
   ItemMachineDefinition,
 } from "./item_machine_registry_types.js";
-import { raise } from "./log.js";
+import { raisePublic } from "./log.js";
+import { PublicErrorType } from "./error.js";
 import { isRegistrationAllowed } from "./registration_allowed.js";
 import {
   SerializableContainerSlot,
@@ -77,6 +78,7 @@ export class RegisteredItemMachine {
    * @beta
    * @param id The ID of the item machine to get.
    * @returns The registered item machine, or `undefined` if it does not exist.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async get(id: string): Promise<RegisteredItemMachine | undefined> {
     if (itemMachineCache.has(id)) {
@@ -109,11 +111,12 @@ export class RegisteredItemMachine {
 /**
  * Registers an item machine. This function should be called in the `worldLoad` after event.
  * @beta
- * @throws Throws if registration has been closed.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if registration has been closed, or if this package has not been initialized (see {@link init}).
  */
 export function registerItemMachine(definition: ItemMachineDefinition): void {
   if (!isRegistrationAllowed()) {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidState,
       `Attempted to register item machine '${definition.description.id}' after registration was closed.`,
     );
   }

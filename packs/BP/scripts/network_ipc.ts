@@ -151,13 +151,15 @@ export function generateListener(payload: ipc.SerializableValue): null {
   const block = location.dimension.getBlock(location);
   if (!block) return null;
 
+  // Resolve the storage type before reading the machine's stored amount, since
+  // getMachineStorage raises a less specific error for an unknown type.
+  const storageType = InternalRegisteredStorageType.forceGetInternal(type);
+
   // Send the full stored amount (existing + generated). Whatever isn't consumed
   // this tick is returned to the machine's storage by the allocator, so this
   // effectively re-offers leftover storage each tick.
   const fullAmount = amount + getMachineStorage(location, type);
   if (!fullAmount) return null;
-
-  const storageType = InternalRegisteredStorageType.forceGetInternal(type);
 
   MachineNetwork.getOrEstablish(storageType, block)?.queueSend(
     block,

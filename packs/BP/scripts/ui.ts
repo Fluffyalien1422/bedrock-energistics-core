@@ -35,7 +35,7 @@ import {
   optionalMachineItemStackToItemStack,
   setMachineSlotItem,
 } from "./data";
-import { logWarn, raise } from "./utils/log";
+import { logWarn, raise } from "./log";
 import {
   getMachineIdFromEntityId,
   InternalRegisteredMachine,

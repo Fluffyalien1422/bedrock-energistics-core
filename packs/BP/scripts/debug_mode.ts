@@ -9,7 +9,7 @@
 import { Block, EquipmentSlot, Player, system, world } from "@minecraft/server";
 import { ModalFormData } from "@minecraft/server-ui";
 import { getMachineStorage, setMachineStorage } from "./data";
-import { logInfo, makeLogString, raise } from "./utils/log";
+import { logInfo, makeLogString, raise } from "./log";
 import { InternalRegisteredStorageType } from "./storage_type_registry";
 import {
   getBlockDynamicProperties,

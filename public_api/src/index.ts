@@ -7,6 +7,7 @@ export { init } from "./init.js";
 export * from "./network_links/network_link_node.js";
 export * from "./common_registry_types.js";
 export * from "./constants.js";
+export * from "./error.js";
 export * from "./io.js";
 export * from "./item_machine_registry_types.js";
 export * from "./item_machine_registry.js";

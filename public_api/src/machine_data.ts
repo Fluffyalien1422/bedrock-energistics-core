@@ -10,7 +10,8 @@ import {
 import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 import { ipcInvoke } from "./ipc_wrapper.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
-import { logWarn, raise } from "./log.js";
+import { logWarn, raisePublic } from "./log.js";
+import { PublicErrorType } from "./error.js";
 import { RegisteredMachine } from "./machine_registry.js";
 import { callMachineOnStorageSetEvent } from "./machine_registry_internal.js";
 import { MachineItemStack } from "./machine_item_stack.js";
@@ -24,7 +25,7 @@ import {
  * @beta
  * @param loc The location of the machine.
  * @param type The storage type ID.
- * @throws Throws if the storage type does not exist
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the storage type does not exist.
  */
 export function getMachineStorage(
   loc: DimensionLocation,
@@ -33,7 +34,8 @@ export function getMachineStorage(
   const objective = getStorageScoreboardObjective(type);
 
   if (!objective) {
-    raise(
+    raisePublic(
+      PublicErrorType.NotRegistered,
       `Failed to get machine storage. Storage type '${type}' doesn't exist.`,
     );
   }
@@ -48,10 +50,10 @@ export function getMachineStorage(
  * @param type The storage type ID.
  * @param value The new value. Must be a non-negative integer.
  * @param callOnStorageSet Whether to call the `onStorageSet` event on the machine, if applicable.
- * @throws Throws if the storage type does not exist.
- * @throws Throws if the new value isn't a non-negative integer.
- * @throws Throws if the block is not valid.
- * @throws Throws if the block is not registered as a machine.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidObject} if the block is not valid.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the new value is negative.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the storage type does not exist, or if the block is not registered as a machine.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
  */
 export async function setMachineStorage(
   block: Block,
@@ -68,18 +70,23 @@ export async function setMachineStorage(
   // IPC calls for machines that don't have the 'onStorageSet' event.
 
   if (!block.isValid) {
-    raise("Failed to set machine storage. The block is invalid.");
+    raisePublic(
+      PublicErrorType.InvalidObject,
+      "Failed to set machine storage. The block is invalid.",
+    );
   }
 
   if (value < 0) {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidArgument,
       `Failed to set machine storage of type '${type}' to ${value.toString()}. The minimum value is 0.`,
     );
   }
 
   const objective = getStorageScoreboardObjective(type);
   if (!objective) {
-    raise(
+    raisePublic(
+      PublicErrorType.NotRegistered,
       `Failed to set machine storage. Storage type '${type}' doesn't exist.`,
     );
   }
@@ -102,6 +109,7 @@ export async function setMachineStorage(
  * @param loc The location of the machine.
  * @param elementId The ID of the item slot element.
  * @returns The {@link MachineItemStack} or `undefined` if there is no item in the specified slot.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
  */
 export async function getMachineSlotItem(
   loc: DimensionLocation,
@@ -126,6 +134,10 @@ export async function getMachineSlotItem(
  * @param loc The location of the machine.
  * @param elementId The ID of the item slot element.
  * @param newItemStack The {@link MachineItemStack} to put in the slot. Pass `undefined` to remove the item in the slot.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if there is no block at the given location.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the block is not registered as a machine.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the element is not an item slot, or if the item is not allowed in that slot.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
  */
 export async function setMachineSlotItem(
   loc: DimensionLocation,

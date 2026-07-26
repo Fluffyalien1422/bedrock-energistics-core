@@ -1,5 +1,5 @@
 import { ItemStack } from "@minecraft/server";
-import { logWarn } from "./log";
+import { logWarn } from "../log";
 
 /**
  * Creates an `ItemStack`, returning `undefined` (and logging a warning) instead

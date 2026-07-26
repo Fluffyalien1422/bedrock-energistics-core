@@ -136,6 +136,7 @@ export const STANDARD_STORAGE_TYPE_DEFINITIONS: Record<
  * @remarks
  * This is a wrapper around {@link registerStorageType} that uses
  * the definitions defined in {@link STANDARD_STORAGE_TYPE_DEFINITIONS}.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if registration has been closed, or if this package has not been initialized (see {@link init}).
  */
 export function useStandardStorageType(id: StandardStorageType): void {
   registerStorageType(STANDARD_STORAGE_TYPE_DEFINITIONS[id]);

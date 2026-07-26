@@ -93,9 +93,15 @@ export async function getItemMachineIoHandler(
 
   const registeredItemMachineData = registeredItemMachine.getData();
 
-  const io = registeredItemMachineData.getIoHandler
-    ? await registeredItemMachine.invokeGetIoHandler(serializableContainerSlot)
-    : {};
+  // The 'getIo' handler runs in the owning add-on. If it throws, the IPC layer
+  // resolves the response to null, so fall back to the registered defaultIo
+  // below rather than dereferencing null.
+  const io =
+    (registeredItemMachineData.getIoHandler
+      ? await registeredItemMachine.invokeGetIoHandler(
+          serializableContainerSlot,
+        )
+      : {}) ?? {};
 
   if (
     io.acceptsAny === true ||

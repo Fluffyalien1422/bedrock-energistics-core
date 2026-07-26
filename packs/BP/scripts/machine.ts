@@ -21,11 +21,12 @@ import {
   removeBlockFromScoreboards,
 } from "./data";
 import { MachineNetwork } from "./network";
-import { raise } from "./utils/log";
+import { raise, raisePublic } from "./log";
 import { Vector3Utils } from "@minecraft/math";
 import {
   getBlockNetworkConnectionType,
   NetworkConnectionType,
+  PublicErrorType,
   RegisteredMachine,
 } from "@/public_api/src";
 import {
@@ -72,7 +73,8 @@ export function destroyMachine(
   );
   const connectionType = getBlockNetworkConnectionType(destroyedPermutation);
   if (connectionType === undefined) {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidArgument,
       `Failed to destroy machine. Could not get network connection type for block '${destroyedPermutation.type.id}'.`,
     );
   }

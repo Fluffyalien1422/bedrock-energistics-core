@@ -10,13 +10,17 @@
 
 import { Block, DimensionLocation, ItemStack, world } from "@minecraft/server";
 import { machineChangedItemSlots } from "./ui";
-import { MachineItemStack, getMachineStorage } from "@/public_api/src";
+import {
+  MachineItemStack,
+  getMachineStorage,
+  PublicErrorType,
+} from "@/public_api/src";
 import {
   getBlockUniqueId,
   getStorageScoreboardObjective,
   setScore,
 } from "@/public_api/src/machine_data_internal";
-import { logWarn, raise } from "./utils/log";
+import { logWarn, raisePublic } from "./log";
 import { InternalRegisteredMachine } from "./machine_registry";
 import {
   getBlockDynamicProperty,
@@ -62,18 +66,23 @@ export function setMachineStorage(
   // Make sure changes are reflected in both.
 
   if (!block.isValid) {
-    raise("Failed to set machine storage. The block is invalid.");
+    raisePublic(
+      PublicErrorType.InvalidObject,
+      "Failed to set machine storage. The block is invalid.",
+    );
   }
 
   if (value < 0) {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidArgument,
       `Failed to set machine storage of type '${type}' to ${value.toString()}. The minimum value is 0.`,
     );
   }
 
   const objective = getStorageScoreboardObjective(type);
   if (!objective) {
-    raise(
+    raisePublic(
+      PublicErrorType.NotRegistered,
       `Failed to set machine storage. Storage type '${type}' doesn't exist.`,
     );
   }
@@ -126,7 +135,8 @@ export function getMachineSlotItem(
   const registered = InternalRegisteredMachine.forceGetInternal(block.typeId);
   const element = registered.uiElements?.get(slotId);
   if (element?.type !== "itemSlot") {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidArgument,
       `Failed to get machine slot item. The element '${slotId}' for machine '${block.typeId}' is of type '${element?.type ?? "undefined"}', expected 'itemSlot'.`,
     );
   }
@@ -144,7 +154,8 @@ export function setMachineSlotItem(
 
   const element = registered.uiElements?.get(slotId);
   if (element?.type !== "itemSlot") {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidArgument,
       `Failed to set machine slot item. The element '${slotId}' for machine '${block.typeId}' is of type '${element?.type ?? "undefined"}', expected 'itemSlot'.`,
     );
   }
@@ -154,7 +165,8 @@ export function setMachineSlotItem(
     element.allowedItems &&
     !element.allowedItems.includes(newItemStack.typeId)
   ) {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidArgument,
       `Failed to set machine slot item. The item '${newItemStack.typeId}' is not allowed in slot '${slotId}' of machine '${block.typeId}'.`,
     );
   }

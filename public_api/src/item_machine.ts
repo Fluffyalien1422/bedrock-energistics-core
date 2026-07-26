@@ -7,7 +7,8 @@ import {
   SerializableContainerSlot,
   SerializableContainerSlotJson,
 } from "./serialize_utils.js";
-import { raise } from "./log.js";
+import { PublicErrorType } from "./error.js";
+import { raisePublic } from "./log.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import {
   GetItemMachineStoragePayload,
@@ -32,7 +33,7 @@ export class ItemMachine {
   readonly typeId: string;
 
   /**
-   * @throws Throws if an item is not found in the specified slot.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if an item is not found in the specified slot.
    */
   constructor(
     /**
@@ -48,7 +49,10 @@ export class ItemMachine {
   ) {
     const typeId = inventory.container?.getItem(slot)?.typeId;
     if (!typeId) {
-      raise("Could not get the item in the specified slot.");
+      raisePublic(
+        PublicErrorType.NotFound,
+        "Could not get the item in the specified slot.",
+      );
     }
 
     this.typeId = typeId;
@@ -73,7 +77,7 @@ export class ItemMachine {
   /**
    * Get the container slot that this item is in.
    * @beta
-   * @throws Throws if this object is not valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidObject} if this object is not valid.
    */
   getContainerSlot(): ContainerSlot {
     this.ensureValidity();
@@ -84,8 +88,10 @@ export class ItemMachine {
    * Gets the storage of a specific type in the item machine.
    * @beta
    * @param type The type of storage to get.
-   * @throws Throws if the storage type does not exist
-   * @throws Throws if this object is not valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidObject} if this object is not valid, or if the item's inventory is no longer valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the storage type does not exist.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if the block or entity holding the item no longer exists.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   getStorage(type: string): Promise<number> {
     this.ensureValidity();
@@ -103,7 +109,8 @@ export class ItemMachine {
    * @beta
    * @param type The type of storage to set.
    * @param value The new value. Must be an integer.
-   * @throws Throws if this object is not valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidObject} if this object is not valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   setStorage(type: string, value: number): void {
     this.ensureValidity();
@@ -120,7 +127,10 @@ export class ItemMachine {
   /**
    * Get the I/O capabilities of this item machine.
    * @beta
-   * @throws Throws if this object is not valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidObject} if this object is not valid, or if the item's inventory is no longer valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the item is not registered as an item machine.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if the block or entity holding the item no longer exists.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   async getIo(): Promise<IoCapabilities> {
     this.ensureValidity();
@@ -143,7 +153,8 @@ export class ItemMachine {
 
   private ensureValidity(): void {
     if (!this.isValid()) {
-      raise(
+      raisePublic(
+        PublicErrorType.InvalidObject,
         "The type ID of the item in the specified slot has changed since the creation of this object.",
       );
     }

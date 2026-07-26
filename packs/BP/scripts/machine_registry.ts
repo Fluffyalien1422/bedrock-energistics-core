@@ -1,10 +1,11 @@
 import * as ipc from "mcbe-addon-ipc";
 import { DimensionLocation } from "@minecraft/server";
-import { logWarn, raise } from "./utils/log";
+import { logWarn, raise, raisePublic } from "./log";
 import {
   MachineUpdateUiHandlerRes,
   NetworkStorageTypeData,
   MachineReceiveHandlerRes,
+  PublicErrorType,
   RegisteredMachine,
 } from "@/public_api/src";
 import {
@@ -163,12 +164,16 @@ export class InternalRegisteredMachine extends RegisteredMachine {
   /**
    * Like {@link InternalRegisteredMachine.getInternal} but throws instead of
    * returning `undefined`. Use when the machine is expected to exist (e.g. in a
-   * block event for a machine block) and a missing entry is a bug.
+   * block event for a machine block).
+   * @throws Throws a `PublicError`, since an unregistered ID is usually the
+   * fault of the add-on that asked for it. Reached from an IPC listener, the
+   * message is returned to that add-on.
    */
   static forceGetInternal(id: string): InternalRegisteredMachine {
     const registered = InternalRegisteredMachine.getInternal(id);
     if (!registered) {
-      raise(
+      raisePublic(
+        PublicErrorType.NotRegistered,
         `Expected '${id}' to be registered as a machine, but it could not be found in the machine registry.`,
       );
     }
@@ -198,7 +203,8 @@ export function registerMachineListener(payload: ipc.SerializableValue): null {
   // A *different* machine already using this entity is a real conflict;
   // the same machine re-registering (an override) is allowed and falls through.
   if (entityExistingAttachment && entityExistingAttachment !== data.id) {
-    raise(
+    raisePublic(
+      PublicErrorType.RegistrationConflict,
       `Failed to register machine '${data.id}'. The attached machine entity '${data.entityId}' is already attached to the machine '${entityExistingAttachment}'.`,
     );
   }

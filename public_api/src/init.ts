@@ -1,5 +1,6 @@
 import * as ipc from "mcbe-addon-ipc";
-import { raise } from "./log.js";
+import { PublicErrorType } from "./error.js";
+import { raisePublic } from "./log.js";
 import { isBedrockEnergisticsCoreInWorld } from "./misc.js";
 
 let ipcRouter: ipc.Router | undefined;
@@ -10,14 +11,16 @@ let initBecVersion: string | undefined;
  * This must be called in the `worldLoad` after event.
  * @param uid A unique ID.
  * @beta
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has already been initialized, or if Bedrock Energistics Core is not in the world.
  */
 export function init(uid: string): void {
   if (ipcRouter) {
-    raise("Library already initialized.");
+    raisePublic(PublicErrorType.InvalidState, "Library already initialized.");
   }
 
   if (!isBedrockEnergisticsCoreInWorld()) {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidState,
       `Cannot initialize library (${uid}). Bedrock Energistics Core is not in the world.`,
     );
   }
@@ -30,7 +33,7 @@ export function init(uid: string): void {
  */
 export function getIpcRouter(): ipc.Router {
   if (!ipcRouter) {
-    raise("Library not initialized.");
+    raisePublic(PublicErrorType.InvalidState, "Library not initialized.");
   }
 
   return ipcRouter;

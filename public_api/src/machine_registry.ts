@@ -13,7 +13,8 @@ import {
 import { deserializeDimensionLocation } from "./serialize_utils.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import { isRegistrationAllowed } from "./registration_allowed.js";
-import { raise } from "./log.js";
+import { raisePublic } from "./log.js";
+import { PublicErrorType } from "./error.js";
 import { getIpcRouter } from "./init.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
 import { IpcListenerType, makeIpcListenerName } from "./ipc_listener_type.js";
@@ -127,6 +128,7 @@ export class RegisteredMachine {
    * @beta
    * @param id The ID of the machine to get.
    * @returns The registered machine, or `undefined` if it does not exist.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async get(id: string): Promise<RegisteredMachine | undefined> {
     if (machineCache.has(id)) {
@@ -160,12 +162,14 @@ export class RegisteredMachine {
    * @beta
    * @param id The ID of the machine to get.
    * @returns The registered machine.
-   * @throws Throws if the machine does not exist in the registry.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the machine does not exist in the registry.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async forceGet(id: string): Promise<RegisteredMachine> {
     const registered = await RegisteredMachine.get(id);
     if (!registered) {
-      raise(
+      raisePublic(
+        PublicErrorType.NotRegistered,
         `Expected '${id}' to be registered as a machine, but it could not be found in the machine registry.`,
       );
     }
@@ -176,11 +180,12 @@ export class RegisteredMachine {
 /**
  * Registers a machine. This function should be called in the `worldLoad` after event.
  * @beta
- * @throws Throws if registration has been closed.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if registration has been closed, or if this package has not been initialized (see {@link init}).
  */
 export function registerMachine(definition: MachineDefinition): void {
   if (!isRegistrationAllowed()) {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidState,
       `Attempted to register machine '${definition.description.id}' after registration was closed.`,
     );
   }

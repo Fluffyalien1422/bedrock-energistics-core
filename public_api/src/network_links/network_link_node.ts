@@ -8,7 +8,8 @@ import {
   NetworkLinkGetResponse,
 } from "./ipc_events.js";
 import { makeSerializableDimensionLocation } from "../serialize_utils.js";
-import { raise } from "../log.js";
+import { raisePublic } from "../log.js";
+import { PublicErrorType } from "../error.js";
 import { ipcInvoke } from "../ipc_wrapper.js";
 import { BecIpcListener } from "../bec_ipc_listener.js";
 
@@ -31,6 +32,10 @@ export class NetworkLinkNode {
    * Fetches all of the outbound connections to other {@link NetworkLinkNode}s.
    * @returns The block positions of each connection.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if this node's block is not loaded.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidObject} if this node is no longer valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if this node's block does not have the network link tag.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   public async getConnections(): Promise<Vector3[]> {
     const payload: NetworkLinkGetRequest = {
@@ -52,6 +57,10 @@ export class NetworkLinkNode {
    * Sends a request to create a two way connection between this {@link NetworkLinkNode} and the location of another.
    * @param location The block location of the other node.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if this node's block or the target block is not loaded.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidObject} if either node is no longer valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if either block does not have the network link tag.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   public async addConnection(location: Vector3): Promise<void> {
     const payload: NetworkLinkAddRequest = {
@@ -69,6 +78,10 @@ export class NetworkLinkNode {
    * Sends a request to break an existing two way connection between this {@link NetworkLinkNode} and the location of another.
    * @param location The block location of the other node.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if this node's block or the target block is not loaded.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidObject} if either node is no longer valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if either block does not have the network link tag.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   public async removeConnection(location: Vector3): Promise<void> {
     const payload: NetworkLinkAddRequest = {
@@ -85,6 +98,10 @@ export class NetworkLinkNode {
   /**
    * Sends a request to break all connections and clean-up the backend side.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if this node's block is not loaded.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidObject} if this node is no longer valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if this node's block does not have the network link tag.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   public async destroyNode(): Promise<void> {
     const payload: NetworkLinkDestroyRequest = {
@@ -111,7 +128,7 @@ export class NetworkLinkNode {
    *
    * @param block Expected to have the `fluffyalien_energisticscore:network_link` block tag.
    * @returns The `NetworkLinkNode` at the block location.
-   * @throws When the `NetworkLinkNode` does not exist yet, and the block at this location does not have the correct tags.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} when the `NetworkLinkNode` does not exist yet, and the block at this location does not have the correct tags.
    * @beta
    */
   static get(block: Block): NetworkLinkNode {
@@ -122,7 +139,8 @@ export class NetworkLinkNode {
     // Only verify the block tag when creating an entity, this is easier for after events when the network link block
     // is destroyed, but we still need to get it to cleanup.
     if (!dataStorageEntity && !block.hasTag(NETWORK_LINK_BLOCK_TAG))
-      raise(
+      raisePublic(
+        PublicErrorType.InvalidArgument,
         `NetworkLinkNode.get expected block of id: '${block.typeId}' to have the '${NETWORK_LINK_BLOCK_TAG}' tag before creating a network link storage entity at this location`,
       );
 

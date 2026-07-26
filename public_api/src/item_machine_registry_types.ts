@@ -100,8 +100,7 @@ export type ItemMachineEventName = keyof ItemMachineDefinitionEvents;
  * @beta
  */
 export type ItemMachineCallbackName =
-  | ItemMachineHandlerName
-  | ItemMachineEventName;
+  ItemMachineHandlerName | ItemMachineEventName;
 
 /**
  * @beta

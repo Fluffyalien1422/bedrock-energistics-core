@@ -55,6 +55,7 @@ export class MachineNetwork {
    * Use this function to force network updates.
    * @see {@link MachineNetwork.updateAdjacent}, {@link MachineNetwork.updateWith}, {@link MachineNetwork.updateWithBlock}
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   destroy(): void {
     const payload: NetworkInstanceMethodPayload = {
@@ -71,8 +72,8 @@ export class MachineNetwork {
    * Contains statistics about each storage type's availability on the network before and after distribution,
    * as of the latest network allocation. This is equivalent to the data passed to the `onNetworkAllocationCompleted`
    * machine event.
-   * @returns Returns an object where each key is a storage type and each value is an object containing information
-   * about the availability of that storage type on the network.
+   * @returns Statistics about this network's storage type before and after the latest distribution.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   async getLatestAllocationData(): Promise<NetworkStorageTypeData> {
     const payload: NetworkInstanceMethodPayload = {
@@ -90,6 +91,7 @@ export class MachineNetwork {
   /**
    * Tests if a machine matching the arguments is inside of this network.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   isPartOfNetwork(
     location: DimensionLocation,
@@ -107,6 +109,7 @@ export class MachineNetwork {
   /**
    * Tests if a block is inside of this network.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   async isBlockPartOfNetwork(block: Block): Promise<boolean> {
     const type = getBlockNetworkConnectionType(block);
@@ -122,6 +125,7 @@ export class MachineNetwork {
    * - Automatically sets the machine's reserve storage to the amount that was not received.
    * @param blockLocation The location of the machine that is sending the storage type.
    * @param amount The amount to send. Must be greater than zero.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    * @see {@link generate}
    */
   queueSend(blockLocation: DimensionLocation, amount: number): void {
@@ -137,6 +141,8 @@ export class MachineNetwork {
   /**
    * Establish a new network at `location`.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the storage type does not exist.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async establish(
     ioTypeId: string,
@@ -163,6 +169,8 @@ export class MachineNetwork {
    * @param location The location of the machine.
    * @param connectionType The connection type of the machine.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the storage type does not exist.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async getWith(
     ioTypeId: string,
@@ -188,6 +196,8 @@ export class MachineNetwork {
   /**
    * Get the {@link MachineNetwork} that contains a block.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the storage type does not exist.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async getWithBlock(
     ioTypeId: string,
@@ -201,6 +211,7 @@ export class MachineNetwork {
   /**
    * Get all {@link MachineNetwork}s that contain a machine that matches the arguments.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async getAllWith(
     location: DimensionLocation,
@@ -222,6 +233,7 @@ export class MachineNetwork {
   /**
    * Get all {@link MachineNetwork}s that contain a block.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async getAllWithBlock(block: Block): Promise<MachineNetwork[]> {
     const type = getBlockNetworkConnectionType(block);
@@ -234,6 +246,8 @@ export class MachineNetwork {
    * otherwise establish a network using the block as the origin if it doesn't exist.
    * @see {@link MachineNetwork.getWithBlock}, {@link MachineNetwork.establish}
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the storage type does not exist.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async getOrEstablish(
     ioTypeId: string,
@@ -260,6 +274,7 @@ export class MachineNetwork {
   /**
    * Update all {@link MachineNetwork}s adjacent to a location.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async updateAdjacent(location: DimensionLocation): Promise<void> {
     for (const directionVector of DIRECTION_VECTORS) {
@@ -281,6 +296,7 @@ export class MachineNetwork {
   /**
    * Update all {@link MachineNetwork}s that contain a machine that matches the arguments.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async updateWith(
     location: DimensionLocation,
@@ -294,6 +310,7 @@ export class MachineNetwork {
   /**
    * Update all {@link MachineNetwork}s that contain a block.
    * @beta
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async updateWithBlock(block: Block): Promise<void> {
     for (const network of await MachineNetwork.getAllWithBlock(block)) {

@@ -129,6 +129,7 @@ export class IoCapabilities {
    * @param id The ID of the storage type.
    * @param isFromConduit Is the source a conduit?
    * @returns Whether this object accepts the storage type with the given ID.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   async acceptsTypeId(id: string, isFromConduit = false): Promise<boolean> {
     if (!isFromConduit && this.onlyAllowsConduitConnections) return false;
@@ -167,6 +168,7 @@ export class IoCapabilities {
    * @param category The category to check.
    * @param isFromConduit Is the source a conduit?
    * @returns Whether this object accepts any storage type of the given category.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   async acceptsAnyTypeOfCategory(
     category: string,
@@ -188,6 +190,7 @@ export class IoCapabilities {
    * @beta
    * @param other The other {@link IoCapabilities} object.
    * @returns Whether the two objects can connect or not.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   async canConnectTo(other: IoCapabilities): Promise<boolean> {
     if (

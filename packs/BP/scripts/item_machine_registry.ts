@@ -1,10 +1,11 @@
 import * as ipc from "mcbe-addon-ipc";
 import {
   ItemMachineGetIoResponse,
+  PublicErrorType,
   RegisteredItemMachine,
 } from "@/public_api/src";
 import { SerializableContainerSlot } from "@/public_api/src/serialize_utils";
-import { logWarn, raise } from "./utils/log";
+import { logWarn, raise, raisePublic } from "./log";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper";
 import {
   ItemMachineOnStorageSetPayload,
@@ -31,9 +32,14 @@ export class InternalRegisteredItemMachine extends RegisteredItemMachine {
     return this.data;
   }
 
+  /**
+   * Resolves to null if the handler throws in the owning add-on: the IPC layer
+   * catches the throw and sends back null. The return type reflects that so
+   * callers must handle it.
+   */
   invokeGetIoHandler(
     serializableSlot: SerializableContainerSlot,
-  ): Promise<ItemMachineGetIoResponse> {
+  ): Promise<ItemMachineGetIoResponse | null> {
     if (!this.data.getIoHandler) {
       raise(`Trying to call the 'getIo' handler but it is not defined.`);
     }
@@ -41,7 +47,7 @@ export class InternalRegisteredItemMachine extends RegisteredItemMachine {
     return ipcInvoke(
       this.data.getIoHandler,
       serializableSlot.toJson(),
-    ) as Promise<ItemMachineGetIoResponse>;
+    ) as Promise<ItemMachineGetIoResponse | null>;
   }
 
   callOnStorageSetEvent(
@@ -66,10 +72,16 @@ export class InternalRegisteredItemMachine extends RegisteredItemMachine {
     return itemMachineRegistry.get(id);
   }
 
+  /**
+   * @throws Throws a `PublicError`, since an unregistered ID is usually the
+   * fault of the add-on that asked for it. Reached from an IPC listener, the
+   * message is returned to that add-on.
+   */
   static forceGetInternal(id: string): InternalRegisteredItemMachine {
     const registered = InternalRegisteredItemMachine.getInternal(id);
     if (!registered) {
-      raise(
+      raisePublic(
+        PublicErrorType.NotRegistered,
         `Expected '${id}' to be registered as an item machine, but it could not be found in the item machine registry.`,
       );
     }

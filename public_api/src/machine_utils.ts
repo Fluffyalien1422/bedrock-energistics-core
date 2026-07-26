@@ -10,7 +10,8 @@ import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 import { RegisteredMachine } from "./machine_registry.js";
 import { RemoveMachineDataPayload } from "./machine_data_internal.js";
 import { getBlockNetworkConnectionType } from "./network_utils.js";
-import { raise } from "./log.js";
+import { raisePublic } from "./log.js";
+import { PublicErrorType } from "./error.js";
 
 /**
  * If this tag is on a machine entity, no UI updates will be triggered.
@@ -32,9 +33,8 @@ export const MACHINE_ENTITY_NO_UPDATE_UI_TAG =
  * @param destroyedPermutation The permutation of the block that was destroyed.
  * If the block hasn't been destroyed, pass the current permutation of the block.
  * If `loc` is of type `Block`, this is optional and will default to `loc.permutation`, otherwise it is required.
- * @throws Throws if arguments are invalid.
- * @throws Throws if the permutation has no network connection type
- * (if {@link getBlockNetworkConnectionType} returns `undefined`).
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if arguments are invalid, or if the permutation has no network connection type (if {@link getBlockNetworkConnectionType} returns `undefined`).
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
  */
 export async function removeMachineData(
   loc: DimensionLocation,
@@ -53,7 +53,8 @@ export async function removeMachineData(
     if (loc instanceof Block) {
       permutation = loc.permutation;
     } else {
-      raise(
+      raisePublic(
+        PublicErrorType.InvalidArgument,
         "Invalid arguments passed to 'removeMachineData'. 'destroyedPermutation' must be defined if 'loc' is not of type 'Block'.",
       );
     }
@@ -61,7 +62,8 @@ export async function removeMachineData(
 
   const connectionType = getBlockNetworkConnectionType(permutation);
   if (connectionType === undefined) {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidArgument,
       `Failed to remove machine data. Could not get network connection type for block '${permutation.type.id}'.`,
     );
   }
@@ -78,6 +80,10 @@ export async function removeMachineData(
  * @remarks
  * This will destroy the block and remove the machine entity. If you only want to remove data, use {@link removeMachineData} instead.
  * @param loc The machine block location.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if there is no block at the given location.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the block is not registered as a machine.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the block has no network connection type.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
  */
 export async function destroyMachine(loc: DimensionLocation): Promise<void> {
   await ipcInvoke(
@@ -91,7 +97,8 @@ export async function destroyMachine(loc: DimensionLocation): Promise<void> {
  * @beta
  * @param block The machine.
  * @returns The machine entity, or `undefined` if it doesn't exist.
- * @throws Throws if the machine does not exist in the registry.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the machine does not exist in the registry.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
  */
 export async function getMachineEntity(
   block: Block,
@@ -108,7 +115,8 @@ export async function getMachineEntity(
  * @beta
  * @param block The machine.
  * @returns The new entity or the one that was already there.
- * @throws Throws if the machine does not exist in the registry.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the machine does not exist in the registry.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
  */
 export async function spawnMachineEntity(block: Block): Promise<Entity> {
   // there is a similar function to this one in the add-on.

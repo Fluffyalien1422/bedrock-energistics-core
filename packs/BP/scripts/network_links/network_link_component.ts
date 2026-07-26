@@ -11,8 +11,12 @@ import {
   SerializableDimensionLocation,
 } from "@/public_api/src/serialize_utils";
 import { InternalNetworkLinkNode } from "./network_link_internal";
-import { raise } from "../utils/log";
-import { getBlockNetworkConnectionType } from "@/public_api/src";
+import { raisePublic } from "../log";
+import { stringifyDimensionLocation } from "../utils/string";
+import {
+  getBlockNetworkConnectionType,
+  PublicErrorType,
+} from "@/public_api/src";
 
 export const networkLinkComponent: BlockCustomComponent = {
   onPlace(ev) {
@@ -40,12 +44,19 @@ export const networkLinkComponent: BlockCustomComponent = {
  * Resolves a network link node from a serialized location sent over IPC.
  * Dependent add-ons manage links (add/remove/query connections) through the
  * public API, which routes to here.
+ * @throws Throws a `PublicError` if the block isn't loaded, so the add-on that
+ * made the call is told rather than the failure being logged here.
  */
 export function getNetworkLinkNode(
   self: SerializableDimensionLocation,
 ): InternalNetworkLinkNode {
   const location = deserializeDimensionLocation(self);
   const block = location.dimension.getBlock(location);
-  if (!block) raise(`_getNetwork failed to get block`);
+  if (!block) {
+    raisePublic(
+      PublicErrorType.NotFound,
+      `Failed to get the network link node at ${stringifyDimensionLocation(location)}. The block is not loaded.`,
+    );
+  }
   return InternalNetworkLinkNode.fromBlock(block);
 }

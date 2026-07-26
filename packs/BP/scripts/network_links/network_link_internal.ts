@@ -3,9 +3,10 @@ import {
   NETWORK_LINK_ENTITY_ID,
   NETWORK_LINK_POSITIONS_KEY,
 } from "@/public_api/src/network_links/ipc_events";
+import { PublicErrorType } from "@/public_api/src";
 import { Vector3Utils } from "@minecraft/math";
 import { Block, Dimension, Entity, Vector3 } from "@minecraft/server";
-import { raise } from "../utils/log";
+import { raisePublic } from "../log";
 import { MachineNetwork } from "../network";
 
 /**
@@ -39,8 +40,9 @@ export class InternalNetworkLinkNode {
     // Only verify the block tag when creating an entity, this is easier for after events when the network link block
     // is destroyed, but we still need to get it to cleanup.
     if (!dataStorageEntity && !block.hasTag(NETWORK_LINK_BLOCK_TAG))
-      raise(
-        `NetworkLinks::getNetworkLink expected block of id: '${block.typeId}' to have the '${NETWORK_LINK_BLOCK_TAG}' tag before creating a network link storage entity at this location`,
+      raisePublic(
+        PublicErrorType.InvalidArgument,
+        `Failed to get the network link node. Expected the block '${block.typeId}' to have the '${NETWORK_LINK_BLOCK_TAG}' tag before creating a network link storage entity at this location.`,
       );
 
     // Spawn entity if tag check passed and it is null.
@@ -85,7 +87,8 @@ export class InternalNetworkLinkNode {
   public addConnection(location: Vector3): void {
     const otherBlock = this.entity.dimension.getBlock(location);
     if (!otherBlock) {
-      raise(
+      raisePublic(
+        PublicErrorType.NotFound,
         `Failed to add network link connection: the target block at ${Vector3Utils.toString(location)} is not loaded.`,
       );
     }
@@ -103,7 +106,8 @@ export class InternalNetworkLinkNode {
   public removeConnection(location: Vector3): void {
     const otherBlock = this.entity.dimension.getBlock(location);
     if (!otherBlock) {
-      raise(
+      raisePublic(
+        PublicErrorType.NotFound,
         `Failed to remove network link connection: the target block at ${Vector3Utils.toString(location)} is not loaded.`,
       );
     }
@@ -167,6 +171,11 @@ export class InternalNetworkLinkNode {
   }
 
   private ensureValid(): void {
-    if (!this.entity.isValid) raise(`NetworkLinkNode instance is not valid.`);
+    if (!this.entity.isValid) {
+      raisePublic(
+        PublicErrorType.InvalidObject,
+        `NetworkLinkNode instance is not valid.`,
+      );
+    }
   }
 }

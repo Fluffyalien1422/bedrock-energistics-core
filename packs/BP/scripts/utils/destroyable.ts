@@ -1,4 +1,4 @@
-import { raise } from "./log";
+import { raise } from "../log";
 
 export interface Destroyable {
   /**

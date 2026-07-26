@@ -1,6 +1,7 @@
 import { BecIpcListener } from "./bec_ipc_listener.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
-import { raise } from "./log.js";
+import { raisePublic } from "./log.js";
+import { PublicErrorType } from "./error.js";
 import { isRegistrationAllowed } from "./registration_allowed.js";
 import {
   StorageTypeTextureDescription,
@@ -97,6 +98,7 @@ export class RegisteredStorageType implements StorageTypeData {
    * @beta
    * @param id The ID of the storage type to get.
    * @returns The registered storage type, or `undefined` if it does not exist.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async get(id: string): Promise<RegisteredStorageType | undefined> {
     if (storageTypeCache.has(id)) {
@@ -129,6 +131,7 @@ export class RegisteredStorageType implements StorageTypeData {
    * Get all registered storage type IDs.
    * @beta
    * @returns An array containing all registered storage type IDs.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   static async getAllIds(): Promise<string[]> {
     if (storageTypeIdCache) {
@@ -151,24 +154,27 @@ export class RegisteredStorageType implements StorageTypeData {
 /**
  * Registers a storage type. This function should be called in the `worldLoad` after event.
  * @beta
- * @throws Throws if registration has been closed.
- * @throws Throws if the definition ID or category is invalid.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if registration has been closed, or if this package has not been initialized (see {@link init}).
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the definition ID or category is invalid.
  */
 export function registerStorageType(definition: StorageTypeDefinition): void {
   if (!isRegistrationAllowed()) {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidState,
       `Attempted to register storage type '${definition.id}' after registration was closed.`,
     );
   }
 
   if (definition.id.startsWith("_") || definition.category.startsWith("_")) {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidArgument,
       `Failed to register storage type '${definition.id}' (category: '${definition.category}'). Storage type IDs and categories cannot start with '_'.`,
     );
   }
 
   if (definition.id.includes(".") || definition.category.includes(".")) {
-    raise(
+    raisePublic(
+      PublicErrorType.InvalidArgument,
       `Failed to register storage type '${definition.id}' (category: '${definition.category}'). Storage type IDs and categories cannot include '.'.`,
     );
   }

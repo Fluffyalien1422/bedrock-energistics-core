@@ -1,7 +1,7 @@
 import { Block, Dimension, DimensionLocation, system } from "@minecraft/server";
 import { Vector3Utils } from "@minecraft/math";
 import { DestroyableObject } from "./utils/destroyable";
-import { logInfo, logWarn } from "./utils/log";
+import { logInfo, logWarn } from "./log";
 import { getBlockUniqueId, getMachineStorage, setMachineStorage } from "./data";
 import {
   DIRECTION_VECTORS,
@@ -409,7 +409,11 @@ export class MachineNetwork extends DestroyableObject {
       // (i.e. "take the offered amount") instead of dereferencing null below.
       const v: MachineReceiveHandlerRes =
         (machineDef.hasCallback("receive")
-          ? await machineDef.invokeReceiveHandler(machine, type, amountToAllocate)
+          ? await machineDef.invokeReceiveHandler(
+              machine,
+              type,
+              amountToAllocate,
+            )
           : {}) ?? {};
 
       const actualAmount = Math.max(v.amount ?? amountToAllocate, 0);

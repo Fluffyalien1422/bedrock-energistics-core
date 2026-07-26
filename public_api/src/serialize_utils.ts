@@ -8,7 +8,8 @@ import {
   Vector3,
   world,
 } from "@minecraft/server";
-import { raise } from "./log.js";
+import { PublicErrorType } from "./error.js";
+import { raisePublic } from "./log.js";
 import { stringifyDimensionLocation } from "./misc_internal.js";
 
 /**
@@ -84,7 +85,10 @@ export class SerializableContainerSlot {
 
   toContainerSlot(): ContainerSlot {
     if (!this.inventory.container) {
-      raise("This inventory is no longer valid.");
+      raisePublic(
+        PublicErrorType.InvalidObject,
+        "This inventory is no longer valid.",
+      );
     }
 
     return this.inventory.container.getSlot(this.slot);
@@ -117,7 +121,10 @@ export class SerializableContainerSlot {
       const loc = deserializeDimensionLocation(obj.actor.loc);
       const block = loc.dimension.getBlock(loc);
       if (!block) {
-        raise(`Could not get block at ${stringifyDimensionLocation(loc)}.`);
+        raisePublic(
+          PublicErrorType.NotFound,
+          `Could not get block at ${stringifyDimensionLocation(loc)}.`,
+        );
       }
 
       const inv = block.getComponent(BlockComponentTypes.Inventory)!;
@@ -127,7 +134,10 @@ export class SerializableContainerSlot {
 
     const entity = world.getEntity(obj.actor.id);
     if (!entity) {
-      raise(`Could not get entity with ID '${obj.actor.id}'.`);
+      raisePublic(
+        PublicErrorType.NotFound,
+        `Could not get entity with ID '${obj.actor.id}'.`,
+      );
     }
 
     const inv = entity.getComponent(EntityComponentTypes.Inventory)!;

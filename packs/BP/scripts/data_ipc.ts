@@ -10,13 +10,14 @@ import {
   SetMachineSlotPayload,
 } from "@/public_api/src/machine_data_internal";
 import * as ipc from "mcbe-addon-ipc";
+import { PublicErrorType } from "@/public_api/src";
 import { getMachineSlotItemRaw, setMachineSlotItem } from "./data";
 import {
   deserializeDimensionLocation,
   SerializableDimensionLocation,
 } from "@/public_api/src/serialize_utils";
 import { deserializeMachineItemStack } from "@/public_api/src/serialize_machine_item_stack";
-import { raise } from "./utils/log";
+import { raisePublic } from "./log";
 import { destroyMachine, removeMachineData } from "./machine";
 import { stringifyDimensionLocation } from "./utils/string";
 
@@ -35,7 +36,8 @@ export function setMachineSlotListener(payload: ipc.SerializableValue): null {
   const loc = deserializeDimensionLocation(data.loc);
   const block = loc.dimension.getBlock(loc);
   if (!block) {
-    raise(
+    raisePublic(
+      PublicErrorType.NotFound,
       `Failed to set machine slot item. Block not found at ${stringifyDimensionLocation(loc)}.`,
     );
   }
@@ -65,7 +67,10 @@ export function destroyMachineListener(payload: ipc.SerializableValue): null {
   const loc = deserializeDimensionLocation(data);
   const block = loc.dimension.getBlock(loc);
   if (!block) {
-    raise(`Expected a block at ${stringifyDimensionLocation(loc)}.`);
+    raisePublic(
+      PublicErrorType.NotFound,
+      `Failed to destroy machine. Expected a block at ${stringifyDimensionLocation(loc)}.`,
+    );
   }
 
   destroyMachine(block);

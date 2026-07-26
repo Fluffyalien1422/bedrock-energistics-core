@@ -59,9 +59,29 @@ This style guide uses elements from the [Google TypeScript Style Guide](https://
 
 ## Diagnostic Messsages
 
-- Use `logInfo`, `logWarn`, and `raise` from `packs/BP/scripts/utils/log.ts` for all logging purposes within the Bedrock Energistics Core add-on (not the public API).
-- Use `logInfo`, `logWarn`, and `raise` from `public_api/src/log.ts` for all logging purposes within the Bedrock Energistics Core public API (not the add-on).
+- Use `logInfo`, `logWarn`, `raise`, and `raisePublic` from `packs/BP/scripts/log.ts` for all logging purposes within the Bedrock Energistics Core add-on (not the public API).
+- Use `logInfo`, `logWarn`, `raise`, and `raisePublic` from `public_api/src/log.ts` for all logging purposes within the Bedrock Energistics Core public API (not the add-on).
 - Diagnostic messages should be clear and grammatically correct (start with a capital letter, end with period, etc). Definite entities (variable names, IDs, etc) should be surrounded in single quotes (eg. "The entity 'example:entity' ...").
+
+## Errors
+
+Errors are classified by who is at fault. That decides whether the error reaches the add-on that made the call, or is only logged.
+
+- `raisePublic(type, message)` throws a `PublicError`: **the caller made a mistake** and can fix it. For example, an unregistered ID, a location with no machine at it, or an item a slot doesn't allow.
+- `raise(message)` throws an `InternalError`: **something went wrong inside Bedrock Energistics Core.** For example, data that we serialized ourselves failing to parse, or an invariant that an earlier guard should already have ensured.
+
+Prefer `raisePublic`. Most failures are the caller's mistake, so `raise` should be rare — especially in the public API, where nearly every error is caused by the add-on calling it. Only use `raise` when the caller could not have caused the problem and could not act on it.
+
+Every `PublicError` carries a `PublicErrorType` so add-ons can handle it programmatically instead of matching on the message text. Pick the member that describes the mistake (see `public_api/src/error.ts`), and add a new member rather than stretching an existing one to fit.
+
+### Crossing the pack boundary
+
+Bedrock Energistics Core and the add-ons that depend on it are separate packs communicating over IPC. This is what the split above is for:
+
+- A `PublicError` thrown inside one of the core pack's IPC listeners is encoded into the response by `registerListener` (`packs/BP/scripts/ipc_wrapper.ts`) and thrown again on the other side by `ipcInvoke` (`public_api/src/ipc_wrapper.ts`), keeping its type. The error surfaces in the add-on that caused it instead of in the core pack's log.
+- Anything else propagates to `mcbe-addon-ipc`, which logs it in the core pack and resolves the caller's invoke to `null`. That is a backstop for bugs, not a reporting path, so don't rely on it for something the caller needs to know about.
+
+A listener for a one-way send has no caller to return to, so a `PublicError` thrown there is only logged.
 
 ## Other
 
