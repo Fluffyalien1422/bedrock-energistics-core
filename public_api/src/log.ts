@@ -1,6 +1,7 @@
 import { VERSION } from "./constants.js";
-import { InternalError, PublicError, PublicErrorType } from "./error.js";
+import { PublicErrorType } from "./error.js";
 import { __GET_INIT_BEC_VER__, tryGetIpcRouter } from "./init.js";
+import { createLogger } from "./shared_logger.js";
 
 function makeLogString(logLevel: string, message: string): string {
   let namespace: string;
@@ -16,27 +17,19 @@ function makeLogString(logLevel: string, message: string): string {
   return `[Bedrock Energistics Core API v${VERSION}] (${namespace}) ${logLevel} ${message}`;
 }
 
-/**
- * @internal
- */
-export function logInfo(message: string): void {
-  console.info(makeLogString("INFO", message));
-}
+const logger = createLogger(makeLogString);
 
 /**
  * @internal
  */
-export function logWarn(message: string): void {
-  console.warn(makeLogString("WARN", message));
-}
+export const logInfo = logger.logInfo;
 
 /**
- * Note: prefer {@link raise} in most cases.
  * @internal
  */
-export function makeErrorString(message: string): string {
-  return makeLogString("ERROR", message);
-}
+export const logWarn = logger.logWarn;
+
+// The following are wrapper functions instead of re-exports so that the return type is correctly `never`.
 
 /**
  * Throws an {@link InternalError} with the standard prefix.
@@ -47,7 +40,7 @@ export function makeErrorString(message: string): string {
  * failure is the caller's mistake, use {@link raisePublic} instead.
  */
 export function raise(message: string): never {
-  throw new InternalError(makeErrorString(message));
+  return logger.raise(message);
 }
 
 /**
@@ -60,5 +53,5 @@ export function raise(message: string): never {
  * @param type Lets the caller handle the error programmatically.
  */
 export function raisePublic(type: PublicErrorType, message: string): never {
-  throw new PublicError(type, makeErrorString(message));
+  return logger.raisePublic(type, message);
 }
