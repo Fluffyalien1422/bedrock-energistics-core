@@ -29,8 +29,15 @@ export class MachineItemStack {
   ) {
     this.nameTag = options.nameTag;
     this.damage = options.damage ?? 0;
-    this.lore = options.lore ?? [];
-    this.enchantments = options.enchantments ?? [];
+    // Copy the collections rather than storing the caller's. Without this, two
+    // stacks built from the same options - notably the copy that `clone` and
+    // `withAmount` produce - would share this state, so mutating one would
+    // silently change the other. `Enchantment` is itself mutable (its `level`
+    // is writable), so the entries are copied too; the `type` is just an ID
+    // wrapper and is safe to share.
+    this.lore = options.lore ? [...options.lore] : [];
+    this.enchantments =
+      options.enchantments?.map((enchantment) => ({ ...enchantment })) ?? [];
   }
 
   /**

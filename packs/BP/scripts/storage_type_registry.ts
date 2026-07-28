@@ -57,6 +57,20 @@ world.afterEvents.worldLoad.subscribe(() => {
   registerStorageType(STANDARD_STORAGE_TYPE_DEFINITIONS.energy);
 });
 
+/**
+ * Compares two textures by value. A texture is either a preset (a string) or a
+ * description object, and the objects arrive freshly deserialized from IPC on
+ * every registration, so comparing them by reference would report a change even
+ * when two add-ons register the exact same texture.
+ */
+function storageTypeTexturesEqual(
+  a: StorageTypeTextureDescription | StorageTypeTexturePreset,
+  b: StorageTypeTextureDescription | StorageTypeTexturePreset,
+): boolean {
+  if (typeof a === "string" || typeof b === "string") return a === b;
+  return a.baseId === b.baseId && a.formattingCode === b.formattingCode;
+}
+
 function prettifyStorageTypeTexture(
   texture: StorageTypeTextureDescription | StorageTypeTexturePreset,
 ): string {
@@ -82,7 +96,7 @@ function registerStorageType(data: StorageTypeDefinition): void {
       );
     }
 
-    if (existing.texture !== data.texture) {
+    if (!storageTypeTexturesEqual(existing.texture, data.texture)) {
       logWarn(
         `Overrode texture of storage type '${data.id}', originally was ${prettifyStorageTypeTexture(existing.texture)}, now is ${prettifyStorageTypeTexture(data.texture)}.`,
       );

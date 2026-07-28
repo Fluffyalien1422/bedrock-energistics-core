@@ -2,6 +2,31 @@ import * as ipc from "mcbe-addon-ipc";
 import { getIpcRouter } from "./init.js";
 import { BecIpcListener } from "./bec_ipc_listener.js";
 import { publicErrorFromIpcMessage } from "./error_internal.js";
+import { logInfo } from "./log.js";
+
+/**
+ * Registers an IPC listener, replacing any listener already registered under
+ * the same ID.
+ * @internal
+ * @remarks
+ * Listener IDs are derived from the ID of the machine or item machine that owns
+ * them, so registering the same one twice would throw. Overriding instead keeps
+ * registration idempotent: re-registering a machine (which is allowed, and
+ * overrides the previous definition) swaps its handlers, rather than throwing
+ * partway through and leaving some listeners replaced and others stale.
+ */
+export function registerOrOverrideIpcListener(
+  event: string,
+  listener: ipc.ScriptEventListener,
+): void {
+  const ipcRouter = getIpcRouter();
+
+  if (ipcRouter.removeListener(event)) {
+    logInfo(`Overrode IPC listener '${event}'.`);
+  }
+
+  ipcRouter.registerListener(event, listener);
+}
 
 /**
  * @internal

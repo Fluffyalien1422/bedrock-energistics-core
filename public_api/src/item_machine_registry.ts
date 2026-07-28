@@ -1,5 +1,9 @@
 import { IpcListenerType, makeIpcListenerName } from "./ipc_listener_type.js";
-import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
+import {
+  ipcInvoke,
+  ipcSend,
+  registerOrOverrideIpcListener,
+} from "./ipc_wrapper.js";
 import {
   ItemMachineOnStorageSetPayload,
   RegisteredItemMachineData,
@@ -121,7 +125,10 @@ export function registerItemMachine(definition: ItemMachineDefinition): void {
     );
   }
 
-  const ipcRouter = getIpcRouter();
+  // Fail before any listener is registered or the item machine is recorded
+  // locally, rather than partway through, if the library hasn't been
+  // initialized.
+  getIpcRouter();
 
   let getIoHandler: string | undefined;
   if (definition.handlers?.getIo) {
@@ -132,7 +139,7 @@ export function registerItemMachine(definition: ItemMachineDefinition): void {
 
     const callback = definition.handlers.getIo.bind(null);
 
-    ipcRouter.registerListener(getIoHandler, (payload) => {
+    registerOrOverrideIpcListener(getIoHandler, (payload) => {
       const serializableSlot = SerializableContainerSlot.fromJson(
         payload as SerializableContainerSlotJson,
       );
@@ -155,7 +162,7 @@ export function registerItemMachine(definition: ItemMachineDefinition): void {
 
     const callback = definition.events.onStorageSet.bind(null);
 
-    ipcRouter.registerListener(onStorageSetEvent, (payloadRaw) => {
+    registerOrOverrideIpcListener(onStorageSetEvent, (payloadRaw) => {
       const payload = payloadRaw as ItemMachineOnStorageSetPayload;
 
       const serializableSlot = SerializableContainerSlot.fromJson(payload.slot);

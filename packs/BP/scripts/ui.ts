@@ -342,9 +342,12 @@ function handleProgressIndicator(
 ): void {
   const indicator = element.indicator;
   const indicatorIsPreset = typeof indicator === "string";
+  // The highest value that can be rendered, inclusive. The preset table already
+  // stores it that way, but a custom indicator's frames are indexed by the
+  // value, so its last usable value is one less than the frame count.
   const maxValue = indicatorIsPreset
     ? PROGRESS_INDICATOR_PRESET_MAX_VALUES[indicator]
-    : indicator.frames.length;
+    : indicator.frames.length - 1;
   const invalidValue =
     value < 0 || value > maxValue || !Number.isInteger(value);
 
@@ -461,14 +464,56 @@ function handleButton(
 }
 
 /**
+ * Entities whose UI is currently being redrawn.
+ * @see {@link updateEntityUi}
+ */
+const entitiesUpdatingUi = new Set<Entity>();
+
+/**
+ * Redraws a machine's UI, skipping the redraw if one is already in progress for
+ * this entity.
+ * @remarks
+ * {@link renderEntityUi} awaits the machine's `updateUi` handler over IPC,
+ * which can span several ticks, so the update interval can fire again before
+ * the previous redraw has finished. Letting two interleave would race on the
+ * item slot sync and on clearing the block's changed-item-slot set, dropping
+ * changes recorded while a redraw was mid-flight.
+ *
+ * Skipping a redraw doesn't lose the player's edits, because the redraw that is
+ * already running syncs the container back to the block after its `await`. The
+ * exception is the initial redraw, which seeds the container from the block
+ * instead, but that only runs as the UI opens, before there is anything for the
+ * player to have changed.
+ * @see {@link renderEntityUi}
+ */
+async function updateEntityUi(
+  definition: InternalRegisteredMachine,
+  entity: Entity,
+  player: Player,
+  init: boolean,
+): Promise<void> {
+  if (entitiesUpdatingUi.has(entity)) return;
+
+  entitiesUpdatingUi.add(entity);
+  try {
+    await renderEntityUi(definition, entity, player, init);
+  } finally {
+    entitiesUpdatingUi.delete(entity);
+  }
+}
+
+/**
  * Redraws every element of a machine's UI into its entity container. Calls the
  * machine's optional `updateUi` handler (over IPC) for dynamic per-element
  * options, then dispatches each configured element to its handler. Cleared at
  * the end: the block's changed-item-slot set, now that it's been rendered.
+ * @remarks
+ * Call {@link updateEntityUi} instead of this, so that concurrent redraws of
+ * the same entity are prevented.
  * @param init `true` for the first draw when the UI opens, which forces item
  * slots to be seeded from the block rather than read from the container.
  */
-async function updateEntityUi(
+async function renderEntityUi(
   definition: InternalRegisteredMachine,
   entity: Entity,
   player: Player,

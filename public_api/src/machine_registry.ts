@@ -11,7 +11,11 @@ import {
   RegisteredMachineData,
 } from "./machine_registry_internal.js";
 import { deserializeDimensionLocation } from "./serialize_utils.js";
-import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
+import {
+  ipcInvoke,
+  ipcSend,
+  registerOrOverrideIpcListener,
+} from "./ipc_wrapper.js";
 import { isRegistrationAllowed } from "./registration_allowed.js";
 import { raisePublic } from "./log.js";
 import { PublicErrorType } from "./error.js";
@@ -190,7 +194,9 @@ export function registerMachine(definition: MachineDefinition): void {
     );
   }
 
-  const ipcRouter = getIpcRouter();
+  // Fail before any listener is registered or the machine is recorded locally,
+  // rather than partway through, if the library hasn't been initialized.
+  getIpcRouter();
 
   let updateUiEvent: string | undefined;
   if (definition.handlers?.updateUi) {
@@ -201,7 +207,7 @@ export function registerMachine(definition: MachineDefinition): void {
 
     const callback = definition.handlers.updateUi.bind(null);
 
-    ipcRouter.registerListener(updateUiEvent, (payload) => {
+    registerOrOverrideIpcListener(updateUiEvent, (payload) => {
       const data = payload as IpcMachineUpdateUiHandlerArg;
 
       return callback({
@@ -220,7 +226,7 @@ export function registerMachine(definition: MachineDefinition): void {
 
     const callback = definition.handlers.receive.bind(null);
 
-    ipcRouter.registerListener(receiveHandlerEvent, (payload) => {
+    registerOrOverrideIpcListener(receiveHandlerEvent, (payload) => {
       const data = payload as IpcReceiveHandlerPayload;
 
       return callback({
@@ -240,7 +246,7 @@ export function registerMachine(definition: MachineDefinition): void {
 
     const callback = definition.events.onButtonPressed.bind(null);
 
-    ipcRouter.registerListener(onButtonPressedEvent, (payload) => {
+    registerOrOverrideIpcListener(onButtonPressedEvent, (payload) => {
       const data = payload as IpcOnButtonPressedPayload;
       void callback({
         blockLocation: deserializeDimensionLocation(data.blockLocation),
@@ -261,7 +267,7 @@ export function registerMachine(definition: MachineDefinition): void {
 
     const callback = definition.events.onNetworkAllocationCompleted.bind(null);
 
-    ipcRouter.registerListener(networkStatEvent, (payload) => {
+    registerOrOverrideIpcListener(networkStatEvent, (payload) => {
       const data = payload as IpcNetworkStatsEventArg;
 
       void callback({
@@ -284,7 +290,7 @@ export function registerMachine(definition: MachineDefinition): void {
 
     const callback = definition.events.onStorageSet.bind(null);
 
-    ipcRouter.registerListener(onStorageSetEvent, (payload) => {
+    registerOrOverrideIpcListener(onStorageSetEvent, (payload) => {
       const data = payload as IpcMachineOnStorageSetEventArg;
       void callback({
         blockLocation: deserializeDimensionLocation(data.blockLocation),

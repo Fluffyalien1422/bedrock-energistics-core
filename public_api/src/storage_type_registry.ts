@@ -138,16 +138,32 @@ export class RegisteredStorageType implements StorageTypeData {
       return [...storageTypeIdCache];
     }
 
+    // Captured before the await, as in `get`. The response can arrive after the
+    // registration window has closed, and caching a list that the core pack
+    // built while other packs were still registering would make an incomplete
+    // result permanent.
+    const isRegistrationOngoing = isRegistrationAllowed();
+
     const ids = await ipcInvoke<string[]>(
       BecIpcListener.GetAllRegisteredStorageTypes,
       null,
     );
 
-    if (!isRegistrationAllowed()) {
+    if (!isRegistrationOngoing) {
       storageTypeIdCache = [...ids];
+      return ids;
     }
 
-    return ids;
+    // While registration is ongoing, this pack's own registrations may not have
+    // reached the core pack yet, so merge them in. Without this, `getAllIds`
+    // would omit a storage type that `get` (which falls back to the same list)
+    // reports as existing.
+    const allIds = new Set(ids);
+    for (const id of ownRegisteredStorageTypes.keys()) {
+      allIds.add(id);
+    }
+
+    return [...allIds];
   }
 }
 
