@@ -222,10 +222,13 @@ export class MachineNetwork {
       type,
     };
 
-    const networks = await ipcInvoke<NetworkDataPayload[]>(
-      BecIpcListener.GetAllNetworksWith,
-      payload,
-    );
+    // An unexpected error in the core pack is logged there and answered with
+    // `null`, so default to an empty list rather than dereferencing it.
+    const networks =
+      (await ipcInvoke<NetworkDataPayload[] | null>(
+        BecIpcListener.GetAllNetworksWith,
+        payload,
+      )) ?? [];
 
     return networks.map((network) => MachineNetwork.fromDataPayload(network));
   }

@@ -9,7 +9,7 @@
 import { Block, EquipmentSlot, Player, system, world } from "@minecraft/server";
 import { ModalFormData } from "@minecraft/server-ui";
 import { getMachineStorage, setMachineStorage } from "./data";
-import { logInfo, makeLogString, raise } from "./log";
+import { logInfo, logWarn, makeLogString, raise } from "./log";
 import { InternalRegisteredStorageType } from "./storage_type_registry";
 import {
   getBlockDynamicProperties,
@@ -149,44 +149,56 @@ function showSetStorageForm(block: Block, player: Player): void {
     )
     .textField("Value", "0");
 
-  void form.show(player).then((response) => {
-    playersInSetStorageForm.delete(player.id);
+  void form
+    .show(player)
+    .then((response) => {
+      if (!response.formValues) return;
 
-    if (!response.formValues) return;
-
-    const varName = response.formValues[0] as string;
-    let value: unknown;
-    try {
-      value = JSON.parse(response.formValues[1] as string) as unknown;
-    } catch (err) {
-      raise(`Debug menu: Invalid JSON value. Error: ${String(err)}.`);
-    }
-
-    if (
-      typeof value !== "number" &&
-      typeof value !== "string" &&
-      typeof value !== "boolean"
-    ) {
-      raise("Debug menu: Expected a number, string, or boolean.");
-    }
-
-    if (varName.startsWith("storage.")) {
-      const storageType = varName.slice("storage.".length);
-      if (typeof value !== "number") {
-        raise("Debug menu: Expected a number to set a storage type.");
+      const varName = response.formValues[0] as string;
+      let value: unknown;
+      try {
+        value = JSON.parse(response.formValues[1] as string) as unknown;
+      } catch (err) {
+        raise(`Debug menu: Invalid JSON value. Error: ${String(err)}.`);
       }
-      setMachineStorage(block, storageType, value);
-      return;
-    }
 
-    if (varName.startsWith("property.")) {
-      const property = varName.slice("property.".length);
-      setBlockDynamicProperty(block, property, value);
-      return;
-    }
+      if (
+        typeof value !== "number" &&
+        typeof value !== "string" &&
+        typeof value !== "boolean"
+      ) {
+        raise("Debug menu: Expected a number, string, or boolean.");
+      }
 
-    raise(
-      `Debug menu: Invalid variable domain. Expected 'storage' or 'property' but got '${varName.split(".")[0]}'.`,
-    );
-  });
+      if (varName.startsWith("storage.")) {
+        const storageType = varName.slice("storage.".length);
+        if (typeof value !== "number") {
+          raise("Debug menu: Expected a number to set a storage type.");
+        }
+        setMachineStorage(block, storageType, value);
+        return;
+      }
+
+      if (varName.startsWith("property.")) {
+        const property = varName.slice("property.".length);
+        setBlockDynamicProperty(block, property, value);
+        return;
+      }
+
+      raise(
+        `Debug menu: Invalid variable domain. Expected 'storage' or 'property' but got '${varName.split(".")[0]}'.`,
+      );
+    })
+    .catch((e: unknown) => {
+      // Everything above runs inside a promise, so without this an invalid
+      // entry (or a rejected setter) would surface as an unhandled rejection
+      // and the player who typed it would get no feedback at all.
+      logWarn(String(e));
+      if (player.isValid) player.sendMessage(String(e));
+    })
+    .finally(() => {
+      // In a `finally` so the player isn't left flagged as being in the form
+      // (which suppresses the debug readout) if showing it rejected.
+      playersInSetStorageForm.delete(player.id);
+    });
 }

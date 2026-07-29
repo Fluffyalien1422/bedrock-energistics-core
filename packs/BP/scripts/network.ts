@@ -416,18 +416,34 @@ export class MachineNetwork extends DestroyableObject {
             )
           : {}) ?? {};
 
-      const actualAmount = Math.max(v.amount ?? amountToAllocate, 0);
-      budget -= actualAmount;
+      // A handler may take less than it was offered, but not more: claiming
+      // more would drive the budget negative and starve the machines after
+      // this one, and would push the machine past its maximum storage.
+      const requestedAmount = Math.min(
+        Math.max(v.amount ?? amountToAllocate, 0),
+        amountToAllocate,
+      );
+
+      let actualAmount = requestedAmount;
+
       if (v.handleStorage ?? true) {
         // Re-read the stored amount because the receive handler is an IPC
         // call that can span ticks, and the machine's storage may be changed
-        // elsewhere in that window.
-        setMachineStorage(
-          machine,
-          type,
-          getMachineStorage(machine, type) + actualAmount,
+        // elsewhere in that window. That also means the room left in the
+        // machine may have shrunk since `amountToAllocate` was calculated, so
+        // clamp again; whatever no longer fits stays in the budget for the
+        // machines after this one.
+        const storedAmount = getMachineStorage(machine, type);
+
+        actualAmount = Math.max(
+          Math.min(requestedAmount, machineDef.maxStorage - storedAmount),
+          0,
         );
+
+        setMachineStorage(machine, type, storedAmount + actualAmount);
       }
+
+      budget -= actualAmount;
 
       // give the scheduler a chance to breathe
       yield;

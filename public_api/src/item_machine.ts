@@ -93,7 +93,9 @@ export class ItemMachine {
    * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if the block or entity holding the item no longer exists.
    * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
-  getStorage(type: string): Promise<number> {
+  // `async` so that a failed validity check rejects the returned promise
+  // instead of throwing synchronously, matching the other methods here.
+  async getStorage(type: string): Promise<number> {
     this.ensureValidity();
 
     const payload: GetItemMachineStoragePayload = {
@@ -101,19 +103,32 @@ export class ItemMachine {
       type,
     };
 
-    return ipcInvoke<number>(BecIpcListener.GetItemMachineStorage, payload);
+    return await ipcInvoke<number>(
+      BecIpcListener.GetItemMachineStorage,
+      payload,
+    );
   }
 
   /**
    * Sets the storage of a specific type in the item machine.
    * @beta
    * @param type The type of storage to set.
-   * @param value The new value. Must be an integer.
+   * @param value The new value. Must be a non-negative integer.
    * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidObject} if this object is not valid.
+   * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the new value isn't a non-negative integer.
    * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   setStorage(type: string, value: number): void {
     this.ensureValidity();
+
+    // Checked here rather than in the core pack: this is a one-way call, so an
+    // error raised on the other side would only reach that pack's log.
+    if (!Number.isInteger(value) || value < 0) {
+      raisePublic(
+        PublicErrorType.InvalidArgument,
+        `Failed to set item machine storage of type '${type}' to ${value.toString()}. The value must be a non-negative integer.`,
+      );
+    }
 
     const payload: SetItemMachineStoragePayload = {
       slot: this.containerSlotJson,

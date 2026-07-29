@@ -127,7 +127,13 @@ export class SerializableContainerSlot {
         );
       }
 
-      const inv = block.getComponent(BlockComponentTypes.Inventory)!;
+      const inv = block.getComponent(BlockComponentTypes.Inventory);
+      if (!inv) {
+        raisePublic(
+          PublicErrorType.InvalidObject,
+          `The block at ${stringifyDimensionLocation(loc)} has no inventory.`,
+        );
+      }
 
       return new SerializableContainerSlot(inv, obj.slot);
     }
@@ -140,7 +146,13 @@ export class SerializableContainerSlot {
       );
     }
 
-    const inv = entity.getComponent(EntityComponentTypes.Inventory)!;
+    const inv = entity.getComponent(EntityComponentTypes.Inventory);
+    if (!inv) {
+      raisePublic(
+        PublicErrorType.InvalidObject,
+        `The entity with ID '${obj.actor.id}' has no inventory.`,
+      );
+    }
 
     return new SerializableContainerSlot(inv, obj.slot);
   }

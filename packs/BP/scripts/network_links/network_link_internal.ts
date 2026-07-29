@@ -159,7 +159,16 @@ export class InternalNetworkLinkNode {
   }
 
   private selfAddConnection(location: Vector3): void {
-    this.selfSerializeConnections([...this.getConnections(), location]);
+    const connections = this.getConnections();
+
+    // Storing a duplicate would make the two directions of the link asymmetric:
+    // `selfRemoveConnection` filters out every match, so a single removal would
+    // undo several additions. It would also grow the stored property each time
+    // the same connection is added.
+    if (connections.some((outbound) => Vector3Utils.equals(outbound, location)))
+      return;
+
+    this.selfSerializeConnections([...connections, location]);
   }
 
   private selfSerializeConnections(connections: Vector3[]): void {

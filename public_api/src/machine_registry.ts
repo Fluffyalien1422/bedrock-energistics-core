@@ -112,6 +112,11 @@ export class RegisteredMachine {
         return !!this.data.receiveHandlerEvent;
       case "updateUi":
         return !!this.data.updateUiEvent;
+      default:
+        // Unreachable through the type system, but a JavaScript caller can
+        // pass an unknown name, and implicitly returning `undefined` from a
+        // `boolean` method would be worse than returning `false`.
+        return false;
     }
   }
 
