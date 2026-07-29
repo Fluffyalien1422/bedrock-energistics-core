@@ -4,6 +4,56 @@ Please follow these guidelines when contributing code to Bedrock Energistics Cor
 
 This style guide uses elements from the [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html) and [TypeScript's Contributor Coding Guidelines](https://github.com/microsoft/TypeScript/wiki/Coding-guidelines).
 
+## Sharing Code Between the Packs
+
+The add-on (`packs/BP/scripts`) and the public API (`public_api/src`) are
+separate packs at runtime, but the add-on is built with the public API's source
+available to it.
+
+- Code that only one side needs lives on that side.
+- Code that both sides need lives in `public_api/src`, and the add-on imports it
+  as `@/public_api/src/...`. Serialization is the usual case, since both sides
+  have to agree on it.
+- Shared code that is _not_ public API goes in a module suffixed `_internal`
+  (`machine_data_internal.ts`, `misc_internal.ts`, and so on). These are not
+  re-exported from `public_api/src/index.ts`, so they never reach add-ons even
+  though both packs import them.
+
+Don't add a second copy of something to avoid crossing this boundary. Where a
+duplicate is genuinely unavoidable, say so in a comment on both copies.
+
+## IPC Payloads
+
+The fields of an IPC payload interface are a wire format. An add-on bundles its
+own copy of the public API, so a payload sent by one version is read by
+whichever version the other pack has.
+
+- Renaming a payload field is a breaking change, even though nothing fails to
+  compile: both sides cast the payload with `as`, so a mismatch shows up at
+  runtime as `undefined`.
+- Prefer string enum values over numeric ones for anything that crosses the
+  boundary, so that inserting a member later can't change the meaning of an
+  existing one.
+
+## Documentation Tags
+
+- Mark beta APIs with `@beta`. See [Versioning](docs/guides/versioning.md) for
+  what that allows.
+- Mark anything exported but not intended for add-ons with `@internal`. TypeDoc
+  is configured to exclude it, but it is still present in the generated type
+  definitions, so an IDE will suggest it. Prefer keeping such things out of a
+  public class or module entirely.
+
+## Data From Add-ons
+
+An add-on that passes an object to a `register*` function still holds a
+reference to it, so keeping that object would let the add-on change what was
+registered afterwards. Copy anything you intend to keep (`deepFreezeCopy` in
+`misc_internal.ts`), and freeze whatever is handed back out.
+
+Only do this where it is actually reachable — data that is never read again, or
+that arrived over IPC (which deserializes into a fresh object), doesn't need it.
+
 ## Naming
 
 - Do not use trailing or leading underscores.
@@ -57,7 +107,7 @@ This style guide uses elements from the [Google TypeScript Style Guide](https://
 
   Note: use the `readonly` keyword where possible instead of simply creating a getter with no setter.
 
-## Diagnostic Messsages
+## Diagnostic Messages
 
 - Use `logInfo`, `logWarn`, `raise`, and `raisePublic` from `packs/BP/scripts/log.ts` for all logging purposes within the Bedrock Energistics Core add-on (not the public API).
 - Use `logInfo`, `logWarn`, `raise`, and `raisePublic` from `public_api/src/log.ts` for all logging purposes within the Bedrock Energistics Core public API (not the add-on).

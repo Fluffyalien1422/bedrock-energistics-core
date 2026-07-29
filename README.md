@@ -1,6 +1,10 @@
 ![Bedrock Energistics Core](keyart/thumbnail.png)
 
-APIs for creating tech add-ons.
+APIs for creating tech add-ons for Minecraft: Bedrock Edition.
+
+Bedrock Energistics Core handles the parts every tech add-on would otherwise
+have to build for itself — networks, storage, machine UI — so that machines from
+separate add-ons can be placed side by side and work together.
 
 ## Features
 
@@ -10,6 +14,16 @@ APIs for creating tech add-ons.
 - Easily create machine UI.
 - Create your own storage types (water, lava, etc) and share them between add-ons, not just energy.
 
-## Getting Started
+## Documentation
 
-See [Getting Started](https://fluffyalien1422.github.io/bedrock-energistics-core/api/documents/Guides.Getting_Started.html).
+- [Getting Started](https://fluffyalien1422.github.io/bedrock-energistics-core/api/documents/Guides.Getting_Started.html)
+- [Guides and API reference](https://fluffyalien1422.github.io/bedrock-energistics-core/api/)
+- [Home page](https://fluffyalien1422.github.io/bedrock-energistics-core/)
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md), and the [coding guidelines](CODING_GUIDELINES.md) before writing code. Bug reports and feature requests go [here](https://github.com/Fluffyalien1422/bedrock-energistics-core/issues/new/choose).
+
+## License
+
+This project is licensed under the [ISC License](LICENSE).
