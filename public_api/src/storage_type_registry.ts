@@ -2,6 +2,7 @@ import { BecIpcListener } from "./bec_ipc_listener.js";
 import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import { raisePublic } from "./log.js";
 import { PublicErrorType } from "./error.js";
+import { deepFreezeCopy } from "./misc_internal.js";
 import { isRegistrationAllowed } from "./registration_allowed.js";
 import {
   StorageTypeTextureDescription,
@@ -31,12 +32,18 @@ export interface StorageTypeData {
  * @see {@link StorageTypeDefinition}, {@link registerStorageType}
  */
 export class RegisteredStorageType implements StorageTypeData {
-  private constructor(
-    /**
-     * @internal
-     */
-    protected readonly definition: StorageTypeDefinition,
-  ) {}
+  /**
+   * @internal
+   */
+  protected readonly definition: StorageTypeDefinition;
+
+  private constructor(definition: StorageTypeDefinition) {
+    // `texture` can be an object, and the getter below hands it straight to the
+    // caller. Copying keeps a locally registered type from changing when the
+    // add-on later mutates the object it passed, and freezing keeps whoever
+    // receives it from changing it.
+    this.definition = deepFreezeCopy(definition);
+  }
 
   /**
    * @returns The ID of this storage type.

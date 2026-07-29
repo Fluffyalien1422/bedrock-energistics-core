@@ -17,7 +17,7 @@ import {
 } from "@/public_api/src";
 import {
   getBlockUniqueId,
-  getStorageScoreboardObjective,
+  resolveMachineStorageWrite,
   setScore,
 } from "@/public_api/src/machine_data_internal";
 import { logWarn, raisePublic } from "./log";
@@ -63,29 +63,10 @@ export function setMachineStorage(
   callOnStorageSet = true,
 ): void {
   // There is a similar function to this in the public API.
-  // Make sure changes are reflected in both.
+  // Make sure changes are reflected in both. The validation they share lives in
+  // `resolveMachineStorageWrite`.
 
-  if (!block.isValid) {
-    raisePublic(
-      PublicErrorType.InvalidObject,
-      "Failed to set machine storage. The block is invalid.",
-    );
-  }
-
-  if (value < 0) {
-    raisePublic(
-      PublicErrorType.InvalidArgument,
-      `Failed to set machine storage of type '${type}' to ${value.toString()}. The minimum value is 0.`,
-    );
-  }
-
-  const objective = getStorageScoreboardObjective(type);
-  if (!objective) {
-    raisePublic(
-      PublicErrorType.NotRegistered,
-      `Failed to set machine storage. Storage type '${type}' doesn't exist.`,
-    );
-  }
+  const objective = resolveMachineStorageWrite(block, type, value);
 
   const registered = InternalRegisteredMachine.forceGetInternal(block.typeId);
 

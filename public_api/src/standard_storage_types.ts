@@ -1,5 +1,6 @@
 import { StorageTypeDefinition } from "./storage_type_registry_types.js";
 import { registerStorageType } from "./storage_type_registry.js";
+import { deepFreeze } from "./misc_internal.js";
 
 /**
  * An enumeration of the standard storage type categories.
@@ -58,10 +59,9 @@ export enum StandardStorageType {
  * @beta
  * @see {@link StandardStorageType}
  */
-export const STANDARD_STORAGE_TYPE_DEFINITIONS: Record<
-  StandardStorageType,
-  StorageTypeDefinition
-> = {
+export const STANDARD_STORAGE_TYPE_DEFINITIONS: Readonly<
+  Record<StandardStorageType, StorageTypeDefinition>
+> = deepFreeze({
   energy: {
     category: StandardStorageCategory.Energy,
     texture: "yellow",
@@ -128,7 +128,7 @@ export const STANDARD_STORAGE_TYPE_DEFINITIONS: Record<
     id: StandardStorageType.Steam,
     name: "steam",
   },
-};
+});
 
 /**
  * Register a standard storage type for use in your add-on.

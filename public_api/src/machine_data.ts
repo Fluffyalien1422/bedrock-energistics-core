@@ -4,6 +4,7 @@ import {
   GetMachineSlotPayload,
   getScore,
   getStorageScoreboardObjective,
+  resolveMachineStorageWrite,
   SetMachineSlotPayload,
   setScore,
 } from "./machine_data_internal.js";
@@ -62,34 +63,15 @@ export async function setMachineStorage(
   callOnStorageSet = true,
 ): Promise<void> {
   // There is a similar function to this in the add-on.
-  // Make sure changes are reflected in both.
+  // Make sure changes are reflected in both. The validation they share lives in
+  // `resolveMachineStorageWrite`.
 
   // To avoid unnecessary IPC calls, this function calls the 'onStorageSet'
   // event on machines directly, without routing through Bedrock Energistics Core.
   // This also allows the local machine registry cache to be used, avoiding any
   // IPC calls for machines that don't have the 'onStorageSet' event.
 
-  if (!block.isValid) {
-    raisePublic(
-      PublicErrorType.InvalidObject,
-      "Failed to set machine storage. The block is invalid.",
-    );
-  }
-
-  if (value < 0) {
-    raisePublic(
-      PublicErrorType.InvalidArgument,
-      `Failed to set machine storage of type '${type}' to ${value.toString()}. The minimum value is 0.`,
-    );
-  }
-
-  const objective = getStorageScoreboardObjective(type);
-  if (!objective) {
-    raisePublic(
-      PublicErrorType.NotRegistered,
-      `Failed to set machine storage. Storage type '${type}' doesn't exist.`,
-    );
-  }
+  const objective = resolveMachineStorageWrite(block, type, value);
 
   const registered = await RegisteredMachine.forceGet(block.typeId);
 

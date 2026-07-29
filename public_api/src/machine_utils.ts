@@ -12,6 +12,7 @@ import { RemoveMachineDataPayload } from "./machine_data_internal.js";
 import { getBlockNetworkConnectionType } from "./network_utils.js";
 import { raisePublic } from "./log.js";
 import { PublicErrorType } from "./error.js";
+import { findEntityAtBlockLocation } from "./misc_internal.js";
 
 /**
  * If this tag is on a machine entity, no UI updates will be triggered.
@@ -104,10 +105,7 @@ export async function getMachineEntity(
   block: Block,
 ): Promise<Entity | undefined> {
   const definition = await RegisteredMachine.forceGet(block.typeId);
-  const existingEntity = block.dimension
-    .getEntitiesAtBlockLocation(block.location)
-    .find((entity) => entity.typeId === definition.entityId);
-  return existingEntity;
+  return findEntityAtBlockLocation(block, definition.entityId);
 }
 
 /**
@@ -125,9 +123,7 @@ export async function spawnMachineEntity(block: Block): Promise<Entity> {
 
   const definition = await RegisteredMachine.forceGet(block.typeId);
 
-  const existingEntity = block.dimension
-    .getEntitiesAtBlockLocation(block.location)
-    .find((entity) => entity.typeId === definition.entityId);
+  const existingEntity = findEntityAtBlockLocation(block, definition.entityId);
   if (existingEntity) return existingEntity;
 
   const newEntity = block.dimension.spawnEntity(

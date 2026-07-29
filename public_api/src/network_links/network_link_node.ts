@@ -6,10 +6,12 @@ import {
   NetworkLinkDestroyRequest,
   NetworkLinkGetRequest,
   NetworkLinkGetResponse,
+  NetworkLinkRemoveRequest,
 } from "./ipc_events.js";
 import { makeSerializableDimensionLocation } from "../serialize_utils.js";
 import { raisePublic } from "../log.js";
 import { PublicErrorType } from "../error.js";
+import { findEntityAtBlockLocation } from "../misc_internal.js";
 import { ipcInvoke } from "../ipc_wrapper.js";
 import { BecIpcListener } from "../bec_ipc_listener.js";
 
@@ -84,7 +86,7 @@ export class NetworkLinkNode {
    * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
    */
   public async removeConnection(location: Vector3): Promise<void> {
-    const payload: NetworkLinkAddRequest = {
+    const payload: NetworkLinkRemoveRequest = {
       self: makeSerializableDimensionLocation({
         dimension: this.entity.dimension,
         ...this.blockPos,
@@ -132,9 +134,10 @@ export class NetworkLinkNode {
    * @beta
    */
   static get(block: Block): NetworkLinkNode {
-    let dataStorageEntity = block.dimension
-      .getEntitiesAtBlockLocation(block.location)
-      .find((e) => e.typeId === NETWORK_LINK_ENTITY_ID);
+    let dataStorageEntity = findEntityAtBlockLocation(
+      block,
+      NETWORK_LINK_ENTITY_ID,
+    );
 
     // Only verify the block tag when creating an entity, this is easier for after events when the network link block
     // is destroyed, but we still need to get it to cleanup.
@@ -163,9 +166,10 @@ export class NetworkLinkNode {
     dimension: Dimension,
     location: Vector3,
   ): NetworkLinkNode | undefined {
-    const dataStorageEntity = dimension
-      .getEntitiesAtBlockLocation(location)
-      .find((e) => e.typeId === NETWORK_LINK_ENTITY_ID);
+    const dataStorageEntity = findEntityAtBlockLocation(
+      { dimension, ...location },
+      NETWORK_LINK_ENTITY_ID,
+    );
 
     if (dataStorageEntity === undefined) return undefined;
     return new NetworkLinkNode(dataStorageEntity, location);

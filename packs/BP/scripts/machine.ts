@@ -34,6 +34,7 @@ import {
   InternalRegisteredMachine,
 } from "./machine_registry";
 import { removeAllDynamicPropertiesForBlock } from "./utils/dynamic_property";
+import { findEntityAtBlockLocation } from "@/public_api/src/misc_internal";
 
 /**
  * Erases all persistent state associated with a machine location and forces
@@ -82,10 +83,7 @@ export function destroyMachine(
   removeMachineData(block, connectionType);
 
   // Remove the machine's attached UI entity, if one is present at the block.
-  block.dimension
-    .getEntitiesAtBlockLocation(block)
-    .find((entity) => entity.typeId === definition.entityId)
-    ?.remove();
+  findEntityAtBlockLocation(block, definition.entityId)?.remove();
   if (newBlockType !== false) block.setType(newBlockType);
 }
 

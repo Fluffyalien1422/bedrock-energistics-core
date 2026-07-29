@@ -4,6 +4,7 @@ import {
   NETWORK_LINK_POSITIONS_KEY,
 } from "@/public_api/src/network_links/ipc_events";
 import { PublicErrorType } from "@/public_api/src";
+import { findEntityAtBlockLocation } from "@/public_api/src/misc_internal";
 import { Vector3Utils } from "@minecraft/math";
 import { Block, Dimension, Entity, Vector3 } from "@minecraft/server";
 import { raisePublic } from "../log";
@@ -17,6 +18,12 @@ import { MachineNetwork } from "../network";
  */
 export class InternalNetworkLinkNode {
   private readonly entity: Entity;
+
+  /**
+   * Always the integer position of the node's block, never the backing
+   * entity's location: stored connections are compared with
+   * {@link Vector3Utils.equals}, so a fractional position would never match.
+   */
   private readonly blockPos: Vector3;
 
   private constructor(entity: Entity, blockPos: Vector3) {
@@ -24,18 +31,15 @@ export class InternalNetworkLinkNode {
     this.blockPos = blockPos;
   }
 
-  public static fromEntity(entity: Entity): InternalNetworkLinkNode {
-    return new InternalNetworkLinkNode(entity, entity.location);
-  }
-
   /**
    * Gets the link node for a block, spawning its backing data entity if one
    * doesn't exist yet. The entity is what persists the node's connections.
    */
   public static fromBlock(block: Block): InternalNetworkLinkNode {
-    let dataStorageEntity = block.dimension
-      .getEntitiesAtBlockLocation(block.location)
-      .find((e) => e.typeId === NETWORK_LINK_ENTITY_ID);
+    let dataStorageEntity = findEntityAtBlockLocation(
+      block,
+      NETWORK_LINK_ENTITY_ID,
+    );
 
     // Only verify the block tag when creating an entity, this is easier for after events when the network link block
     // is destroyed, but we still need to get it to cleanup.
@@ -62,9 +66,10 @@ export class InternalNetworkLinkNode {
     dimension: Dimension,
     location: Vector3,
   ): InternalNetworkLinkNode | undefined {
-    const dataStorageEntity = dimension
-      .getEntitiesAtBlockLocation(location)
-      .find((e) => e.typeId === NETWORK_LINK_ENTITY_ID);
+    const dataStorageEntity = findEntityAtBlockLocation(
+      { dimension, ...location },
+      NETWORK_LINK_ENTITY_ID,
+    );
 
     if (dataStorageEntity === undefined) return undefined;
     return new InternalNetworkLinkNode(dataStorageEntity, location);

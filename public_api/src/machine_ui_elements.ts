@@ -1,4 +1,5 @@
 import { UiElementDefinition } from "./machine_registry_types.js";
+import { deepFreezeCopy } from "./misc_internal.js";
 
 /**
  * Represents the UI elements of a machine.
@@ -7,7 +8,11 @@ import { UiElementDefinition } from "./machine_registry_types.js";
 export class MachineUiElements implements Iterable<
   [string, UiElementDefinition]
 > {
-  constructor(private readonly elements: Record<string, UiElementDefinition>) {}
+  private readonly elements: Readonly<Record<string, UiElementDefinition>>;
+
+  constructor(elements: Record<string, UiElementDefinition>) {
+    this.elements = deepFreezeCopy(elements);
+  }
 
   /**
    * Test if a UI element with the given ID exists.
@@ -22,14 +27,11 @@ export class MachineUiElements implements Iterable<
    * Gets a UI element by its ID.
    * @beta
    * @param id The ID of the UI element to get.
-   * @returns A deep copy of the UI element with the specified ID, or `undefined` if it doesn't exist.
+   * @returns The UI element with the specified ID, or `undefined` if it doesn't exist. The returned object is frozen; copy it if you need to modify it.
    */
   get(id: string): UiElementDefinition | undefined {
     if (!this.has(id)) return;
-    const element = this.elements[id];
-
-    // deep copy the object to prevent mutation of the local cache
-    return JSON.parse(JSON.stringify(element)) as UiElementDefinition;
+    return this.elements[id];
   }
 
   /**
