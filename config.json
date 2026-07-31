@@ -10,13 +10,17 @@
     "formatVersion": "1.4.0",
     "dataPath": "./packs/data",
     "filterDefinitions": {
-      "build_scripts": {
+      "copy_default_config": {
         "runWith": "shell",
-        "command": "npx esbuild BP/scripts/index.ts --outfile=BP/scripts/__bundle.js --bundle --format=esm --log-level=warning --preserve-symlinks --external:@minecraft/server --external:@minecraft/server-* --external:@minecraft/common --external:@minecraft/diagnostics"
+        "command": "Copy-Item ./BP/scripts/__config.js ./BP/scripts/default_config.js"
+      },
+      "build_scripts": {
+        "runWith": "nodejs",
+        "script": "scripts/filters/build_scripts.ts"
       },
       "prod_finish_up_build_scripts": {
         "runWith": "shell",
-        "command": "npx terser BP/scripts/__bundle.js --module -cmo BP/scripts/__bundle.js; Remove-Item BP/scripts/* -Recurse -Exclude __bundle.js"
+        "command": "npx terser ./BP/scripts/__bundle.js --module -cmo ./BP/scripts/__bundle.js; Remove-Item ./BP/scripts/* -Recurse -Exclude __*.js"
       },
       "gen_ui_bars": {
         "runWith": "nodejs",
@@ -30,6 +34,9 @@
           "build": "standard"
         },
         "filters": [
+          {
+            "filter": "copy_default_config"
+          },
           {
             "filter": "build_scripts"
           },

@@ -1,7 +1,8 @@
 /**
  * Registers the add-on's custom slash commands (game-director permission):
- * `/becdebugmode` enables debug mode (see debug_mode.ts) and
- * `/becprintnetworks` dumps info about all live networks.
+ * `becdebugmode` enables debug mode (see debug_mode.ts) and
+ * `becprintnetworks` dumps info about all live networks.
+ * Both are registered under the configured `customCommandNamespace`.
  */
 
 import {
@@ -9,15 +10,18 @@ import {
   CustomCommandStatus,
   system,
 } from "@minecraft/server";
+import { CONFIG } from "./config_manager";
 import { enableDebugMode, isDebugModeEnabled } from "./debug_mode";
 import { logInfo } from "./log";
 import { MachineNetwork } from "./network";
 import { toPrettyString } from "./utils/string";
 
 system.beforeEvents.startup.subscribe((e) => {
+  const ns = CONFIG.customCommandNamespace;
+
   e.customCommandRegistry.registerCommand(
     {
-      name: "fluffyalien_energisticscore:becdebugmode",
+      name: `${ns}:becdebugmode`,
       description:
         "Enables debug mode for Bedrock Energistics Core. This applies to the entire world and can only be disabled with a reload.",
       permissionLevel: CommandPermissionLevel.GameDirectors,
@@ -39,7 +43,7 @@ system.beforeEvents.startup.subscribe((e) => {
 
   e.customCommandRegistry.registerCommand(
     {
-      name: "fluffyalien_energisticscore:becprintnetworks",
+      name: `${ns}:becprintnetworks`,
       description:
         "Returns debug information about all active machine network instances. The output is also logged to the console.",
       permissionLevel: CommandPermissionLevel.GameDirectors,
@@ -52,7 +56,7 @@ system.beforeEvents.startup.subscribe((e) => {
       }));
       const debugStr = JSON.stringify(networks);
       const prettyStr = toPrettyString(networks);
-      logInfo("/becprintnetworks result: " + debugStr);
+      logInfo(`/becprintnetworks result: ${debugStr}`);
       return {
         status: CustomCommandStatus.Success,
         message: prettyStr,

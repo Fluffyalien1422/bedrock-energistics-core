@@ -1,5 +1,5 @@
 /**
- * Debug mode (enabled via the /becdebugmode command) is a world-wide developer
+ * Debug mode (enabled via the `becdebugmode` command) is a world-wide developer
  * aid. While a player holds a stick, the block they're looking at has its
  * network, storage, and dynamic-property state shown on their action bar; a
  * machine block can also be sneaked-at to open a form for setting a variable.

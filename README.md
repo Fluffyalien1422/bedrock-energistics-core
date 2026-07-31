@@ -14,6 +14,12 @@ separate add-ons can be placed side by side and work together.
 - Easily create machine UI.
 - Create your own storage types (water, lava, etc) and share them between add-ons, not just energy.
 
+## Configuration
+
+Configure the add-on by editing `BP/scripts/__config.js` in the behavior pack with any text editor.
+
+Every option is optional and is documented with a comment in the file. Remove an option to use its default. If an option is missing or set to the wrong type, its default is used and a warning is logged to the content log.
+
 ## Documentation
 
 - [Getting Started](https://fluffyalien1422.github.io/bedrock-energistics-core/api/documents/Guides.Getting_Started.html)

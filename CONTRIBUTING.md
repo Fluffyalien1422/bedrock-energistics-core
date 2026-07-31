@@ -70,10 +70,14 @@ Other profiles are available:
 | `regolith run`                 | Builds and exports to Minecraft's development pack folders.      |
 | `regolith run preview`         | The same, but for Minecraft Preview.                             |
 | `regolith run dev_localexport` | Exports to the project's `build` directory instead of Minecraft. |
-| `regolith run prod`            | A production build: minified, with only the bundled script kept. |
+| `regolith run prod`            | A production build: minified, with only `__*.js` scripts kept.   |
 
 The behavior pack scripts are bundled from `packs/BP/scripts/index.ts`, so a new
 script file is only included if something imports it.
+
+The `build_scripts` filter (`scripts/filters/build_scripts.ts`) marks every `__*.js` script as external, so those are left out of the bundle and stay editable in the built pack. They are also what the `prod` profile keeps when it deletes everything else. To add another such module, just name it `__*.js`; nothing needs configuring.
+
+Adding a config option is documented at the top of `packs/BP/scripts/config_manager.ts`.
 
 ## Editing Documentation
 
