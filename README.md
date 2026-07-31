@@ -16,7 +16,7 @@ separate add-ons can be placed side by side and work together.
 
 ## Configuration
 
-Configure the add-on by editing `BP/scripts/__config.js` in the behavior pack with any text editor.
+Configure the add-on by editing `scripts/__config.js` in the behavior pack with any text editor.
 
 Every option is optional and is documented with a comment in the file. Remove an option to use its default. If an option is missing or set to the wrong type, its default is used and a warning is logged to the content log.
 
