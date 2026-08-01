@@ -1,5 +1,6 @@
 import { Block, DimensionLocation } from "@minecraft/server";
 import {
+  AddMachineSlotPayload,
   getBlockUniqueId,
   GetMachineSlotPayload,
   getScore,
@@ -7,6 +8,7 @@ import {
   resolveMachineStorageWrite,
   SetMachineSlotPayload,
   setScore,
+  TakeMachineSlotPayload,
 } from "./machine_data_internal.js";
 import { makeSerializableDimensionLocation } from "./serialize_utils.js";
 import { ipcInvoke } from "./ipc_wrapper.js";
@@ -109,6 +111,109 @@ export async function getMachineSlotItem(
   );
 
   return data ? deserializeMachineItemStack(data) : undefined;
+}
+
+/**
+ * Conditions that a machine item slot must currently meet for an operation to
+ * apply. Each is only checked if given; an empty object applies unconditionally.
+ * @beta
+ * @remarks
+ * Use these to make a read-modify-write safe when the operations that do it for
+ * you don't fit. Anything you read from a slot may already be out of date by the
+ * time your write reaches Bedrock Energistics Core - the player has had ticks in
+ * which to change it - so state what you expected to be there and handle the
+ * operation reporting that it didn't apply.
+ */
+export interface MachineSlotItemExpectOptions {
+  /**
+   * The item type the slot must hold.
+   * @beta
+   */
+  expectType?: string;
+  /**
+   * How many items the slot must hold. Use `0` to require an empty slot.
+   * @beta
+   */
+  expectAmount?: number;
+}
+
+/**
+ * Removes items from a machine item slot.
+ * @beta
+ * @remarks
+ * Prefer this over reading a slot and writing it back: the whole
+ * read-modify-write happens inside Bedrock Energistics Core, so a player can't
+ * take the item out in between and end up holding a copy of it.
+ * @param loc The location of the machine.
+ * @param elementId The ID of the item slot element.
+ * @param amount The amount of items to remove. Defaults to the whole stack. Asking
+ * for more than the slot holds is not an error; the rest of the stack is
+ * returned.
+ * @param options Conditions the slot must meet.
+ * @returns What was removed, or `undefined` if the slot was empty or did not
+ * meet `options`.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if there is no block at the given location, including when that location's chunk is not loaded.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the block is not registered as a machine.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the element is not an item slot, or if `amount` is not a positive integer.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
+ */
+export async function takeMachineSlotItem(
+  loc: DimensionLocation,
+  elementId: string,
+  amount?: number,
+  options?: MachineSlotItemExpectOptions,
+): Promise<MachineItemStack | undefined> {
+  const payload: TakeMachineSlotPayload = {
+    loc: makeSerializableDimensionLocation(loc),
+    slot: elementId,
+    amount,
+    expectType: options?.expectType,
+    expectAmount: options?.expectAmount,
+  };
+
+  const data = await ipcInvoke<string | null>(
+    BecIpcListener.TakeMachineSlot,
+    payload,
+  );
+
+  return data ? deserializeMachineItemStack(data) : undefined;
+}
+
+/**
+ * Adds items to a machine item slot, stacking onto whatever is already there.
+ * @beta
+ * @remarks
+ * Prefer this over reading a slot and writing it back: the whole
+ * read-modify-write happens inside Bedrock Energistics Core, so a change the
+ * player makes in between can't be overwritten.
+ * @param loc The location of the machine.
+ * @param elementId The ID of the item slot element.
+ * @param newItemStack The {@link MachineItemStack} to add. Its `amount` is how
+ * many to add.
+ * @param options Conditions the slot must meet.
+ * @returns The amount of items added. Fewer than `newItemStack.amount` if the
+ * slot couldn't fit them all, and `0` if nothing was added - because the slot
+ * is full, holds a different item, or doesn't meet `options`.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if there is no block at the given location, including when that location's chunk is not loaded.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the block is not registered as a machine.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the element is not an item slot, if the item is not allowed in that slot, or if the item does not exist.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
+ */
+export async function addMachineSlotItem(
+  loc: DimensionLocation,
+  elementId: string,
+  newItemStack: MachineItemStack,
+  options?: MachineSlotItemExpectOptions,
+): Promise<number> {
+  const payload: AddMachineSlotPayload = {
+    loc: makeSerializableDimensionLocation(loc),
+    slot: elementId,
+    item: serializeMachineItemStack(newItemStack),
+    expectType: options?.expectType,
+    expectAmount: options?.expectAmount,
+  };
+
+  return ipcInvoke<number>(BecIpcListener.AddMachineSlot, payload);
 }
 
 /**

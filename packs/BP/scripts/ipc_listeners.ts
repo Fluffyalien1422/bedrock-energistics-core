@@ -41,10 +41,12 @@ import {
   setItemMachineStorageListener,
 } from "./item_machine_ipc";
 import {
+  addMachineSlotListener,
   destroyMachineListener,
   getMachineSlotListener,
   removeMachineDataListener,
   setMachineSlotListener,
+  takeMachineSlotListener,
 } from "./data_ipc";
 
 registerListener(BecIpcListener.RegisterMachine, registerMachineListener);
@@ -54,6 +56,8 @@ registerListener(
 );
 registerListener(BecIpcListener.SetMachineSlot, setMachineSlotListener);
 registerListener(BecIpcListener.GetMachineSlot, getMachineSlotListener);
+registerListener(BecIpcListener.TakeMachineSlot, takeMachineSlotListener);
+registerListener(BecIpcListener.AddMachineSlot, addMachineSlotListener);
 registerListener(BecIpcListener.DestroyNetwork, networkDestroyListener);
 registerListener(BecIpcListener.NetworkQueueSend, networkQueueSendListener);
 registerListener(BecIpcListener.Generate, generateListener);

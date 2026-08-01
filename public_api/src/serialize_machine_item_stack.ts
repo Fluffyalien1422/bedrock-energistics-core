@@ -191,10 +191,12 @@ class DeserializeParser {
     this.next();
 
     const amount = Number(this.read([" "]));
-    // amount cannot be zero, so use ! instead of isNaN
-    if (!amount) {
+    // Checked here as well as by the MachineItemStack constructor, so that data
+    // we serialized ourselves failing to parse is reported as our fault rather
+    // than as a bad argument from whoever asked to read it.
+    if (!Number.isInteger(amount) || amount <= 0) {
       raise(
-        "Failed to deserialize data: Item stack amount is zero or not a number.",
+        `Failed to deserialize data: Item stack amount is not a positive integer: ${amount.toString()}.`,
       );
     }
     this.next();

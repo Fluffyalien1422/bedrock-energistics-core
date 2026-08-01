@@ -109,6 +109,25 @@ export function clearItemSlotChanges(uid: string): void {
 }
 
 /**
+ * The container that backs a machine's UI, or `undefined` if the machine entity
+ * doesn't have one.
+ * @remarks
+ * A machine entity is defined by the add-on that registered the machine, so an
+ * entity without an inventory component is that add-on's mistake. There is no
+ * UI to update without a container, so callers skip the entity; warn rather
+ * than throw, since this runs every update tick.
+ */
+function getMachineUiContainer(entity: Entity): Container | undefined {
+  const container = entity.getComponent("inventory")?.container;
+  if (!container) {
+    logWarn(
+      `Failed to update UI for the machine entity '${entity.typeId}'. It does not have an inventory component with a container.`,
+    );
+  }
+  return container;
+}
+
+/**
  * Removes any leftover UI item from the player's cursor or inventory. Only the
  * first one found is removed, since at most one UI item can leak per
  * interaction (the player can only take one slot at a time); the
@@ -397,7 +416,9 @@ function updateItemSlots(entity: Entity, player: Player, init: boolean): void {
   if (init) machineChangedItemSlots.delete(uid);
 
   const changedSlots = machineChangedItemSlots.get(uid);
-  const inventory = entity.getComponent("inventory")!.container;
+
+  const inventory = getMachineUiContainer(entity);
+  if (!inventory) return;
 
   for (const [id, options] of definition.uiElements) {
     if (options.type !== "itemSlot") continue;
@@ -445,7 +466,9 @@ export function flushItemSlotsFromContainer(block: Block): void {
   if (ui.entity.typeId !== definition.entityId) return;
 
   const changedSlots = machineChangedItemSlots.get(uid);
-  const inventory = ui.entity.getComponent("inventory")!.container;
+
+  const inventory = getMachineUiContainer(ui.entity);
+  if (!inventory) return;
 
   for (const [id, options] of definition.uiElements) {
     if (options.type !== "itemSlot") continue;
@@ -680,7 +703,8 @@ async function renderEntityUi(
   const buttons = updateUiResult?.buttons ?? {};
   const storageBars = updateUiResult?.storageBars ?? {};
 
-  const inventory = entity.getComponent("inventory")!.container;
+  const inventory = getMachineUiContainer(entity);
+  if (!inventory) return;
 
   for (const [id, options] of definition.uiElements) {
     switch (options.type) {

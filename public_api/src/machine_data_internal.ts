@@ -26,6 +26,32 @@ export interface SetMachineSlotPayload extends GetMachineSlotPayload {
 }
 
 /**
+ * Conditions a machine item slot must currently meet, as sent over IPC. An
+ * absent field is not checked; see `MachineSlotItemExpectOptions`.
+ * @internal
+ */
+export interface MachineSlotExpectPayload {
+  expectType?: string;
+  expectAmount?: number;
+}
+
+/**
+ * @internal
+ */
+export interface TakeMachineSlotPayload
+  extends GetMachineSlotPayload, MachineSlotExpectPayload {
+  amount?: number;
+}
+
+/**
+ * @internal
+ */
+export interface AddMachineSlotPayload
+  extends GetMachineSlotPayload, MachineSlotExpectPayload {
+  item: string;
+}
+
+/**
  * @internal
  */
 export interface RemoveMachineDataPayload {

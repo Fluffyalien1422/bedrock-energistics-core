@@ -12,6 +12,7 @@ import { Block, DimensionLocation, ItemStack, world } from "@minecraft/server";
 import { recordItemSlotChange } from "./ui";
 import {
   MachineItemStack,
+  MachineSlotItemExpectOptions,
   getMachineStorage,
   PublicErrorType,
 } from "@/public_api/src";
@@ -141,15 +142,29 @@ export function setMachineSlotItem(
     );
   }
 
-  if (
-    newItemStack &&
-    element.allowedItems &&
-    !element.allowedItems.includes(newItemStack.typeId)
-  ) {
-    raisePublic(
-      PublicErrorType.InvalidArgument,
-      `Failed to set machine slot item. The item '${newItemStack.typeId}' is not allowed in slot '${slotId}' of machine '${block.typeId}'.`,
+  if (newItemStack) {
+    if (
+      element.allowedItems &&
+      !element.allowedItems.includes(newItemStack.typeId)
+    ) {
+      raisePublic(
+        PublicErrorType.InvalidArgument,
+        `Failed to set machine slot item. The item '${newItemStack.typeId}' is not allowed in slot '${slotId}' of machine '${block.typeId}'.`,
+      );
+    }
+
+    // An item slot is one container slot, so it cannot show more than a single
+    // stack. Storing more would be lost the moment the slot was rendered.
+    const maxAmount = getItemMaxAmount(
+      newItemStack.typeId,
+      "Failed to set machine slot item.",
     );
+    if (newItemStack.amount > maxAmount) {
+      raisePublic(
+        PublicErrorType.InvalidArgument,
+        `Failed to set machine slot item. The amount ${newItemStack.amount.toString()} exceeds the maximum stack size of ${maxAmount.toString()} for the item '${newItemStack.typeId}'.`,
+      );
+    }
   }
 
   const uid = getBlockUniqueId(block);
@@ -163,8 +178,10 @@ export function setMachineSlotItem(
     recordItemSlotChange(uid, slotId);
   }
 
-  // An empty/zero-amount stack clears the slot's dynamic property entirely.
-  if (!newItemStack || newItemStack.amount <= 0) {
+  // No stack clears the slot's dynamic property entirely. A stack always holds
+  // at least one item (see MachineItemStack.amount), so that is the only way to
+  // express an empty slot.
+  if (!newItemStack) {
     setBlockDynamicProperty(block, propertyId);
     return;
   }
@@ -174,6 +191,148 @@ export function setMachineSlotItem(
     propertyId,
     serializeMachineItemStack(newItemStack),
   );
+}
+
+/**
+ * Whether a machine item slot's current contents meet the conditions a caller
+ * asked for. A condition that wasn't given isn't checked.
+ */
+function machineSlotItemMatches(
+  current: MachineItemStack | undefined,
+  expect: MachineSlotItemExpectOptions,
+): boolean {
+  if (
+    expect.expectType !== undefined &&
+    current?.typeId !== expect.expectType
+  ) {
+    return false;
+  }
+
+  return (
+    expect.expectAmount === undefined ||
+    (current?.amount ?? 0) === expect.expectAmount
+  );
+}
+
+/**
+ * Rejects an item count that can't describe a real stack.
+ * @remarks
+ * A `MachineItemStack` rejects one of these too, but only once the count has
+ * been folded into what's left in the slot - so the error would name a number
+ * the caller never passed. Checking the argument up front reports the number
+ * they actually gave.
+ * @throws Throws if `amount` is not a positive integer.
+ */
+function validateSlotItemAmount(amount: number, failureMsg: string): void {
+  if (amount <= 0 || !Number.isInteger(amount)) {
+    raisePublic(
+      PublicErrorType.InvalidArgument,
+      `${failureMsg} Got ${amount.toString()}.`,
+    );
+  }
+}
+
+/**
+ * The largest stack the given item type can form.
+ * @throws Throws if the item type does not exist.
+ */
+function getItemMaxAmount(typeId: string, failureMsg: string): number {
+  try {
+    return new ItemStack(typeId).maxAmount;
+  } catch (e) {
+    raisePublic(
+      PublicErrorType.InvalidArgument,
+      `${failureMsg} The item '${typeId}' could not be created: ${String(e)}.`,
+    );
+  }
+}
+
+/**
+ * Removes items from a machine item slot and returns what was removed.
+ * @param amount How many to remove. Defaults to the whole stack. Removing more
+ * than the slot holds is not an error; the rest of the stack is returned.
+ * @param expect Conditions the slot must currently meet.
+ * @returns What was removed, or `undefined` if the slot was empty or did not
+ * meet `expect`.
+ * @throws Throws if `amount` is not a positive integer.
+ * @throws Throws if the element is not an item slot.
+ */
+export function takeMachineSlotItem(
+  block: Block,
+  slotId: string,
+  amount?: number,
+  expect: MachineSlotItemExpectOptions = {},
+): MachineItemStack | undefined {
+  if (amount !== undefined) {
+    validateSlotItemAmount(
+      amount,
+      "Failed to take machine slot item. Expected 'amount' to be a positive integer.",
+    );
+  }
+
+  const current = getMachineSlotItem(block, slotId);
+  if (!current || !machineSlotItemMatches(current, expect)) {
+    return;
+  }
+
+  const taken = Math.min(amount ?? current.amount, current.amount);
+  const remaining = current.amount - taken;
+
+  setMachineSlotItem(
+    block,
+    slotId,
+    remaining > 0 ? current.withAmount(remaining) : undefined,
+  );
+
+  return current.withAmount(taken);
+}
+
+/**
+ * Adds items to a machine item slot, stacking onto whatever is already there.
+ * @param expect Conditions the slot must currently meet.
+ * @returns How many were added, which is fewer than `newItemStack.amount` if
+ * the slot could not fit them all, and `0` if nothing was added.
+ * @throws Throws if the item type does not exist.
+ * @throws Throws if the element is not an item slot, or the item is not allowed
+ * in it.
+ */
+export function addMachineSlotItem(
+  block: Block,
+  slotId: string,
+  newItemStack: MachineItemStack,
+  expect: MachineSlotItemExpectOptions = {},
+): number {
+  const current = getMachineSlotItem(block, slotId);
+
+  if (!machineSlotItemMatches(current, expect)) {
+    return 0;
+  }
+
+  // Only a stack of the same item can be added to; anything else would have to
+  // replace what's there, which is a set rather than an add.
+  if (current && !current.isSimilarTo(newItemStack)) {
+    return 0;
+  }
+
+  const maxAmount = getItemMaxAmount(
+    newItemStack.typeId,
+    "Failed to add machine slot item.",
+  );
+  const added = Math.min(
+    newItemStack.amount,
+    maxAmount - (current?.amount ?? 0),
+  );
+  if (added <= 0) {
+    return 0;
+  }
+
+  setMachineSlotItem(
+    block,
+    slotId,
+    newItemStack.withAmount((current?.amount ?? 0) + added),
+  );
+
+  return added;
 }
 
 /**
