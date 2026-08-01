@@ -35,6 +35,7 @@ import {
   optionalMachineItemStackToItemStack,
   setMachineSlotItem,
 } from "./data";
+import { getMachineEntityBlockUniqueId } from "@/public_api/src/machine_data_internal";
 import { logWarn, raise } from "./log";
 import {
   getMachineIdFromEntityId,
@@ -67,16 +68,45 @@ const STORAGE_TYPE_COLOR_TO_FORMATTING_CODE: Record<
 };
 
 /**
- * key = machine entity
- * value = last player in UI
+ * The machine UIs that are currently open.
+ *
+ * key = block uid (see getBlockUniqueId)
+ * value = the machine entity and the last player to open it
  */
-const playersInUi = new Map<Entity, Player>();
+const openMachineUis = new Map<string, { entity: Entity; player: Player }>();
 
 /**
  * key = block uid (see getBlockUniqueId)
- * value = array of slot IDs that have changed
+ * value = set of item slot element IDs whose stored item changed out of band
  */
-export const machineChangedItemSlots = new Map<string, Set<string>>();
+const machineChangedItemSlots = new Map<string, Set<string>>();
+
+/**
+ * Records that a machine's stored item for `slotId` changed outside of the UI,
+ * so that the next item slot pass pushes the new contents into the container.
+ * @remarks
+ * A change is only recorded while the machine's UI is open. The flag has no
+ * other consumer, and a UI seeds every slot from the block when it opens, so a
+ * flag set while the UI was closed would never be read. Skipping it also keeps
+ * this map from growing without bound for machines that are only ever driven by
+ * automation and never opened.
+ */
+export function recordItemSlotChange(uid: string, slotId: string): void {
+  if (!openMachineUis.has(uid)) return;
+
+  const existingChangedItemSlots = machineChangedItemSlots.get(uid);
+  if (existingChangedItemSlots) {
+    existingChangedItemSlots.add(slotId);
+    return;
+  }
+
+  machineChangedItemSlots.set(uid, new Set([slotId]));
+}
+
+/** Drops every recorded item slot change for a machine. */
+export function clearItemSlotChanges(uid: string): void {
+  machineChangedItemSlots.delete(uid);
+}
 
 /**
  * Removes any leftover UI item from the player's cursor or inventory. Only the
@@ -239,43 +269,44 @@ function handleBarItems(
 }
 
 /**
- * Reconciles an item-slot element between the block's stored item and what's
- * physically in the container slot. Direction depends on the situation:
- * - On init, or when the stored item changed elsewhere (tracked in
- *   {@link machineChangedItemSlots}), push the stored item into the slot.
- * - Otherwise the container is the source of truth for player edits: write the
- *   player's changes back to the block, rejecting disallowed items (spawned
- *   back to the player) and ignoring UI filler items.
+ * Block -> UI: overwrites the container slot with the block's stored item. Used
+ * when the stored item is authoritative, i.e. on init or after an out-of-band
+ * change.
  */
-function handleItemSlot(
+function pushItemSlotToContainer(
+  block: Block,
+  inventory: Container,
+  elementId: string,
+  element: UiItemSlotElementDefinition,
+): void {
+  inventory.setItem(
+    element.index,
+    optionalMachineItemStackToItemStack(
+      getMachineSlotItem(block, elementId),
+      element.emptyItemId,
+    ),
+  );
+}
+
+/**
+ * UI -> block: writes whatever the player left in the container slot back to
+ * the block, rejecting disallowed items (spawned back to the player) and
+ * ignoring UI filler items. Used when the container is the source of truth,
+ * i.e. whenever the stored item has not changed out of band.
+ */
+function syncItemSlotToBlock(
   block: Block,
   inventory: Container,
   elementId: string,
   element: UiItemSlotElementDefinition,
   player: Player,
-  init: boolean,
 ): void {
   const expectedMachineItem = getMachineSlotItem(block, elementId);
 
-  const changedSlots = machineChangedItemSlots.get(getBlockUniqueId(block));
-  const slotChanged = changedSlots?.has(elementId);
-
   const containerSlot = inventory.getSlot(element.index);
 
-  // Block -> UI: the stored item is authoritative on init or after an
-  // out-of-band change, so overwrite whatever is in the slot.
-  if (slotChanged || init) {
-    containerSlot.setItem(
-      optionalMachineItemStackToItemStack(
-        expectedMachineItem,
-        element.emptyItemId,
-      ),
-    );
-    return;
-  }
-
-  // UI -> block from here on. An empty slot means the player took the item out;
-  // clear the stored item and drop the empty-slot placeholder back in.
+  // An empty slot means the player took the item out; clear the stored item and
+  // drop the empty-slot placeholder back in.
   if (!containerSlot.hasItem()) {
     clearUiItemsFromPlayer(player);
     setMachineSlotItem(block, elementId, undefined, false);
@@ -327,6 +358,62 @@ function handleItemSlot(
     return;
   }
   setMachineSlotItem(block, elementId, containerSlotMachineItemStack, false);
+}
+
+/**
+ * Reconciles every item slot element of a machine between the block's stored
+ * items and its UI container.
+ * @remarks
+ * Deliberately synchronous, and deliberately not part of
+ * {@link renderEntityUi}. Item slots take nothing from the machine's `updateUi`
+ * handler, and that handler is awaited over IPC for several ticks. Reconciling
+ * them behind that await left a window in which the player could take an item
+ * out and have it pushed back in from the block, duplicating it - and, because
+ * {@link updateEntityUi} skips a redraw while one is already in flight, item
+ * slots were not synced at all for the duration of the await.
+ * @param init `true` for the first pass when the UI opens, which seeds the slots
+ * from the block rather than reading them from the container.
+ */
+function updateItemSlots(entity: Entity, player: Player, init: boolean): void {
+  if (entity.hasTag(MACHINE_ENTITY_NO_UPDATE_UI_TAG)) return;
+
+  const machineId = getMachineIdFromEntityId(entity.typeId);
+  if (!machineId) return;
+
+  const definition = InternalRegisteredMachine.forceGetInternal(machineId);
+  if (!definition.uiElements) return;
+
+  // Unlike renderEntityUi, a missing or unexpected block is not raised on here.
+  // This also runs from the update interval and from the machine data IPC
+  // listeners, where the chunk having unloaded is a normal condition rather
+  // than a bug.
+  const block = entity.dimension.getBlock(entity.location);
+  if (block?.typeId !== definition.id) return;
+
+  const uid = getBlockUniqueId(block);
+
+  // Every slot is seeded from the block on init, so any recorded change is
+  // about to be rendered regardless of which slot it belongs to.
+  if (init) machineChangedItemSlots.delete(uid);
+
+  const changedSlots = machineChangedItemSlots.get(uid);
+  const inventory = entity.getComponent("inventory")!.container;
+
+  for (const [id, options] of definition.uiElements) {
+    if (options.type !== "itemSlot") continue;
+
+    // The changed flag is consumed as it is handled, rather than clearing the
+    // whole block's flags afterwards, so that a change recorded for a slot this
+    // pass didn't reach can't be dropped without being rendered.
+    if (init || changedSlots?.delete(id)) {
+      pushItemSlotToContainer(block, inventory, id, options);
+      continue;
+    }
+
+    syncItemSlotToBlock(block, inventory, id, options, player);
+  }
+
+  if (changedSlots && !changedSlots.size) machineChangedItemSlots.delete(uid);
 }
 
 /**
@@ -475,15 +562,13 @@ const entitiesUpdatingUi = new Set<Entity>();
  * @remarks
  * {@link renderEntityUi} awaits the machine's `updateUi` handler over IPC,
  * which can span several ticks, so the update interval can fire again before
- * the previous redraw has finished. Letting two interleave would race on the
- * item slot sync and on clearing the block's changed-item-slot set, dropping
- * changes recorded while a redraw was mid-flight.
+ * the previous redraw has finished. Letting two interleave would draw each
+ * element twice from two different `updateUi` results.
  *
- * Skipping a redraw doesn't lose the player's edits, because the redraw that is
- * already running syncs the container back to the block after its `await`. The
- * exception is the initial redraw, which seeds the container from the block
- * instead, but that only runs as the UI opens, before there is anything for the
- * player to have changed.
+ * Nothing is lost by skipping a redraw. Every element this draws is rendered
+ * from the machine's current state, so the next redraw produces the same result
+ * the skipped one would have. Item slots, the one part of the UI a player can
+ * write to, are not drawn here at all - see {@link updateItemSlots}.
  * @see {@link renderEntityUi}
  */
 async function updateEntityUi(
@@ -503,15 +588,18 @@ async function updateEntityUi(
 }
 
 /**
- * Redraws every element of a machine's UI into its entity container. Calls the
- * machine's optional `updateUi` handler (over IPC) for dynamic per-element
- * options, then dispatches each configured element to its handler. Cleared at
- * the end: the block's changed-item-slot set, now that it's been rendered.
+ * Redraws a machine's storage bars, progress indicators and buttons into its
+ * entity container. Calls the machine's optional `updateUi` handler (over IPC)
+ * for dynamic per-element options, then dispatches each configured element to
+ * its handler.
  * @remarks
  * Call {@link updateEntityUi} instead of this, so that concurrent redraws of
  * the same entity are prevented.
- * @param init `true` for the first draw when the UI opens, which forces item
- * slots to be seeded from the block rather than read from the container.
+ *
+ * Item slots are not drawn here; {@link updateItemSlots} handles them
+ * synchronously, off the `updateUi` await.
+ * @param init `true` for the first draw when the UI opens, which places button
+ * items rather than treating a missing one as a press.
  */
 async function renderEntityUi(
   definition: InternalRegisteredMachine,
@@ -535,8 +623,6 @@ async function renderEntityUi(
       `Failed to update UI for entity '${entity.typeId}' (machine: '${definition.id}'). The machine block does not exist or is not the expected block type.`,
     );
   }
-
-  const uid = getBlockUniqueId(block);
 
   const updateUiResult = definition.hasCallback("updateUi")
     ? await definition.invokeUpdateUiHandler(block, entity.id)
@@ -573,7 +659,7 @@ async function renderEntityUi(
         break;
       }
       case "itemSlot":
-        handleItemSlot(block, inventory, id, options, player, init);
+        // handled synchronously by updateItemSlots
         break;
       case "progressIndicator":
         handleProgressIndicator(
@@ -610,8 +696,6 @@ async function renderEntityUi(
       }
     }
   }
-
-  machineChangedItemSlots.delete(uid);
 }
 
 // A machine's UI is its entity's container. Track the player who opened it so
@@ -630,8 +714,18 @@ world.afterEvents.entityContainerOpened.subscribe(
       );
     }
 
-    playersInUi.set(entity, player);
+    openMachineUis.set(getMachineEntityBlockUniqueId(entity), {
+      entity,
+      player,
+    });
+
     const definition = InternalRegisteredMachine.forceGetInternal(machineId);
+
+    // Seed the item slots synchronously, in the same tick the container opens,
+    // so the player cannot take an item out before the seeding overwrites the
+    // slot with the block's stored item. updateEntityUi awaits the machine's
+    // 'updateUi' handler over IPC, which can span several ticks.
+    updateItemSlots(entity, player, true);
     void updateEntityUi(definition, entity, player, true);
   },
   {
@@ -647,20 +741,41 @@ world.afterEvents.entityContainerOpened.subscribe(
 world.afterEvents.entityContainerClosed.subscribe(
   (e) => {
     const entity = e.entity;
-    const player = playersInUi.get(entity);
-    playersInUi.delete(entity);
 
-    // Run one final UI update so the machine block captures any item-slot change
-    // the player made right before closing. Item slots are only synced back to
-    // the block during a UI update, and the periodic interval may not have run
-    // between the player's last action and the container closing.
-    if (!player?.isValid || !entity.isValid) return;
+    // Identifying the machine means reading the entity's location, which throws
+    // if it is no longer valid - destroying a machine whose UI is open closes
+    // the container exactly that way. Nothing is leaked by giving up here: the
+    // update interval drops the registry entry once it notices the entity has
+    // gone, and there is no longer a container to sync back from anyway.
+    if (!entity.isValid) return;
 
-    const machineId = getMachineIdFromEntityId(entity.typeId);
-    if (!machineId) return;
+    const uid = getMachineEntityBlockUniqueId(entity);
+    const player = openMachineUis.get(uid)?.player;
+    openMachineUis.delete(uid);
 
-    const definition = InternalRegisteredMachine.forceGetInternal(machineId);
-    void updateEntityUi(definition, entity, player, false);
+    // Run one final update so the machine captures anything the player did
+    // right before closing: an item slot change (only synced back to the block
+    // during an update) or a button press (inferred from the button item being
+    // missing during a redraw). The periodic interval may not have run between
+    // the player's last action and the container closing.
+    if (player?.isValid) {
+      updateItemSlots(entity, player, false);
+
+      const machineId = getMachineIdFromEntityId(entity.typeId);
+      if (machineId) {
+        void updateEntityUi(
+          InternalRegisteredMachine.forceGetInternal(machineId),
+          entity,
+          player,
+          false,
+        );
+      }
+    }
+
+    // Anything left over is for a UI that no longer exists. Dropped after the
+    // final pass, so that a slot the machine changed but the container hasn't
+    // rendered yet is still pushed rather than synced back from stale contents.
+    clearItemSlotChanges(uid);
   },
   {
     entityFilter: {
@@ -685,7 +800,7 @@ world.afterEvents.playerInventoryItemChange.subscribe((e) => {
 });
 
 system.runInterval(() => {
-  for (const [entity, player] of playersInUi) {
+  for (const [uid, { entity, player }] of openMachineUis) {
     // entityContainerClosed handles the common case, but the entity may despawn
     // (non-persistent machines) or the player may leave while the UI is open, so
     // drop any stale entries here as well.
@@ -694,13 +809,15 @@ system.runInterval(() => {
       !player.isValid ||
       entity.hasTag(MACHINE_ENTITY_NO_UPDATE_UI_TAG)
     ) {
-      playersInUi.delete(entity);
+      openMachineUis.delete(uid);
+      clearItemSlotChanges(uid);
       continue;
     }
 
     const machineId = getMachineIdFromEntityId(entity.typeId)!;
     const definition = InternalRegisteredMachine.forceGetInternal(machineId);
 
+    updateItemSlots(entity, player, false);
     void updateEntityUi(definition, entity, player, false);
   }
 }, 4);

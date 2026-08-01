@@ -16,10 +16,12 @@ import {
   world,
 } from "@minecraft/server";
 import {
+  getBlockUniqueId,
   getMachineSlotItemUnsafe,
   optionalMachineItemStackToItemStack,
   removeBlockFromScoreboards,
 } from "./data";
+import { clearItemSlotChanges } from "./ui";
 import { MachineNetwork } from "./network";
 import { raise, raisePublic } from "./log";
 import { Vector3Utils } from "@minecraft/math";
@@ -53,6 +55,10 @@ export function removeMachineData(
   MachineNetwork.updateWith(loc, connectionType);
   removeBlockFromScoreboards(loc);
   removeAllDynamicPropertiesForBlock(loc);
+  // The item slots those changes refer to no longer exist. The UI update
+  // interval drops the entry too when it notices the entity has gone, but the
+  // machine's data can also be removed with its entity left in place.
+  clearItemSlotChanges(getBlockUniqueId(loc));
 }
 
 /**

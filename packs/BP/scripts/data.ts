@@ -9,7 +9,7 @@
  */
 
 import { Block, DimensionLocation, ItemStack, world } from "@minecraft/server";
-import { machineChangedItemSlots } from "./ui";
+import { recordItemSlotChange } from "./ui";
 import {
   MachineItemStack,
   getMachineStorage,
@@ -160,12 +160,7 @@ export function setMachineSlotItem(
   // to the block (i.e. reflecting a change the UI already shows) pass
   // `setChanged = false` to avoid a redundant round-trip.
   if (setChanged) {
-    const existingChangedItemSlotsArr = machineChangedItemSlots.get(uid);
-    if (existingChangedItemSlotsArr) {
-      existingChangedItemSlotsArr.add(slotId);
-    } else {
-      machineChangedItemSlots.set(uid, new Set([slotId]));
-    }
+    recordItemSlotChange(uid, slotId);
   }
 
   // An empty/zero-amount stack clears the slot's dynamic property entirely.

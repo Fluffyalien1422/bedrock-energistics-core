@@ -1,6 +1,7 @@
 import {
   Block,
   DimensionLocation,
+  Entity,
   ScoreboardObjective,
   world,
 } from "@minecraft/server";
@@ -45,6 +46,23 @@ export function getBlockUniqueId(loc: DimensionLocation): string {
     "," +
     loc.dimension.id
   );
+}
+
+/**
+ * The block uid (see {@link getBlockUniqueId}) of the machine that a machine
+ * entity is attached to.
+ * @internal
+ * @remarks
+ * Machine entities are spawned at their block's `bottomCenter` (see
+ * `spawnMachineEntity`, which exists on both sides), and `getBlockUniqueId`
+ * floors each coordinate, so this resolves back to the machine block.
+ * @throws Throws if the entity is not valid, since its location can't be read.
+ */
+export function getMachineEntityBlockUniqueId(entity: Entity): string {
+  return getBlockUniqueId({
+    ...entity.location,
+    dimension: entity.dimension,
+  });
 }
 
 /**
