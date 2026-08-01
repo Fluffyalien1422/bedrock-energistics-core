@@ -417,6 +417,49 @@ function updateItemSlots(entity: Entity, player: Player, init: boolean): void {
 }
 
 /**
+ * Writes any edit the player has made to a machine's open UI container back
+ * into the block's item slot storage, so that a read or write of that storage
+ * sees the machine's actual current contents.
+ * @remarks
+ * A machine's stored items lag its container: a player's edit only reaches the
+ * block on the next item slot pass, up to an update interval later. Anything
+ * reading or writing that storage from outside the UI - the machine data IPC
+ * listeners, for dependent add-ons - would otherwise be working from contents
+ * the player has already changed.
+ *
+ * Does nothing if the machine's UI isn't open, in which case its stored items
+ * are already current.
+ */
+export function flushItemSlotsFromContainer(block: Block): void {
+  const uid = getBlockUniqueId(block);
+
+  const ui = openMachineUis.get(uid);
+  if (!ui?.entity.isValid || !ui.player.isValid) return;
+
+  const definition = InternalRegisteredMachine.getInternal(block.typeId);
+  if (!definition?.uiElements) return;
+
+  // The block may have been replaced since the UI was opened, in which case the
+  // open container belongs to a different machine than the one being written to
+  // and its slots don't correspond to this machine's elements.
+  if (ui.entity.typeId !== definition.entityId) return;
+
+  const changedSlots = machineChangedItemSlots.get(uid);
+  const inventory = ui.entity.getComponent("inventory")!.container;
+
+  for (const [id, options] of definition.uiElements) {
+    if (options.type !== "itemSlot") continue;
+
+    // A flagged slot holds a change the machine made that the container hasn't
+    // rendered yet, so the container's contents are the stale side there.
+    // Syncing them back would undo that pending change.
+    if (changedSlots?.has(id)) continue;
+
+    syncItemSlotToBlock(block, inventory, id, options, ui.player);
+  }
+}
+
+/**
  * Renders a progress indicator (e.g. an arrow or flame) at its frame
  * for `value`. Presets have a fixed frame count; custom indicators list their
  * frames. An out-of-range or non-integer value renders the error item.

@@ -91,6 +91,7 @@ export async function setMachineStorage(
  * @param loc The location of the machine.
  * @param elementId The ID of the item slot element.
  * @returns The {@link MachineItemStack} or `undefined` if there is no item in the specified slot.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if there is no block at the given location, including when that location's chunk is not loaded.
  * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
  */
 export async function getMachineSlotItem(
@@ -116,7 +117,7 @@ export async function getMachineSlotItem(
  * @param loc The location of the machine.
  * @param elementId The ID of the item slot element.
  * @param newItemStack The {@link MachineItemStack} to put in the slot. Pass `undefined` to remove the item in the slot.
- * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if there is no block at the given location.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if there is no block at the given location, including when that location's chunk is not loaded.
  * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the block is not registered as a machine.
  * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the element is not an item slot, or if the item is not allowed in that slot.
  * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).

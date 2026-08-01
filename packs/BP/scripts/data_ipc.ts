@@ -19,16 +19,37 @@ import {
 import { deserializeMachineItemStack } from "@/public_api/src/serialize_machine_item_stack";
 import { raisePublic } from "./log";
 import { destroyMachine, removeMachineData } from "./machine";
+import { flushItemSlotsFromContainer } from "./ui";
 import { stringifyDimensionLocation } from "./utils/string";
+
+// Both item slot listeners flush the machine's open UI container first (see
+// flushItemSlotsFromContainer), so that an add-on never reads or overwrites item
+// slot contents the player has already changed. One side effect of that:
+// reclaiming a disallowed item the player dropped into a slot can now happen on
+// whichever tick an add-on calls in, rather than only on a UI update tick.
 
 export function getMachineSlotListener(
   payload: ipc.SerializableValue,
 ): string | null {
   const data = payload as GetMachineSlotPayload;
-  return (
-    getMachineSlotItemRaw(deserializeDimensionLocation(data.loc), data.slot) ??
-    null
-  );
+  const loc = deserializeDimensionLocation(data.loc);
+
+  // A read only touches dynamic properties, so it doesn't strictly need the
+  // block - but a machine's data is cleared when its block is destroyed, so
+  // data without a block means either an unloaded chunk or an add-on that
+  // removed the block without calling 'destroyMachine' or 'removeMachineData'.
+  // Neither is a read this can answer correctly, so it fails like the write.
+  const block = loc.dimension.getBlock(loc);
+  if (!block) {
+    raisePublic(
+      PublicErrorType.NotFound,
+      `Failed to get machine slot item. Block not found at ${stringifyDimensionLocation(loc)}.`,
+    );
+  }
+
+  flushItemSlotsFromContainer(block);
+
+  return getMachineSlotItemRaw(loc, data.slot) ?? null;
 }
 
 export function setMachineSlotListener(payload: ipc.SerializableValue): null {
@@ -41,6 +62,8 @@ export function setMachineSlotListener(payload: ipc.SerializableValue): null {
       `Failed to set machine slot item. Block not found at ${stringifyDimensionLocation(loc)}.`,
     );
   }
+
+  flushItemSlotsFromContainer(block);
 
   setMachineSlotItem(
     block,
