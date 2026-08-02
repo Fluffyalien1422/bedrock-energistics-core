@@ -19,13 +19,6 @@ export interface GetMachineSlotPayload {
 }
 
 /**
- * @internal
- */
-export interface SetMachineSlotPayload extends GetMachineSlotPayload {
-  item?: string;
-}
-
-/**
  * Conditions a machine item slot must currently meet, as sent over IPC. An
  * absent field is not checked; see `MachineSlotItemExpectOptions`.
  * @internal
@@ -33,6 +26,14 @@ export interface SetMachineSlotPayload extends GetMachineSlotPayload {
 export interface MachineSlotExpectPayload {
   expectType?: string;
   expectAmount?: number;
+}
+
+/**
+ * @internal
+ */
+export interface SetMachineSlotPayload
+  extends GetMachineSlotPayload, MachineSlotExpectPayload {
+  item?: string;
 }
 
 /**

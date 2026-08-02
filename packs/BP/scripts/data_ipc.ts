@@ -79,7 +79,9 @@ export function getMachineSlotListener(
   return getMachineSlotItemRaw(block, data.slot) ?? null;
 }
 
-export function setMachineSlotListener(payload: ipc.SerializableValue): null {
+export function setMachineSlotListener(
+  payload: ipc.SerializableValue,
+): boolean {
   const data = payload as SetMachineSlotPayload;
 
   const block = resolveItemSlotBlock(
@@ -87,13 +89,12 @@ export function setMachineSlotListener(payload: ipc.SerializableValue): null {
     "Failed to set machine slot item.",
   );
 
-  setMachineSlotItem(
+  return setMachineSlotItem(
     block,
     data.slot,
     data.item ? deserializeMachineItemStack(data.item) : undefined,
+    { expect: data },
   );
-
-  return null;
 }
 
 export function takeMachineSlotListener(

@@ -328,7 +328,9 @@ function syncItemSlotToBlock(
   // drop the empty-slot placeholder back in.
   if (!containerSlot.hasItem()) {
     clearUiItemsFromPlayer(player);
-    setMachineSlotItem(block, elementId, undefined, false);
+    setMachineSlotItem(block, elementId, undefined, {
+      setChanged: false,
+    });
     containerSlot.setItem(
       optionalMachineItemStackToItemStack(undefined, element.emptyItemId),
     );
@@ -353,7 +355,7 @@ function syncItemSlotToBlock(
         block,
         elementId,
         expectedMachineItem.withAmount(containerSlot.amount),
-        false,
+        { setChanged: false },
       );
     }
 
@@ -365,7 +367,9 @@ function syncItemSlotToBlock(
   const isAllowed =
     element.allowedItems?.includes(containerSlot.typeId) ?? true;
   if (!isAllowed) {
-    setMachineSlotItem(block, elementId, undefined, false);
+    setMachineSlotItem(block, elementId, undefined, {
+      setChanged: false,
+    });
     player.dimension.spawnItem(containerSlot.getItem()!, player.location);
     containerSlot.setItem(
       optionalMachineItemStackToItemStack(undefined, element.emptyItemId),
@@ -376,7 +380,9 @@ function syncItemSlotToBlock(
   if (isUiItem(containerSlotItemStack)) {
     return;
   }
-  setMachineSlotItem(block, elementId, containerSlotMachineItemStack, false);
+  setMachineSlotItem(block, elementId, containerSlotMachineItemStack, {
+    setChanged: false,
+  });
 }
 
 /**

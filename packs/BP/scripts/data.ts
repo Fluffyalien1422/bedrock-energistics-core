@@ -126,73 +126,6 @@ export function getMachineSlotItem(
   return getMachineSlotItemUnsafe(block, slotId);
 }
 
-export function setMachineSlotItem(
-  block: Block,
-  slotId: string,
-  newItemStack?: MachineItemStack,
-  setChanged = true,
-): void {
-  const registered = InternalRegisteredMachine.forceGetInternal(block.typeId);
-
-  const element = registered.uiElements?.get(slotId);
-  if (element?.type !== "itemSlot") {
-    raisePublic(
-      PublicErrorType.InvalidArgument,
-      `Failed to set machine slot item. The element '${slotId}' for machine '${block.typeId}' is of type '${element?.type ?? "undefined"}', expected 'itemSlot'.`,
-    );
-  }
-
-  if (newItemStack) {
-    if (
-      element.allowedItems &&
-      !element.allowedItems.includes(newItemStack.typeId)
-    ) {
-      raisePublic(
-        PublicErrorType.InvalidArgument,
-        `Failed to set machine slot item. The item '${newItemStack.typeId}' is not allowed in slot '${slotId}' of machine '${block.typeId}'.`,
-      );
-    }
-
-    // An item slot is one container slot, so it cannot show more than a single
-    // stack. Storing more would be lost the moment the slot was rendered.
-    const maxAmount = getItemMaxAmount(
-      newItemStack.typeId,
-      "Failed to set machine slot item.",
-    );
-    if (newItemStack.amount > maxAmount) {
-      raisePublic(
-        PublicErrorType.InvalidArgument,
-        `Failed to set machine slot item. The amount ${newItemStack.amount.toString()} exceeds the maximum stack size of ${maxAmount.toString()} for the item '${newItemStack.typeId}'.`,
-      );
-    }
-  }
-
-  const uid = getBlockUniqueId(block);
-  const propertyId = `item${slotId}`;
-
-  // Record that this slot changed so the UI update loop knows to push the new
-  // contents into the open container. Callers syncing *from* the container back
-  // to the block (i.e. reflecting a change the UI already shows) pass
-  // `setChanged = false` to avoid a redundant round-trip.
-  if (setChanged) {
-    recordItemSlotChange(uid, slotId);
-  }
-
-  // No stack clears the slot's dynamic property entirely. A stack always holds
-  // at least one item (see MachineItemStack.amount), so that is the only way to
-  // express an empty slot.
-  if (!newItemStack) {
-    setBlockDynamicProperty(block, propertyId);
-    return;
-  }
-
-  setBlockDynamicProperty(
-    block,
-    propertyId,
-    serializeMachineItemStack(newItemStack),
-  );
-}
-
 /**
  * Whether a machine item slot's current contents meet the conditions a caller
  * asked for. A condition that wasn't given isn't checked.
@@ -245,6 +178,109 @@ function getItemMaxAmount(typeId: string, failureMsg: string): number {
       `${failureMsg} The item '${typeId}' could not be created: ${String(e)}.`,
     );
   }
+}
+
+/** Options for {@link setMachineSlotItem}. */
+export interface SetMachineSlotItemOptions {
+  /**
+   * Whether to record the change so that the UI update loop pushes the new
+   * contents into the open container. Callers syncing *from* the container back
+   * to the block - reflecting a change the UI already shows - pass `false` to
+   * avoid a redundant round-trip.
+   * @default true
+   */
+  setChanged?: boolean;
+  /**
+   * Conditions the slot must currently meet for the write to apply. Omit, or
+   * pass no conditions, to write unconditionally.
+   */
+  expect?: MachineSlotItemExpectOptions;
+}
+
+/**
+ * @returns Whether the item was written. Only `false` if `options.expect` was
+ * given and the slot didn't meet it.
+ */
+export function setMachineSlotItem(
+  block: Block,
+  slotId: string,
+  newItemStack?: MachineItemStack,
+  options: SetMachineSlotItemOptions = {},
+): boolean {
+  const registered = InternalRegisteredMachine.forceGetInternal(block.typeId);
+
+  const element = registered.uiElements?.get(slotId);
+  if (element?.type !== "itemSlot") {
+    raisePublic(
+      PublicErrorType.InvalidArgument,
+      `Failed to set machine slot item. The element '${slotId}' for machine '${block.typeId}' is of type '${element?.type ?? "undefined"}', expected 'itemSlot'.`,
+    );
+  }
+
+  if (newItemStack) {
+    if (
+      element.allowedItems &&
+      !element.allowedItems.includes(newItemStack.typeId)
+    ) {
+      raisePublic(
+        PublicErrorType.InvalidArgument,
+        `Failed to set machine slot item. The item '${newItemStack.typeId}' is not allowed in slot '${slotId}' of machine '${block.typeId}'.`,
+      );
+    }
+
+    // An item slot is one container slot, so it cannot show more than a single
+    // stack. Storing more would be lost the moment the slot was rendered.
+    const maxAmount = getItemMaxAmount(
+      newItemStack.typeId,
+      "Failed to set machine slot item.",
+    );
+    if (newItemStack.amount > maxAmount) {
+      raisePublic(
+        PublicErrorType.InvalidArgument,
+        `Failed to set machine slot item. The amount ${newItemStack.amount.toString()} exceeds the maximum stack size of ${maxAmount.toString()} for the item '${newItemStack.typeId}'.`,
+      );
+    }
+  }
+
+  // Checked after the argument validation above, so that a bad argument is
+  // reported as such rather than being masked by a compare that would also have
+  // failed.
+  //
+  // Reading the slot is skipped unless there is actually a condition to check,
+  // and not just an empty options object. Deserializing raises on data it can't
+  // parse, so an unconditional write has to stay able to overwrite a slot whose
+  // contents are corrupt - that is how one would be recovered.
+  const expect = options.expect;
+  if (
+    expect &&
+    (expect.expectType !== undefined || expect.expectAmount !== undefined) &&
+    !machineSlotItemMatches(getMachineSlotItemUnsafe(block, slotId), expect)
+  ) {
+    return false;
+  }
+
+  const uid = getBlockUniqueId(block);
+  const propertyId = `item${slotId}`;
+
+  if (options.setChanged ?? true) {
+    recordItemSlotChange(uid, slotId);
+  }
+
+  // No stack clears the slot's dynamic property entirely. A stack always holds
+  // at least one item (see MachineItemStack.amount), so that is the only way to
+  // express an empty slot.
+  if (!newItemStack) {
+    setBlockDynamicProperty(block, propertyId);
+    return true;
+  }
+
+  setBlockDynamicProperty(
+    block,
+    propertyId,
+    serializeMachineItemStack(newItemStack),
+  );
+
+  return true;
 }
 
 /**

@@ -219,24 +219,36 @@ export async function addMachineSlotItem(
 /**
  * Sets an item in a machine inventory.
  * @beta
+ * @remarks
+ * Without conditions in `options`, this replaces whatever is in the slot,
+ * including a change the player made since you last looked at it - which can
+ * duplicate an item they are already holding. For anything derived from the
+ * slot's current contents, prefer {@link takeMachineSlotItem} or
+ * {@link addMachineSlotItem}, or state what you expected to replace.
  * @param loc The location of the machine.
  * @param elementId The ID of the item slot element.
  * @param newItemStack The {@link MachineItemStack} to put in the slot. Pass `undefined` to remove the item in the slot.
+ * @param options Conditions the slot must meet.
+ * @returns Whether the item was set. Only `false` if `options` gave a condition
+ * the slot didn't meet, so a write with no conditions always resolves `true`.
  * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotFound} if there is no block at the given location, including when that location's chunk is not loaded.
  * @throws Throws a {@link PublicError} of type {@link PublicErrorType.NotRegistered} if the block is not registered as a machine.
- * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the element is not an item slot, or if the item is not allowed in that slot.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the element is not an item slot, if the item is not allowed in that slot, if the item does not exist, or if its amount exceeds the item's maximum stack size.
  * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has not been initialized (see {@link init}).
  */
 export async function setMachineSlotItem(
   loc: DimensionLocation,
   elementId: string,
   newItemStack?: MachineItemStack,
-): Promise<void> {
+  options?: MachineSlotItemExpectOptions,
+): Promise<boolean> {
   const payload: SetMachineSlotPayload = {
     loc: makeSerializableDimensionLocation(loc),
     slot: elementId,
     item: newItemStack ? serializeMachineItemStack(newItemStack) : undefined,
+    expectType: options?.expectType,
+    expectAmount: options?.expectAmount,
   };
 
-  await ipcInvoke(BecIpcListener.SetMachineSlot, payload);
+  return ipcInvoke<boolean>(BecIpcListener.SetMachineSlot, payload);
 }
