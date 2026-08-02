@@ -5,6 +5,7 @@ import {
   GetMachineSlotPayload,
   getScore,
   getStorageScoreboardObjective,
+  MachineSlotExpectPayload,
   resolveMachineStorageWrite,
   SetMachineSlotPayload,
   setScore,
@@ -115,7 +116,8 @@ export async function getMachineSlotItem(
 
 /**
  * Conditions that a machine item slot must currently meet for an operation to
- * apply. Each is only checked if given; an empty object applies unconditionally.
+ * apply. Each is only checked if given, and every condition that applies must
+ * hold; an empty object applies unconditionally.
  * @beta
  * @remarks
  * Use these to make a read-modify-write safe when the operations that do it for
@@ -131,10 +133,46 @@ export interface MachineSlotItemExpectOptions {
    */
   expectType?: string;
   /**
-   * How many items the slot must hold. Use `0` to require an empty slot.
+   * Exactly how many items the slot must hold. Use `0` to require an empty
+   * slot.
    * @beta
+   * @remarks
+   * Takes precedence over {@link MachineSlotItemExpectOptions.expectMinAmount}
+   * and {@link MachineSlotItemExpectOptions.expectMaxAmount}, which are not
+   * checked at all when this is given.
    */
   expectAmount?: number;
+  /**
+   * The fewest items the slot may hold. Ignored if
+   * {@link MachineSlotItemExpectOptions.expectAmount} is given.
+   * @beta
+   * @remarks
+   * Passing the same number as {@link takeMachineSlotItem}'s `amount` consumes
+   * that many items or none at all, since the take only applies when the slot
+   * can cover it in full.
+   */
+  expectMinAmount?: number;
+  /**
+   * The most items the slot may hold. Ignored if
+   * {@link MachineSlotItemExpectOptions.expectAmount} is given.
+   * @beta
+   */
+  expectMaxAmount?: number;
+}
+
+/**
+ * Maps the conditions an add-on gave onto the fields sent over IPC. Kept in one
+ * place so that the three operations taking them can't drift apart.
+ */
+function makeExpectPayload(
+  options?: MachineSlotItemExpectOptions,
+): MachineSlotExpectPayload {
+  return {
+    expectType: options?.expectType,
+    expectAmount: options?.expectAmount,
+    expectMinAmount: options?.expectMinAmount,
+    expectMaxAmount: options?.expectMaxAmount,
+  };
 }
 
 /**
@@ -148,7 +186,8 @@ export interface MachineSlotItemExpectOptions {
  * @param elementId The ID of the item slot element.
  * @param amount The amount of items to remove. Defaults to the whole stack. Asking
  * for more than the slot holds is not an error; the rest of the stack is
- * returned.
+ * returned. To take this many items or none at all, pass the same number as
+ * {@link MachineSlotItemExpectOptions.expectMinAmount}.
  * @param options Conditions the slot must meet.
  * @returns What was removed, or `undefined` if the slot was empty or did not
  * meet `options`.
@@ -167,8 +206,7 @@ export async function takeMachineSlotItem(
     loc: makeSerializableDimensionLocation(loc),
     slot: elementId,
     amount,
-    expectType: options?.expectType,
-    expectAmount: options?.expectAmount,
+    ...makeExpectPayload(options),
   };
 
   const data = await ipcInvoke<string | null>(
@@ -209,8 +247,7 @@ export async function addMachineSlotItem(
     loc: makeSerializableDimensionLocation(loc),
     slot: elementId,
     item: serializeMachineItemStack(newItemStack),
-    expectType: options?.expectType,
-    expectAmount: options?.expectAmount,
+    ...makeExpectPayload(options),
   };
 
   return ipcInvoke<number>(BecIpcListener.AddMachineSlot, payload);
@@ -246,8 +283,7 @@ export async function setMachineSlotItem(
     loc: makeSerializableDimensionLocation(loc),
     slot: elementId,
     item: newItemStack ? serializeMachineItemStack(newItemStack) : undefined,
-    expectType: options?.expectType,
-    expectAmount: options?.expectAmount,
+    ...makeExpectPayload(options),
   };
 
   return ipcInvoke<boolean>(BecIpcListener.SetMachineSlot, payload);

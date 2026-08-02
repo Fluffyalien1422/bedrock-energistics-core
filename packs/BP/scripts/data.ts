@@ -126,9 +126,20 @@ export function getMachineSlotItem(
   return getMachineSlotItemUnsafe(block, slotId);
 }
 
+/** Whether the caller asked for any condition at all. */
+function hasSlotItemConditions(expect: MachineSlotItemExpectOptions): boolean {
+  return (
+    expect.expectType !== undefined ||
+    expect.expectAmount !== undefined ||
+    expect.expectMinAmount !== undefined ||
+    expect.expectMaxAmount !== undefined
+  );
+}
+
 /**
  * Whether a machine item slot's current contents meet the conditions a caller
- * asked for. A condition that wasn't given isn't checked.
+ * asked for. A condition that wasn't given isn't checked; every condition that
+ * applies has to hold.
  */
 function machineSlotItemMatches(
   current: MachineItemStack | undefined,
@@ -141,9 +152,21 @@ function machineSlotItemMatches(
     return false;
   }
 
+  // An empty slot holds nothing, which the amount conditions read as zero.
+  const amount = current?.amount ?? 0;
+
+  // An exact amount wins over the bounds. Against an exact amount a bound can
+  // only ever be redundant or contradictory.
+  if (expect.expectAmount !== undefined) {
+    return amount === expect.expectAmount;
+  }
+
+  if (expect.expectMinAmount !== undefined && amount < expect.expectMinAmount) {
+    return false;
+  }
+
   return (
-    expect.expectAmount === undefined ||
-    (current?.amount ?? 0) === expect.expectAmount
+    expect.expectMaxAmount === undefined || amount <= expect.expectMaxAmount
   );
 }
 
@@ -253,7 +276,7 @@ export function setMachineSlotItem(
   const expect = options.expect;
   if (
     expect &&
-    (expect.expectType !== undefined || expect.expectAmount !== undefined) &&
+    hasSlotItemConditions(expect) &&
     !machineSlotItemMatches(getMachineSlotItemUnsafe(block, slotId), expect)
   ) {
     return false;

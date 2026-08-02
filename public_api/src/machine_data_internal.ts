@@ -26,6 +26,8 @@ export interface GetMachineSlotPayload {
 export interface MachineSlotExpectPayload {
   expectType?: string;
   expectAmount?: number;
+  expectMinAmount?: number;
+  expectMaxAmount?: number;
 }
 
 /**
