@@ -34,6 +34,14 @@ export interface NewMachineItemStackOptions {
 /**
  * Represents an item stack that may be stored in a machine UI item slot.
  * @beta
+ * @remarks
+ * Carries an item's type, amount, name tag, damage, lore and enchantments, and
+ * nothing else. An item holding more than that does not survive a round trip
+ * through one: a shulker box with items in it becomes an empty shulker box.
+ *
+ * Machine item slots store their contents this way, so restrict them with
+ * {@link UiItemSlotElementDefinition.allowedItems}, or use a persistent entity's
+ * container instead if a slot has to accept any item.
  */
 export class MachineItemStack {
   nameTag?: string;

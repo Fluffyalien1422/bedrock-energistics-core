@@ -35,6 +35,16 @@ Indicator preset max progress values:
 - Arrow: 16
 - Flame: 13
 
+## Item Slots
+
+Item slots let a machine store items without a persistent entity. They take up one slot.
+
+A slot's contents are saved as a [MachineItemStack](https://fluffyalien1422.github.io/bedrock-energistics-core/api/classes/API.MachineItemStack.html), which keeps an item's type, amount, name tag, damage, lore, and enchantments, and nothing else. An item carrying more than that does not survive being stored: a shulker box with items in it comes back out as an empty shulker box.
+
+Because of this, setting `allowedItems` to the items your machine actually needs is highly recommended. As well as keeping out items the machine has no use for, it stops a player from placing one that cannot be stored intact.
+
+If a slot has to accept any item at all, use a persistent entity and access its container directly rather than using an item slot element. See the [Persistent Entities](persistent-entities.md) guide.
+
 ## Other Elements
 
 Some elements are not listed here. Find more information on these elements in the reference documentation. All other elements use one slot.

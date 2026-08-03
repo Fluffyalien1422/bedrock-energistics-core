@@ -70,6 +70,16 @@ export interface UiStorageBarElementDefinition {
  * This is used to store items without persistent entities.
  * If your machine uses a persistent entity, we recommend
  * accessing the entity's inventory directly rather than using this.
+ *
+ * A slot's contents are saved as a {@link MachineItemStack}, which keeps most of
+ * an item but not all of it - a shulker box holding items, for one, comes back
+ * out as an empty shulker box. Set
+ * {@link UiItemSlotElementDefinition.allowedItems} to the items your machine
+ * actually needs, so that a player cannot put something in a slot that won't
+ * survive being stored.
+ *
+ * If a slot has to accept any item at all, use a persistent entity and access
+ * its container directly instead of using an item slot element.
  * @beta
  */
 export interface UiItemSlotElementDefinition {
@@ -82,6 +92,10 @@ export interface UiItemSlotElementDefinition {
   /**
    * Only allow specific items in this slot.
    * @beta
+   * @remarks
+   * Highly recommended. Restricting a slot to what the machine needs also keeps
+   * a player from putting in an item that cannot be stored intact - see the
+   * remarks on {@link UiItemSlotElementDefinition}.
    */
   allowedItems?: string[];
 
