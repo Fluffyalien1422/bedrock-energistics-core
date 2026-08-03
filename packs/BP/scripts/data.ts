@@ -212,7 +212,7 @@ export interface SetMachineSlotItemOptions {
    * a redundant round-trip.
    * @default true
    */
-  setChanged?: boolean;
+  showInUi?: boolean;
   /**
    * Conditions the slot must currently meet for the write to apply. Omit, or
    * pass no conditions, to write unconditionally.
@@ -301,7 +301,7 @@ export function setMachineSlotItem(
   // an amount the machine has already changed. Callers syncing *from* the
   // container back to the block pass `false`, since the container is where the
   // new contents came from.
-  if (options.setChanged ?? true) {
+  if (options.showInUi ?? true) {
     showItemSlotChange(block, slotId);
   }
 

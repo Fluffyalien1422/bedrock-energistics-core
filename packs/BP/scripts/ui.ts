@@ -337,7 +337,7 @@ function syncItemSlotToBlock(
   if (!containerSlot.hasItem()) {
     clearUiItemsFromPlayer(player);
     setMachineSlotItem(block, elementId, undefined, {
-      setChanged: false,
+      showInUi: false,
     });
     containerSlot.setItem(
       optionalMachineItemStackToItemStack(undefined, element.emptyItemId),
@@ -363,7 +363,7 @@ function syncItemSlotToBlock(
         block,
         elementId,
         expectedMachineItem.withAmount(containerSlot.amount),
-        { setChanged: false },
+        { showInUi: false },
       );
     }
 
@@ -376,7 +376,7 @@ function syncItemSlotToBlock(
     element.allowedItems?.includes(containerSlot.typeId) ?? true;
   if (!isAllowed) {
     setMachineSlotItem(block, elementId, undefined, {
-      setChanged: false,
+      showInUi: false,
     });
     player.dimension.spawnItem(containerSlot.getItem()!, player.location);
     containerSlot.setItem(
@@ -389,7 +389,7 @@ function syncItemSlotToBlock(
     return;
   }
   setMachineSlotItem(block, elementId, containerSlotMachineItemStack, {
-    setChanged: false,
+    showInUi: false,
   });
 }
 
