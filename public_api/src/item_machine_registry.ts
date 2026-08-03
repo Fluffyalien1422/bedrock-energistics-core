@@ -14,7 +14,7 @@ import {
 } from "./item_machine_registry_types.js";
 import { raisePublic } from "./log.js";
 import { PublicErrorType } from "./error.js";
-import { isRegistrationAllowed } from "./registration_allowed.js";
+import { isRegistrationOpen } from "./registration_open.js";
 import {
   SerializableContainerSlot,
   SerializableContainerSlotJson,
@@ -94,7 +94,7 @@ export class RegisteredItemMachine {
       return itemMachineCache.get(id);
     }
 
-    const isRegistrationOngoing = isRegistrationAllowed();
+    const isRegistrationOngoing = isRegistrationOpen();
     // if registration is still ongoing, check own registered item machines first.
     // we don't want to do this if registration has ended, since the item machine
     // may have been overriden by another pack.
@@ -123,7 +123,7 @@ export class RegisteredItemMachine {
  * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if registration has been closed, or if this package has not been initialized (see {@link init}).
  */
 export function registerItemMachine(definition: ItemMachineDefinition): void {
-  if (!isRegistrationAllowed()) {
+  if (!isRegistrationOpen()) {
     raisePublic(
       PublicErrorType.InvalidState,
       `Attempted to register item machine '${definition.description.id}' after registration was closed.`,

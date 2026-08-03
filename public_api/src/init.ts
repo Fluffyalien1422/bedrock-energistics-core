@@ -8,10 +8,18 @@ let initBecVersion: string | undefined;
 
 /**
  * Initializes this package. Some APIs require this to be called.
- * This must be called in the `worldLoad` after event.
- * @param uid A unique ID.
+ * Must be called after `worldLoad`.
  * @beta
- * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has already been initialized, or if Bedrock Energistics Core is not in the world.
+ * @remarks
+ * `uid` is passed straight to `mcbe-addon-ipc`'s `Router` as its own unique ID.
+ * Two routers sharing an ID will receive each other's messages, so if your
+ * add-on constructs a `Router` of its own, give it an ID different from the one
+ * passed here. Anything identifying your add-on works, as long as nothing else
+ * in the world uses it.
+ * @param uid A unique ID. Must be between one and `MAX_ROUTER_UID_LENGTH`
+ * characters (see `mcbe-addon-ipc`).
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if this package has already been initialized, if Bedrock Energistics Core is not in the world, or if called before `worldLoad`.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if `uid` is empty or too long.
  */
 export function init(uid: string): void {
   if (ipcRouter) {
@@ -25,7 +33,14 @@ export function init(uid: string): void {
     );
   }
 
-  ipcRouter = new ipc.Router(uid);
+  try {
+    ipcRouter = new ipc.Router(uid);
+  } catch {
+    raisePublic(
+      PublicErrorType.InvalidArgument,
+      `Cannot initialize library. The unique ID '${uid}' is ${uid.length.toString()} characters; it must be between 1 and ${ipc.MAX_ROUTER_UID_LENGTH.toString()}.`,
+    );
+  }
 }
 
 /**

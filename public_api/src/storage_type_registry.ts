@@ -3,7 +3,7 @@ import { ipcInvoke, ipcSend } from "./ipc_wrapper.js";
 import { raisePublic } from "./log.js";
 import { PublicErrorType } from "./error.js";
 import { deepFreezeCopy } from "./misc_internal.js";
-import { isRegistrationAllowed } from "./registration_allowed.js";
+import { isRegistrationOpen } from "./registration_open.js";
 import {
   StorageTypeTextureDescription,
   StorageTypeTexturePreset,
@@ -112,7 +112,7 @@ export class RegisteredStorageType implements StorageTypeData {
       return storageTypeCache.get(id);
     }
 
-    const isRegistrationOngoing = isRegistrationAllowed();
+    const isRegistrationOngoing = isRegistrationOpen();
     // if registration is still ongoing, check own registered storage types first.
     // we don't want to do this if registration has ended, since the storage type
     // may have been overriden by another pack.
@@ -149,7 +149,7 @@ export class RegisteredStorageType implements StorageTypeData {
     // registration window has closed, and caching a list that the core pack
     // built while other packs were still registering would make an incomplete
     // result permanent.
-    const isRegistrationOngoing = isRegistrationAllowed();
+    const isRegistrationOngoing = isRegistrationOpen();
 
     const ids = await ipcInvoke<string[]>(
       BecIpcListener.GetAllRegisteredStorageTypes,
@@ -181,7 +181,7 @@ export class RegisteredStorageType implements StorageTypeData {
  * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the definition ID or category is invalid.
  */
 export function registerStorageType(definition: StorageTypeDefinition): void {
-  if (!isRegistrationAllowed()) {
+  if (!isRegistrationOpen()) {
     raisePublic(
       PublicErrorType.InvalidState,
       `Attempted to register storage type '${definition.id}' after registration was closed.`,

@@ -21,6 +21,7 @@ export * from "./machine_utils.js";
 export * from "./misc.js";
 export * from "./network_utils.js";
 export * from "./network.js";
+export * from "./registration_open.js";
 export * from "./standard_storage_types.js";
 export * from "./storage_type_registry_types.js";
 export * from "./storage_type_registry.js";

@@ -16,7 +16,7 @@ import {
   ipcSend,
   registerOrOverrideIpcListener,
 } from "./ipc_wrapper.js";
-import { isRegistrationAllowed } from "./registration_allowed.js";
+import { isRegistrationOpen } from "./registration_open.js";
 import { raisePublic } from "./log.js";
 import { PublicErrorType } from "./error.js";
 import { getIpcRouter } from "./init.js";
@@ -144,7 +144,7 @@ export class RegisteredMachine {
       return machineCache.get(id);
     }
 
-    const isRegistrationOngoing = isRegistrationAllowed();
+    const isRegistrationOngoing = isRegistrationOpen();
     // if registration is still ongoing, check own registered machines first.
     // we don't want to do this if registration has ended, since the machine
     // may have been overriden by another pack.
@@ -192,7 +192,7 @@ export class RegisteredMachine {
  * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if registration has been closed, or if this package has not been initialized (see {@link init}).
  */
 export function registerMachine(definition: MachineDefinition): void {
-  if (!isRegistrationAllowed()) {
+  if (!isRegistrationOpen()) {
     raisePublic(
       PublicErrorType.InvalidState,
       `Attempted to register machine '${definition.description.id}' after registration was closed.`,
