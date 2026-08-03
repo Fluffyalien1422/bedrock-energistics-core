@@ -76,36 +76,44 @@ const STORAGE_TYPE_COLOR_TO_FORMATTING_CODE: Record<
 const openMachineUis = new Map<string, { entity: Entity; player: Player }>();
 
 /**
- * key = block uid (see getBlockUniqueId)
- * value = set of item slot element IDs whose stored item changed out of band
- */
-const machineChangedItemSlots = new Map<string, Set<string>>();
-
-/**
- * Records that a machine's stored item for `slotId` changed outside of the UI,
- * so that the next item slot pass pushes the new contents into the container.
+ * Shows a machine's new stored item for `slotId` in its open UI right away.
+ * Call after writing the new contents.
  * @remarks
- * A change is only recorded while the machine's UI is open. The flag has no
- * other consumer, and a UI seeds every slot from the block when it opens, so a
- * flag set while the UI was closed would never be read. Skipping it also keeps
- * this map from growing without bound for machines that are only ever driven by
- * automation and never opened.
+ * Doing this as part of the write, rather than leaving it to the next update
+ * tick, is what keeps a machine and a player from both laying claim to the same
+ * items. A container showing an amount the machine has already changed lets the
+ * player take items that are no longer there, or take fewer than they can see;
+ * either way the two disagree about what happened and reconciling them
+ * afterwards cannot always be done without inventing or destroying items.
+ *
+ * Push immediately and there is nothing to reconcile. Whatever the player does
+ * next, they do to the machine's current contents, so the container already
+ * holds the combined result and {@link syncItemSlotToBlock} just writes it back.
+ *
+ * Does nothing if the machine's UI isn't open, since then there is no container
+ * for the player to act on and none for this to correct. A UI seeds every slot
+ * from the block as it opens.
  */
-export function recordItemSlotChange(uid: string, slotId: string): void {
-  if (!openMachineUis.has(uid)) return;
+export function showItemSlotChange(block: Block, slotId: string): void {
+  const ui = openMachineUis.get(getBlockUniqueId(block));
+  if (!ui?.entity.isValid) return;
+  if (ui.entity.hasTag(MACHINE_ENTITY_NO_UPDATE_UI_TAG)) return;
 
-  const existingChangedItemSlots = machineChangedItemSlots.get(uid);
-  if (existingChangedItemSlots) {
-    existingChangedItemSlots.add(slotId);
-    return;
-  }
+  const definition = InternalRegisteredMachine.getInternal(block.typeId);
+  if (!definition) return;
 
-  machineChangedItemSlots.set(uid, new Set([slotId]));
-}
+  // The block may have been replaced since the UI was opened, in which case the
+  // open container belongs to a different machine and its slots don't
+  // correspond to this machine's elements.
+  if (ui.entity.typeId !== definition.entityId) return;
 
-/** Drops every recorded item slot change for a machine. */
-export function clearItemSlotChanges(uid: string): void {
-  machineChangedItemSlots.delete(uid);
+  const element = definition.uiElements?.get(slotId);
+  if (element?.type !== "itemSlot") return;
+
+  const inventory = getMachineUiContainer(ui.entity);
+  if (!inventory) return;
+
+  pushItemSlotToContainer(block, inventory, slotId, element);
 }
 
 /**
@@ -289,8 +297,8 @@ function handleBarItems(
 
 /**
  * Block -> UI: overwrites the container slot with the block's stored item. Used
- * when the stored item is authoritative, i.e. on init or after an out-of-band
- * change.
+ * when the stored item is authoritative, i.e. as the UI opens and as a machine
+ * changes a slot.
  */
 function pushItemSlotToContainer(
   block: Block,
@@ -310,8 +318,8 @@ function pushItemSlotToContainer(
 /**
  * UI -> block: writes whatever the player left in the container slot back to
  * the block, rejecting disallowed items (spawned back to the player) and
- * ignoring UI filler items. Used when the container is the source of truth,
- * i.e. whenever the stored item has not changed out of band.
+ * ignoring UI filler items. Used whenever the UI is open and past its first
+ * pass, since the container is the source of truth from then on.
  */
 function syncItemSlotToBlock(
   block: Block,
@@ -396,6 +404,12 @@ function syncItemSlotToBlock(
  * out and have it pushed back in from the block, duplicating it - and, because
  * {@link updateEntityUi} skips a redraw while one is already in flight, item
  * slots were not synced at all for the duration of the await.
+ *
+ * Outside of the first pass the container is taken as the source of truth, never
+ * overwritten from the block. It can be, because a machine's own changes are
+ * already shown in it as they are made (see {@link showItemSlotChange}), so
+ * whatever is in a slot is what the machine put there plus whatever the player
+ * did to it - which is exactly what the block should be storing.
  * @param init `true` for the first pass when the UI opens, which seeds the slots
  * from the block rather than reading them from the container.
  */
@@ -415,38 +429,25 @@ function updateItemSlots(entity: Entity, player: Player, init: boolean): void {
   const block = entity.dimension.getBlock(entity.location);
   if (block?.typeId !== definition.id) return;
 
-  const uid = getBlockUniqueId(block);
-
-  // Every slot is seeded from the block on init, so any recorded change is
-  // about to be rendered regardless of which slot it belongs to.
-  if (init) machineChangedItemSlots.delete(uid);
-
-  const changedSlots = machineChangedItemSlots.get(uid);
-
   const inventory = getMachineUiContainer(entity);
   if (!inventory) return;
 
   for (const [id, options] of definition.uiElements) {
     if (options.type !== "itemSlot") continue;
 
-    // The changed flag is consumed as it is handled, rather than clearing the
-    // whole block's flags afterwards, so that a change recorded for a slot this
-    // pass didn't reach can't be dropped without being rendered.
-    if (init || changedSlots?.delete(id)) {
+    if (init) {
       pushItemSlotToContainer(block, inventory, id, options);
       continue;
     }
 
     syncItemSlotToBlock(block, inventory, id, options, player);
   }
-
-  if (changedSlots && !changedSlots.size) machineChangedItemSlots.delete(uid);
 }
 
 /**
- * Writes any edit the player has made to a machine's open UI container back
- * into the block's item slot storage, so that a read or write of that storage
- * sees the machine's actual current contents.
+ * Brings a machine's stored item slots and its open UI container into agreement,
+ * so that a read or write of that storage sees the machine's actual current
+ * contents.
  * @remarks
  * A machine's stored items lag its container: a player's edit only reaches the
  * block on the next item slot pass, up to an update interval later. Anything
@@ -458,34 +459,14 @@ function updateItemSlots(entity: Entity, player: Player, init: boolean): void {
  * are already current.
  */
 export function flushItemSlotsFromContainer(block: Block): void {
-  const uid = getBlockUniqueId(block);
-
-  const ui = openMachineUis.get(uid);
+  const ui = openMachineUis.get(getBlockUniqueId(block));
   if (!ui?.entity.isValid || !ui.player.isValid) return;
 
-  const definition = InternalRegisteredMachine.getInternal(block.typeId);
-  if (!definition?.uiElements) return;
-
-  // The block may have been replaced since the UI was opened, in which case the
-  // open container belongs to a different machine than the one being written to
-  // and its slots don't correspond to this machine's elements.
-  if (ui.entity.typeId !== definition.entityId) return;
-
-  const changedSlots = machineChangedItemSlots.get(uid);
-
-  const inventory = getMachineUiContainer(ui.entity);
-  if (!inventory) return;
-
-  for (const [id, options] of definition.uiElements) {
-    if (options.type !== "itemSlot") continue;
-
-    // A flagged slot holds a change the machine made that the container hasn't
-    // rendered yet, so the container's contents are the stale side there.
-    // Syncing them back would undo that pending change.
-    if (changedSlots?.has(id)) continue;
-
-    syncItemSlotToBlock(block, inventory, id, options, ui.player);
-  }
+  // Identical to what an update tick does, so there is no separate pass here:
+  // running one early is exactly what "flush" means. updateItemSlots resolves
+  // the machine from the entity and checks the block still matches it, which
+  // also covers the block having been replaced since the UI was opened.
+  updateItemSlots(ui.entity, ui.player, false);
 }
 
 /**
@@ -844,11 +825,6 @@ world.afterEvents.entityContainerClosed.subscribe(
         );
       }
     }
-
-    // Anything left over is for a UI that no longer exists. Dropped after the
-    // final pass, so that a slot the machine changed but the container hasn't
-    // rendered yet is still pushed rather than synced back from stale contents.
-    clearItemSlotChanges(uid);
   },
   {
     entityFilter: {
@@ -883,7 +859,6 @@ system.runInterval(() => {
       entity.hasTag(MACHINE_ENTITY_NO_UPDATE_UI_TAG)
     ) {
       openMachineUis.delete(uid);
-      clearItemSlotChanges(uid);
       continue;
     }
 

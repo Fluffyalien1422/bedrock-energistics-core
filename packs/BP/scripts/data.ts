@@ -9,7 +9,7 @@
  */
 
 import { Block, DimensionLocation, ItemStack, world } from "@minecraft/server";
-import { recordItemSlotChange } from "./ui";
+import { showItemSlotChange } from "./ui";
 import {
   MachineItemStack,
   MachineSlotItemExpectOptions,
@@ -206,10 +206,10 @@ function getItemMaxAmount(typeId: string, failureMsg: string): number {
 /** Options for {@link setMachineSlotItem}. */
 export interface SetMachineSlotItemOptions {
   /**
-   * Whether to record the change so that the UI update loop pushes the new
-   * contents into the open container. Callers syncing *from* the container back
-   * to the block - reflecting a change the UI already shows - pass `false` to
-   * avoid a redundant round-trip.
+   * Whether to show the new contents in the machine's open UI, if it has one.
+   * Callers syncing *from* the container back to the block - where the new
+   * contents came from the container in the first place - pass `false` to avoid
+   * a redundant round-trip.
    * @default true
    */
   setChanged?: boolean;
@@ -282,26 +282,28 @@ export function setMachineSlotItem(
     return false;
   }
 
-  const uid = getBlockUniqueId(block);
   const propertyId = `item${slotId}`;
-
-  if (options.setChanged ?? true) {
-    recordItemSlotChange(uid, slotId);
-  }
 
   // No stack clears the slot's dynamic property entirely. A stack always holds
   // at least one item (see MachineItemStack.amount), so that is the only way to
   // express an empty slot.
-  if (!newItemStack) {
+  if (newItemStack) {
+    setBlockDynamicProperty(
+      block,
+      propertyId,
+      serializeMachineItemStack(newItemStack),
+    );
+  } else {
     setBlockDynamicProperty(block, propertyId);
-    return true;
   }
 
-  setBlockDynamicProperty(
-    block,
-    propertyId,
-    serializeMachineItemStack(newItemStack),
-  );
+  // Shown in the open UI as part of the write, so that the player never acts on
+  // an amount the machine has already changed. Callers syncing *from* the
+  // container back to the block pass `false`, since the container is where the
+  // new contents came from.
+  if (options.setChanged ?? true) {
+    showItemSlotChange(block, slotId);
+  }
 
   return true;
 }
