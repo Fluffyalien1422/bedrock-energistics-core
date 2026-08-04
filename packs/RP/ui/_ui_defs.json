@@ -1,3 +1,6 @@
 {
-  "ui_defs": ["ui/fluffyalien/energisticscore/common.json"]
+  "ui_defs": [
+    "ui/fluffyalien/energisticscore/common_v2.json",
+    "ui/fluffyalien/energisticscore/common.json"
+  ]
 }

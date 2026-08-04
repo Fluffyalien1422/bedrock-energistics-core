@@ -1,5 +1,10 @@
 {
   "namespace": "fluffyalien_energisticscore:common",
+  "_doc": {
+    "summary": "Legacy common UI utilities. This namespace is deprecated and will be removed in a future update. Please use 'common_v2' instead.",
+    "deprecated": true
+  },
+
   "container_title": {
     "type": "label",
     "anchor_from": "top_left",

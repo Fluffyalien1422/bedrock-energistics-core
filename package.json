@@ -9,7 +9,7 @@
     "check-eslint": "eslint .",
     "check-typedoc": "typedoc --emit none --treatWarningsAsErrors",
     "check": "npm run check-prettier && npm run check-tsc && npm run check-eslint && npm run check-typedoc",
-    "docs": "typedoc"
+    "docs": "node scripts/gen_json_ui_ref.ts && typedoc"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

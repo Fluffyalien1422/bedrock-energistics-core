@@ -25,6 +25,10 @@
       "gen_ui_bars": {
         "runWith": "nodejs",
         "script": "scripts/filters/gen_ui_bars.ts"
+      },
+      "strip_ui_docs": {
+        "runWith": "nodejs",
+        "script": "scripts/filters/strip_ui_docs.ts"
       }
     },
     "profiles": {
@@ -42,6 +46,9 @@
           },
           {
             "filter": "gen_ui_bars"
+          },
+          {
+            "filter": "strip_ui_docs"
           }
         ]
       },

@@ -1,0 +1,472 @@
+{
+  "namespace": "fluffyalien_energisticscore:common_v2",
+  "_doc": {
+    "summary": "A collection of common UI utilities to be used by machine UIs."
+  },
+
+  "root": {
+    "_doc": {
+      "summary": "The root panel for a machine UI. Lays out the player inventory and hotbar in the bottom half of the screen and the machine's own content in the top half.",
+      "remarks": "Define a panel containing your machine's content in your own namespace, then pass its fully qualified name as '$content_ref'.",
+      "props": {
+        "$content_ref": "The fully qualified name of the panel containing the machine-specific content."
+      }
+    },
+
+    "type": "panel",
+    "controls": [
+      {
+        "container_gamepad_helpers@common.container_gamepad_helpers": {}
+      },
+      {
+        "flying_item_renderer@common.flying_item_renderer": {
+          "layer": 14
+        }
+      },
+      {
+        "selected_item_details_factory@common.selected_item_details_factory": {}
+      },
+      {
+        "item_lock_notification_factory@common.item_lock_notification_factory": {}
+      },
+      {
+        "root_panel@common.root_panel": {
+          "layer": 1,
+          "size": [180, 180],
+          "controls": [
+            {
+              "common_panel@common.common_panel": {}
+            },
+            {
+              "chest_panel": {
+                "type": "panel",
+                "layer": 5,
+                "offset": [0, -0.5],
+                "controls": [
+                  {
+                    "small_chest_panel_top_half@$content_ref": {}
+                  },
+                  {
+                    "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": {}
+                  },
+                  {
+                    "hotbar_grid@common.hotbar_grid_template": {}
+                  },
+                  {
+                    "inventory_take_progress_icon_button@common.inventory_take_progress_icon_button": {}
+                  }
+                ]
+              }
+            },
+            {
+              "inventory_selected_icon_button@common.inventory_selected_icon_button": {}
+            },
+            {
+              "gamepad_cursor@common.gamepad_cursor_button": {}
+            }
+          ]
+        }
+      }
+    ]
+  },
+
+  "container_slot_base": {
+    "_doc": {
+      "summary": "A base container slot, which displays one item from the machine's container.",
+      "remarks": "This element only exists to be extended. Use 'container_slot_nobg' or 'container_slot_nobg_noclick' unless you need a slot with a custom container item.",
+      "props": {
+        "$index": "The index of the item in the 'container_items' collection. Defaults to 0.",
+        "$container_item_ref": "The fully qualified name of the container item panel to use."
+      }
+    },
+
+    "type": "stack_panel",
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+
+    "$index|default": 0,
+    "collection_name": "container_items",
+
+    "controls": [
+      {
+        "item@$container_item_ref": {
+          "$item_collection_name": "container_items",
+          "collection_index": "$index"
+        }
+      }
+    ]
+  },
+
+  "container_slot_nobg@fluffyalien_energisticscore:common_v2.container_slot_base": {
+    "_doc": {
+      "summary": "A container slot with no background.",
+      "remarks": "The player can take from and place into this slot. Use 'container_slot_nobg_noclick' for slots that only display information.",
+      "props": {
+        "$index": "The index of the item in the 'container_items' collection. Defaults to 0."
+      }
+    },
+
+    "$container_item_ref": "fluffyalien_energisticscore:common_v2.container_item_nobg"
+  },
+
+  "container_slot_nobg_noclick@fluffyalien_energisticscore:common_v2.container_slot_base": {
+    "_doc": {
+      "summary": "A container slot with no background and no click functionality.",
+      "remarks": "Use this for slots that display information rather than hold items the player interacts with, such as storage bar segments and progress indicators. Hover text still displays.",
+      "props": {
+        "$index": "The index of the item in the 'container_items' collection. Defaults to 0."
+      }
+    },
+
+    "$container_item_ref": "fluffyalien_energisticscore:common_v2.container_item_nobg_noclick"
+  },
+
+  "container_item_nobg": {
+    "_doc": {
+      "summary": "A container item with no background. Used as the item ref for 'container_slot_nobg'.",
+      "remarks": "This is a building block for 'container_slot_nobg'. You only need it directly when composing a custom container slot.",
+      "props": {
+        "$button_ref": "The fully qualified name of the button panel to use. Defaults to 'fluffyalien_energisticscore:common_v2.container_item_button_nobg'."
+      }
+    },
+
+    "type": "input_panel",
+    "size": [16, 16],
+    "layer": 1,
+
+    "$button_ref|default": "fluffyalien_energisticscore:common_v2.container_item_button_nobg",
+
+    "focus_enabled": true,
+    "focus_wrap_enabled": false,
+    "focus_magnet_enabled": true,
+    "tts_ignore_count": true,
+
+    "controls": [
+      {
+        "item_renderer@common.item_renderer": {
+          "size": [16, 16],
+          "offset": [0, 0],
+          "anchor_to": "center",
+          "anchor_from": "center",
+          "layer": 7
+        }
+      },
+      {
+        "item_button_ref@$button_ref": {
+          "tts_ignore_count": true,
+          "tts_skip_message": true,
+          "tts_inherit_siblings": true,
+          "layer": 5
+        }
+      }
+    ]
+  },
+
+  "container_item_nobg_noclick@fluffyalien_energisticscore:common_v2.container_item_nobg": {
+    "_doc": {
+      "summary": "A container item with no background and no click functionality. Used as the item ref for 'container_slot_nobg_noclick'.",
+      "remarks": "This is a building block for 'container_slot_nobg_noclick'. You only need it directly when composing a custom container slot."
+    },
+
+    "$button_ref": "fluffyalien_energisticscore:common_v2.container_item_button_nobg_noclick"
+  },
+
+  "container_item_button_nobg": {
+    "_doc": {
+      "summary": "A container item button with no background. Handles the click and focus behavior of a container slot.",
+      "remarks": "This is a building block for 'container_item_nobg'. You only need it directly when composing a custom container slot.",
+      "props": {
+        "$highlight_control": "The fully qualified name of the highlight control to use. Defaults to 'fluffyalien_energisticscore:common_v2.container_item_highlight_nobg'."
+      }
+    },
+
+    "type": "button",
+
+    "$highlight_control|default": "fluffyalien_energisticscore:common_v2.container_item_highlight_nobg",
+
+    "focus_enabled": true,
+    "focus_wrap_enabled": false,
+    "focus_magnet_enabled": true,
+
+    "default_focus_precedence": 1,
+    "hover_control": "hover",
+    "layer": 1,
+    "bindings": [
+      {
+        "binding_type": "collection_details",
+        "binding_collection_name": "$item_collection_name",
+        "binding_condition": "once"
+      },
+      {
+        "binding_type": "collection",
+        "binding_name": "#focus_identifier",
+        "binding_name_override": "#focus_identifier",
+        "binding_collection_name": "$item_collection_name",
+        "binding_condition": "once"
+      },
+      {
+        "binding_type": "collection",
+        "binding_name": "#focus_change_down",
+        "binding_name_override": "#focus_change_down",
+        "binding_collection_name": "$item_collection_name",
+        "binding_condition": "once"
+      },
+      {
+        "binding_type": "collection",
+        "binding_name": "#focus_change_up",
+        "binding_name_override": "#focus_change_up",
+        "binding_collection_name": "$item_collection_name",
+        "binding_condition": "once"
+      },
+      {
+        "binding_type": "collection",
+        "binding_name": "#focus_change_left",
+        "binding_name_override": "#focus_change_left",
+        "binding_collection_name": "$item_collection_name",
+        "binding_condition": "once"
+      },
+      {
+        "binding_type": "collection",
+        "binding_name": "#focus_change_right",
+        "binding_name_override": "#focus_change_right",
+        "binding_collection_name": "$item_collection_name",
+        "binding_condition": "once"
+      }
+    ],
+    "button_mappings": [
+      {
+        "from_button_id": "button.menu_select",
+        "to_button_id": "button.container_take_all_place_all",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.menu_ok",
+        "to_button_id": "button.container_take_all_place_all",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.controller_back",
+        "to_button_id": "button.container_take_all_place_all",
+        "mapping_type": "pressed",
+        "ignored": "(not $is_ps4)"
+      },
+      {
+        "from_button_id": "button.menu_secondary_select",
+        "to_button_id": "button.container_take_half_place_one",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.controller_select",
+        "to_button_id": "button.container_take_half_place_one",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.menu_auto_place",
+        "to_button_id": "button.container_auto_place",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.controller_secondary_select",
+        "to_button_id": "button.container_auto_place",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.menu_inventory_drop",
+        "to_button_id": "button.drop_one",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.menu_inventory_drop_all",
+        "to_button_id": "button.drop_all",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.menu_select",
+        "to_button_id": "button.coalesce_stack",
+        "mapping_type": "double_pressed"
+      },
+      {
+        "from_button_id": "button.menu_ok",
+        "to_button_id": "button.coalesce_stack",
+        "mapping_type": "double_pressed"
+      },
+      {
+        "to_button_id": "button.shape_drawing",
+        "mapping_type": "pressed"
+      },
+      {
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "pressed"
+      }
+    ],
+
+    "controls": [
+      {
+        "hover@$highlight_control": {}
+      }
+    ]
+  },
+
+  "container_item_button_nobg_noclick@fluffyalien_energisticscore:common_v2.container_item_button_nobg": {
+    "_doc": {
+      "summary": "A container item button with no background and no click functionality. Used by 'container_item_nobg_noclick'.",
+      "remarks": "Every button mapping is redirected to 'button.container_slot_hovered', so the slot still responds to being hovered but the player cannot take or place items."
+    },
+
+    "button_mappings": [
+      {
+        "from_button_id": "button.menu_select",
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.menu_ok",
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.controller_back",
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "pressed",
+        "ignored": "(not $is_ps4)"
+      },
+      {
+        "from_button_id": "button.menu_secondary_select",
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.controller_select",
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.menu_auto_place",
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.controller_secondary_select",
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.menu_inventory_drop",
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.menu_inventory_drop_all",
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "pressed"
+      },
+      {
+        "from_button_id": "button.menu_select",
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "double_pressed"
+      },
+      {
+        "from_button_id": "button.menu_ok",
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "double_pressed"
+      },
+      {
+        "to_button_id": "button.shape_drawing",
+        "mapping_type": "pressed"
+      },
+      {
+        "to_button_id": "button.container_slot_hovered",
+        "mapping_type": "pressed"
+      }
+    ]
+  },
+
+  "container_item_highlight_nobg": {
+    "_doc": {
+      "summary": "The hover control for a container item slot with no background. Displays the hover text of the item under the cursor.",
+      "remarks": "This is a building block for 'container_item_button_nobg'. You only need it directly when composing a custom container slot."
+    },
+
+    "type": "panel",
+    "controls": [
+      {
+        "highlight@common.highlight_slot": {
+          "alpha": 0.0,
+          "controls": [
+            {
+              "hover_text@common.hover_text": {
+                "layer": 29,
+                "$hover_text_binding_name|default": "#hover_text",
+                "bindings": [
+                  {
+                    "binding_name": "$hover_text_binding_name",
+                    "binding_name_override": "#hover_text",
+                    "binding_type": "collection",
+                    "binding_collection_name": "$item_collection_name"
+                  }
+                ]
+              }
+            }
+          ],
+          "bindings": [
+            {
+              "binding_name": "#show_persistent_bundle_hover_text",
+              "binding_name_override": "#visible"
+            }
+          ]
+        }
+      }
+    ]
+  },
+
+  "machine_storage_bar": {
+    "_doc": {
+      "summary": "A panel that displays a standard machine storage bar, which consists of 4 container item slots and a border. The bar is 16 pixels wide and 64 pixels tall.",
+      "remarks": "Note that the border image is drawn on top of the container item slots, so use a border image with transparency. The border image should be 16x16 because it is tiled vertically to fill the height of the storage bar. This element is designed for a standard vertical storage bar. If you need a unique layout, you can use the 'container_slot_nobg_noclick' element to display the storage bar items in your own layout.",
+      "props": {
+        "$start_index": "The index of the first item in the 'container_items' collection. This should match the 'startIndex' property from the machine definition. Defaults to 0.",
+        "$border_texture": "The texture to use for the border of the storage bar. Defaults to 'textures/fluffyalien/energisticscore/ui/storage_bar_border'."
+      }
+    },
+
+    "type": "panel",
+    "$start_index|default": 0,
+    "$border_texture|default": "textures/fluffyalien/energisticscore/ui/storage_bar_border",
+    "controls": [
+      {
+        "border": {
+          "type": "image",
+          "texture": "$border_texture",
+          "size": [16, 64],
+          "tiled": true,
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "layer": 9
+        }
+      },
+      {
+        "segment1@fluffyalien_energisticscore:common_v2.container_slot_nobg_noclick": {
+          "$index": "$start_index"
+        }
+      },
+      {
+        "segment2@fluffyalien_energisticscore:common_v2.container_slot_nobg_noclick": {
+          "$index": "($start_index+1)",
+          "offset": [0, 16]
+        }
+      },
+      {
+        "segment3@fluffyalien_energisticscore:common_v2.container_slot_nobg_noclick": {
+          "$index": "($start_index+2)",
+          "offset": [0, 32]
+        }
+      },
+      {
+        "segment4@fluffyalien_energisticscore:common_v2.container_slot_nobg_noclick": {
+          "$index": "($start_index+3)",
+          "offset": [0, 48]
+        }
+      }
+    ]
+  }
+}
