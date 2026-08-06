@@ -19,6 +19,13 @@ import { InternalRegisteredStorageType } from "../storage_type_registry";
 import { tryCreateItemStack } from "../utils/item";
 import { clearUiItemsFromPlayer } from "./ui_items";
 
+/**
+ * How many fill levels one slot of a bar has when its texture doesn't say. This
+ * is what the built-in textures use: they are 16 pixels tall and fill a pixel
+ * at a time.
+ */
+const DEFAULT_BAR_SEGMENTS = 16;
+
 const STORAGE_TYPE_COLOR_TO_FORMATTING_CODE: Record<
   StorageTypeTexturePreset,
   string
@@ -63,11 +70,12 @@ function fillDisabledUiBar(
 }
 
 /**
- * Renders a filled storage bar across `size` slots. A bar has `size * 16`
- * pips total; each slot shows 0-16 of them via a per-count segment item
- * (`<baseId><count>`). The fill amount is converted to a pip count and laid out
- * from the bottom slot up. Every segment shares one name tag showing the label
- * (or the `amount/maxStorage` readout) tinted with the storage type's colour.
+ * Renders a filled storage bar across `size` slots. A bar has
+ * `size * segmentsPerSlot` pips total; each slot shows `0` to
+ * `segmentsPerSlot` of them via a per-count segment item (`<baseId><count>`).
+ * The fill amount is converted to a pip count and laid out from the bottom slot
+ * up. Every segment shares one name tag showing the label (or the
+ * `amount/maxStorage` readout) tinted with the storage type's colour.
  */
 function fillUiBar(
   segmentItemBaseId: string,
@@ -78,10 +86,13 @@ function fillUiBar(
   startIndex: number,
   maxStorage: number,
   size: number,
+  segmentsPerSlot: number,
   label?: string,
 ): void {
-  // How many 1/16 pips are filled in total, across all slots of the bar.
-  let remainingSegments = Math.floor(amount / (maxStorage / (size * 16)));
+  // How many pips are filled in total, across all slots of the bar.
+  let remainingSegments = Math.floor(
+    amount / (maxStorage / (size * segmentsPerSlot)),
+  );
 
   const formattingCodes = "§r§" + labelColorCode.split("").join("§");
   const nameTag =
@@ -89,10 +100,10 @@ function fillUiBar(
     (label ?? `${amount.toString()}/${maxStorage.toString()} ${name}`);
 
   for (let i = startIndex + (size - 1); i >= startIndex; i--) {
-    const segments = Math.min(16, remainingSegments);
-    remainingSegments -= segments;
+    const filledSegments = Math.min(segmentsPerSlot, remainingSegments);
+    remainingSegments -= filledSegments;
 
-    const segmentId = segmentItemBaseId + segments.toString();
+    const segmentId = segmentItemBaseId + filledSegments.toString();
 
     let itemStack =
       tryCreateItemStack(
@@ -177,6 +188,10 @@ export function handleBarItems(
     startIndex,
     maxStorage,
     size,
+    // The presets are all generated at the default resolution.
+    usesCustomTexture
+      ? (texture.segments ?? DEFAULT_BAR_SEGMENTS)
+      : DEFAULT_BAR_SEGMENTS,
     label,
   );
 }

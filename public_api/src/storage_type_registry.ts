@@ -178,7 +178,7 @@ export class RegisteredStorageType implements StorageTypeData {
  * Registers a storage type. This function should be called in the `worldLoad` after event.
  * @beta
  * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidState} if registration has been closed, or if this package has not been initialized (see {@link init}).
- * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the definition ID or category is invalid.
+ * @throws Throws a {@link PublicError} of type {@link PublicErrorType.InvalidArgument} if the definition ID or category is invalid, or if the texture's `segments` is not a positive integer.
  */
 export function registerStorageType(definition: StorageTypeDefinition): void {
   if (!isRegistrationOpen()) {
@@ -199,6 +199,19 @@ export function registerStorageType(definition: StorageTypeDefinition): void {
     raisePublic(
       PublicErrorType.InvalidArgument,
       `Failed to register storage type '${definition.id}' (category: '${definition.category}'). Storage type IDs and categories cannot include '.'.`,
+    );
+  }
+
+  // A bar divides its capacity by its segment count to work out how much of it
+  // to fill, so anything but a positive integer would render nonsense.
+  const segments =
+    typeof definition.texture === "object"
+      ? definition.texture.segments
+      : undefined;
+  if (segments !== undefined && (!Number.isInteger(segments) || segments < 1)) {
+    raisePublic(
+      PublicErrorType.InvalidArgument,
+      `Failed to register storage type '${definition.id}'. Expected the texture's 'segments' to be a positive integer but got ${segments.toString()}.`,
     );
   }
 

@@ -4,12 +4,29 @@
  */
 export interface StorageTypeTextureDescription {
   /**
-   * Base ID for all 16 UI items.
+   * Base ID for the bar's segment items.
    * @remarks
-   * The index will be appended to the end of the base ID. For example, if the base ID is 'example:example' then 'example:example0' to 'example:example15' will be used. All items must have the `fluffyalien_energisticscore:ui_item` tag.
+   * One slot of a storage bar is drawn with one item per fill level, from empty
+   * to full, with the level appended to the base ID. A base ID of
+   * 'example:example' at the default {@link
+   * StorageTypeTextureDescription.segments} therefore needs 'example:example0'
+   * through 'example:example16' - that is, `segments + 1` items, since empty is
+   * a level too. All of them must have the
+   * `fluffyalien_energisticscore:ui_item` tag.
    * @beta
    */
   baseId: string;
+  /**
+   * How many fill levels one slot of the bar has, not counting empty.
+   * @remarks
+   * Must be a positive integer. A bar `size` slots tall shows `size * segments`
+   * levels across the whole bar, so a smaller number makes it coarser and needs
+   * fewer items. The default matches the built-in textures, which are 16 pixels
+   * tall and fill one pixel at a time.
+   * @beta
+   * @default 16
+   */
+  segments?: number;
   /**
    * Formatting code to prefix the label. ONLY include the formatting code, NOT the '§'. Multiple formatting codes can be used.
    * @remarks
