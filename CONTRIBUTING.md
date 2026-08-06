@@ -32,7 +32,7 @@ them. Which one you're editing decides a lot, so it's worth knowing up front:
 | `packs/BP`, `packs/RP` | The Bedrock Energistics Core add-on itself. `packs/BP/scripts` is its behavior pack script source.      |
 | `public_api`           | The `bedrock-energistics-core-api` npm package, which add-ons bundle. Published from `public_api/dist`. |
 | `docs/guides`          | The markdown guides, published with the generated API reference.                                        |
-| `scripts`              | Regolith filter scripts (not shipped).                                                                  |
+| `scripts`              | Build tooling: Regolith filters and the JSON UI reference generator (not shipped).                      |
 
 The add-on and the public API are separate packs at runtime and talk to each
 other over IPC. See [Crossing the pack boundary](CODING_GUIDELINES.md#crossing-the-pack-boundary)
@@ -86,6 +86,28 @@ Documentation is generated for the public API (`public_api` directory) using [Ty
 Markdown guides are also included. These guides can be found in `docs/guides`.
 
 To add a new guide, add it to the `children` frontmatter property in `docs/guides/index.md`.
+
+### Documenting JSON UI
+
+The shared JSON UI elements in `packs/RP/ui` are documented in the files
+themselves, using a `_doc` property. Put one at the top level of a file to
+document the namespace, and at the top level of an element to document that
+element. Every property is optional, but an element with no `_doc` reaches the
+reference as a bare name:
+
+| Property     | What it is                                                                              |
+| ------------ | --------------------------------------------------------------------------------------- |
+| `summary`    | A short description of the namespace or element.                                        |
+| `remarks`    | Anything that doesn't belong in the summary, such as caveats or when to use an element. |
+| `props`      | Descriptions of the element's `$variables`, keyed by name. Elements only.               |
+| `deprecated` | `true`, or a string explaining what to use instead.                                     |
+
+`_doc` is not valid JSON UI, so it is stripped at build time and never reaches
+the game. A new JSON UI file is covered as soon as it is listed in
+`packs/RP/ui/_ui_defs.json`.
+
+Leave `docs/json-ui-ref.md` alone. It is a placeholder, and its real contents
+are generated from the `_doc` properties when the documentation is released.
 
 `npm run check-typedoc` verifies that the documentation still builds, and treats
 warnings (such as a `{@link}` that doesn't resolve) as errors.
