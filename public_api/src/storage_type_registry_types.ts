@@ -24,15 +24,26 @@ export interface StorageTypeTextureDescription {
  * @beta
  */
 export type StorageTypeTexturePreset =
+  | "ammonia"
   | "black"
+  | "blue"
+  | "carbon"
+  | "energy"
+  | "green"
+  | "hydrogen"
+  | "lava"
+  | "liquid_exp"
+  | "nitrogen"
+  | "oil"
   | "orange"
+  | "oxygen"
   | "pink"
   | "purple"
   | "red"
-  | "yellow"
-  | "blue"
+  | "steam"
+  | "water"
   | "white"
-  | "green";
+  | "yellow";
 
 /**
  * @beta

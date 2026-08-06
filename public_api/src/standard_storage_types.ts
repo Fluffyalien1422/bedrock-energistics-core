@@ -26,32 +26,17 @@ export enum StandardStorageCategory {
  * @beta
  */
 export enum StandardStorageType {
-  Energy = "energy",
-  Lava = "lava",
-  /**
-   * Ammonia in it's liquid form. {@link StandardStorageType.Ammonia} refers to the gaseous form of ammonia.
-   */
-  LiquidAmmonia = "liquid_ammonia",
-  /**
-   * Petroleum or crude oil.
-   */
-  Oil = "oil",
-  Water = "water",
-  /**
-   * Ammonia in it's gaseous form. {@link StandardStorageType.LiquidAmmonia} refers to the liquid form of ammonia.
-   */
   Ammonia = "ammonia",
-  /**
-   * Carbon dioxide.
-   */
   Carbon = "carbon",
+  Energy = "energy",
   Hydrogen = "hydrogen",
+  Lava = "lava",
+  LiquidExp = "liquid_exp",
   Nitrogen = "nitrogen",
+  Oil = "oil",
   Oxygen = "oxygen",
-  /**
-   * Water vapor.
-   */
   Steam = "steam",
+  Water = "water",
 }
 
 /**
@@ -62,71 +47,71 @@ export enum StandardStorageType {
 export const STANDARD_STORAGE_TYPE_DEFINITIONS: Readonly<
   Record<StandardStorageType, StorageTypeDefinition>
 > = deepFreeze({
-  energy: {
-    category: StandardStorageCategory.Energy,
-    texture: "yellow",
-    id: StandardStorageType.Energy,
-    name: "energy",
-  },
-  lava: {
-    category: StandardStorageCategory.Fluid,
-    texture: "red",
-    id: StandardStorageType.Lava,
-    name: "lava",
-  },
-  liquid_ammonia: {
-    category: StandardStorageCategory.Fluid,
-    texture: "orange",
-    id: StandardStorageType.LiquidAmmonia,
-    name: "liquid ammonia",
-  },
-  oil: {
-    category: StandardStorageCategory.Fluid,
-    texture: "black",
-    id: StandardStorageType.Oil,
-    name: "oil",
-  },
-  water: {
-    category: StandardStorageCategory.Fluid,
-    texture: "blue",
-    id: StandardStorageType.Water,
-    name: "water",
-  },
   ammonia: {
     category: StandardStorageCategory.Gas,
-    texture: "orange",
+    texture: "ammonia",
     id: StandardStorageType.Ammonia,
     name: "ammonia",
   },
   carbon: {
     category: StandardStorageCategory.Gas,
-    texture: "red",
+    texture: "carbon",
     id: StandardStorageType.Carbon,
     name: "carbon",
   },
+  energy: {
+    category: StandardStorageCategory.Energy,
+    texture: "energy",
+    id: StandardStorageType.Energy,
+    name: "energy",
+  },
   hydrogen: {
     category: StandardStorageCategory.Gas,
-    texture: "pink",
+    texture: "hydrogen",
     id: StandardStorageType.Hydrogen,
     name: "hydrogen",
   },
+  lava: {
+    category: StandardStorageCategory.Fluid,
+    texture: "lava",
+    id: StandardStorageType.Lava,
+    name: "lava",
+  },
+  liquid_exp: {
+    category: StandardStorageCategory.Fluid,
+    texture: "liquid_exp",
+    id: StandardStorageType.LiquidExp,
+    name: "liquid experience",
+  },
   nitrogen: {
     category: StandardStorageCategory.Gas,
-    texture: "purple",
+    texture: "nitrogen",
     id: StandardStorageType.Nitrogen,
     name: "nitrogen",
   },
+  oil: {
+    category: StandardStorageCategory.Fluid,
+    texture: "oil",
+    id: StandardStorageType.Oil,
+    name: "oil",
+  },
   oxygen: {
     category: StandardStorageCategory.Gas,
-    texture: "white",
+    texture: "oxygen",
     id: StandardStorageType.Oxygen,
     name: "oxygen",
   },
   steam: {
     category: StandardStorageCategory.Gas,
-    texture: "white",
+    texture: "steam",
     id: StandardStorageType.Steam,
     name: "steam",
+  },
+  water: {
+    category: StandardStorageCategory.Fluid,
+    texture: "water",
+    id: StandardStorageType.Water,
+    name: "water",
   },
 });
 

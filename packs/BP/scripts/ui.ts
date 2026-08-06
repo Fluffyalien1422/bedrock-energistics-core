@@ -56,15 +56,26 @@ const STORAGE_TYPE_COLOR_TO_FORMATTING_CODE: Record<
   StorageTypeTexturePreset,
   string
 > = {
+  ammonia: "g",
   black: "8",
-  orange: "6",
+  blue: "1",
+  carbon: "4",
+  energy: "e",
+  green: "2",
+  hydrogen: "w",
+  lava: "v",
+  liquid_exp: "a",
+  nitrogen: "u",
+  oil: "t",
+  orange: "v",
+  oxygen: "f",
   pink: "d",
   purple: "u",
   red: "4",
-  yellow: "e",
-  blue: "9",
+  steam: "7",
+  water: "9",
   white: "f",
-  green: "2",
+  yellow: "6",
 };
 
 /**
@@ -281,7 +292,7 @@ function handleBarItems(
   fillUiBar(
     usesCustomTexture
       ? texture.baseId
-      : `fluffyalien_energisticscore:ui_storage_bar_segment_${texture}`,
+      : `fluffyalien_energisticscore:ui_sbar_seg_${texture}`,
     usesCustomTexture
       ? (texture.formattingCode ?? "f")
       : STORAGE_TYPE_COLOR_TO_FORMATTING_CODE[texture],
@@ -515,7 +526,7 @@ function handleProgressIndicator(
     inventory.setItem(
       element.index,
       new ItemStack(
-        `fluffyalien_energisticscore:ui_progress_${indicator}${value.toString()}`,
+        `fluffyalien_energisticscore:ui_prog_${indicator}${value.toString()}`,
       ),
     );
     return;

@@ -4,7 +4,7 @@
       "textures": "textures/fluffyalien/energisticscore/ui/disabled_storage_bar_segment"
     },
     "fluffyalien_energisticscore:ui_empty_slot": {
-      "textures": "textures/fluffyalien/energisticscore/ui/empty_slot"
+      "textures": "textures/fluffyalien/energisticscore/empty"
     },
     "fluffyalien_energisticscore:ui_error": {
       "textures": "textures/blocks/barrier"

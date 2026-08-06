@@ -438,18 +438,18 @@
       "remarks": "The border is split into three parts which are drawn on top of the container item slots, so use border images with transparency. The top part fills the first 16x16 pixels, the middle part fills the 16x32 pixels below it (the middle texture is tiled vertically to fill that area, so it should be 16x16), and the bottom part fills the last 16x16 pixels. This element is designed for a standard vertical storage bar. If you need a unique layout, you can use the 'container_slot_nobg_noclick' element to display the storage bar items in your own layout.",
       "props": {
         "$start_index": "The index of the first item in the 'container_items' collection. This should match the 'startIndex' property from the machine definition. Defaults to 0.",
-        "$border_top_texture": "The texture to use for the top 16x16 pixels of the border. Defaults to 'textures/fluffyalien/energisticscore/ui/storage_bar_border'.",
-        "$border_middle_texture": "The texture to use for the middle 16x32 pixels of the border. This texture is tiled vertically, so it should be 16x16. Defaults to 'textures/fluffyalien/energisticscore/ui/storage_bar_border'.",
-        "$border_bottom_texture": "The texture to use for the bottom 16x16 pixels of the border. Defaults to 'textures/fluffyalien/energisticscore/ui/storage_bar_border'."
+        "$border_top_texture": "The texture to use for the top 16x16 pixels of the border. Defaults to 'textures/fluffyalien/energisticscore/ui/sbar_border_inset_top'.",
+        "$border_middle_texture": "The texture to use for the middle 16x32 pixels of the border. This texture is tiled vertically, so it should be 16x16. Defaults to 'textures/fluffyalien/energisticscore/ui/sbar_border_inset_middle'.",
+        "$border_bottom_texture": "The texture to use for the bottom 16x16 pixels of the border. Defaults to 'textures/fluffyalien/energisticscore/ui/sbar_border_inset_bottom'."
       }
     },
 
     "type": "panel",
 
     "$start_index|default": 0,
-    "$border_top_texture|default": "textures/fluffyalien/energisticscore/ui/storage_bar_border",
-    "$border_middle_texture|default": "textures/fluffyalien/energisticscore/ui/storage_bar_border",
-    "$border_bottom_texture|default": "textures/fluffyalien/energisticscore/ui/storage_bar_border",
+    "$border_top_texture|default": "textures/fluffyalien/energisticscore/ui/sbar_border_inset_top",
+    "$border_middle_texture|default": "textures/fluffyalien/energisticscore/ui/sbar_border_inset_middle",
+    "$border_bottom_texture|default": "textures/fluffyalien/energisticscore/ui/sbar_border_inset_bottom",
 
     "controls": [
       {

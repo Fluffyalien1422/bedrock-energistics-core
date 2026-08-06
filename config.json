@@ -22,9 +22,9 @@
         "runWith": "shell",
         "command": "npx terser ./BP/scripts/__bundle.js --module -cmo ./BP/scripts/__bundle.js; Remove-Item ./BP/scripts/* -Recurse -Exclude __*.js"
       },
-      "gen_ui_bars": {
+      "ui_composite": {
         "runWith": "nodejs",
-        "script": "scripts/filters/gen_ui_bars.ts"
+        "script": "scripts/filters/ui_composite.ts"
       },
       "strip_ui_docs": {
         "runWith": "nodejs",
@@ -45,7 +45,7 @@
             "filter": "build_scripts"
           },
           {
-            "filter": "gen_ui_bars"
+            "filter": "ui_composite"
           },
           {
             "filter": "strip_ui_docs"

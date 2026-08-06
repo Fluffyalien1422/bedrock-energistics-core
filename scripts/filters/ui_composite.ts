@@ -1,20 +1,31 @@
 /**
- * Generates the ui bar items & textures based on the composite images in packs/data/ui_bars
+ * Generates the UI bar items & textures based on the composite images in packs/data/ui_composite
  */
 
 import * as imgManip from "imagescript";
 import * as fs from "fs";
 
-const STORAGE_BAR_COLORS: string[] = [
+const STORAGE_BAR_TEXTURES: string[] = [
+  "ammonia",
   "black",
+  "blue",
+  "carbon",
+  "energy",
+  "green",
+  "hydrogen",
+  "lava",
+  "liquid_exp",
+  "nitrogen",
+  "oil",
   "orange",
+  "oxygen",
   "pink",
   "purple",
   "red",
-  "yellow",
-  "blue",
+  "steam",
+  "water",
   "white",
-  "green",
+  "yellow",
 ];
 
 const itemTexturePath = "RP/textures/item_texture.json";
@@ -89,20 +100,20 @@ const flameProgressFull = await readImg(
 );
 
 // storage bars
-for (const color of STORAGE_BAR_COLORS) {
-  const imgBasePath = `data/ui_composite/storage_bar_segments/${color}`;
+for (const textureId of STORAGE_BAR_TEXTURES) {
+  const imgBasePath = `data/ui_composite/storage_bar_segments/${textureId}`;
 
   const onImg = await readImg(`${imgBasePath}_on.png`);
   const offImg = await readImg(`${imgBasePath}_off.png`);
 
-  await makeStorageBar(`ui_storage_bar_segment_${color}`, onImg, offImg);
+  await makeStorageBar(`ui_sbar_seg_${textureId}`, onImg, offImg);
 }
 
-// progress bar IDs must match `ui_progress_${indicator}${progress}`
+// progress bar IDs must match `ui_prog_${indicator}${progress}`
 
 // arrow progress bar
 for (let progress = 0; progress <= 16; progress++) {
-  const shortId = `ui_progress_arrow${progress.toString()}`;
+  const shortId = `ui_prog_arrow${progress.toString()}`;
   const itemId = `fluffyalien_energisticscore:${shortId}`;
 
   fs.writeFileSync(`BP/items/${shortId}.json`, createUiItem(itemId));
@@ -124,7 +135,7 @@ for (let progress = 0; progress <= 16; progress++) {
 
 // flame progress bar
 for (let progress = 0; progress <= 13; progress++) {
-  const shortId = `ui_progress_flame${progress.toString()}`;
+  const shortId = `ui_prog_flame${progress.toString()}`;
   const itemId = `fluffyalien_energisticscore:${shortId}`;
 
   fs.writeFileSync(`BP/items/${shortId}.json`, createUiItem(itemId));
