@@ -30,7 +30,7 @@ import {
 } from "@/public_api/src/serialize_machine_item_stack";
 import { raisePublic } from "./log";
 import { destroyMachine, removeMachineData } from "./machine";
-import { flushItemSlotsFromContainer } from "./ui";
+import { flushItemSlotsFromContainer } from "./ui/item_slots";
 import { stringifyDimensionLocation } from "./utils/string";
 
 /**

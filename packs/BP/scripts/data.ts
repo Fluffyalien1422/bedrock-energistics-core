@@ -9,7 +9,7 @@
  */
 
 import { Block, DimensionLocation, ItemStack, world } from "@minecraft/server";
-import { showItemSlotChange } from "./ui";
+import { showItemSlotChange } from "./ui/item_slots";
 import {
   MachineItemStack,
   MachineSlotItemExpectOptions,
