@@ -1,0 +1,51 @@
+name: Feature request
+description: Suggest an idea for Bedrock Energistics Core
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check that it isn't [already suggested](https://github.com/Fluffyalien1422/bedrock-energistics-core/issues?q=is%3Aissue).
+
+        **Playing with an add-on that uses Bedrock Energistics Core?** Bedrock Energistics Core is a library that tech add-ons build on. It adds no machines, conduits, or recipes of its own, so ask the creators of the add-on that adds them for a new one or a change to an existing one. This form is for the library itself.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: What are you trying to build, and what makes it hard or impossible today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to happen?
+      description: If it's an API, a rough sketch of how you'd call it says more than a description.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What have you tried instead?
+      description: Any workarounds you're using now, or other approaches you considered and why they fall short.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: What would this affect?
+      options:
+        - The add-on, in game
+        - The API package (bedrock-energistics-core-api)
+        - The shared JSON UI elements
+        - The documentation
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: Screenshots, examples from other add-ons, or anything else that helps.

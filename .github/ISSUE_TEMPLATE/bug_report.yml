@@ -1,0 +1,90 @@
+name: Bug report
+description: Report something that isn't working
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Please check that it isn't [already reported](https://github.com/Fluffyalien1422/bedrock-energistics-core/issues?q=is%3Aissue), and that you're on a Minecraft version the release you're using supports (each [release](https://github.com/Fluffyalien1422/bedrock-energistics-core/releases) notes which ones it does).
+
+        **Playing with an add-on that uses Bedrock Energistics Core?** Bedrock Energistics Core is a library that tech add-ons build on. It adds no machines, conduits, or recipes of its own, so a problem with one of those is best reported to the creators of the add-on that adds it. They can pass it on here if it turns out to be a Bedrock Energistics Core bug.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What went wrong, and what did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce
+      description: The steps to make it happen. If it involves an add-on you're writing, the smallest machine definition, block JSON, or JSON UI that still shows the problem is the most useful thing you can include.
+      placeholder: |
+        1. Place ...
+        2. ...
+        3. See ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where is the problem?
+      options:
+        - The add-on, in game
+        - The API package (bedrock-energistics-core-api)
+        - The shared JSON UI elements
+        - The documentation
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: bec-version
+    attributes:
+      label: Bedrock Energistics Core version
+    validations:
+      required: true
+
+  - type: input
+    id: api-version
+    attributes:
+      label: bedrock-energistics-core-api version
+      description: The version in your `package.json`.
+    validations:
+      required: true
+
+  - type: input
+    id: minecraft-version
+    attributes:
+      label: Minecraft version
+      placeholder: 26.40
+    validations:
+      required: true
+
+  - type: textarea
+    id: other-addons
+    attributes:
+      label: Other add-ons in the world
+      description: Anything else that depends on Bedrock Energistics Core, since machines from different add-ons share networks. Write "none" if there aren't any.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Content log output
+      description: |
+        Bedrock Energistics Core writes errors and warnings to the content log, which you can turn on under Settings > Creator. Reproduce the problem and paste anything that shows up.
+
+        `/becdebugmode` output for the machine involved may be useful too. See the [Debugging guide](https://fluffyalien1422.github.io/bedrock-energistics-core/api/documents/Guides.Debugging.html).
+      render: text
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: Screenshots, a world or pack download, or anything else that helps.

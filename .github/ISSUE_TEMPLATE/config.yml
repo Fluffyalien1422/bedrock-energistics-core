@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question, or help with your add-on
+    url: https://github.com/Fluffyalien1422/bedrock-energistics-core/discussions
+    about: Ask in Discussions. Issues are for bugs and feature requests.
+  - name: Guides and API reference
+    url: https://fluffyalien1422.github.io/bedrock-energistics-core/api/
+    about: How to add machines, conduits, item machines, and machine UIs.
