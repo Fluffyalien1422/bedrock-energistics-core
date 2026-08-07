@@ -56,6 +56,7 @@ const STORAGE_TYPE_COLOR_TO_FORMATTING_CODE: Record<
 function fillDisabledUiBar(
   inventory: Container,
   startIndex: number,
+  size: number,
   label?: string,
 ): void {
   const itemStack = new ItemStack(
@@ -63,10 +64,9 @@ function fillDisabledUiBar(
   );
   itemStack.nameTag = "§r" + (label ?? "Disabled");
 
-  inventory.setItem(startIndex, itemStack);
-  inventory.setItem(startIndex + 1, itemStack);
-  inventory.setItem(startIndex + 2, itemStack);
-  inventory.setItem(startIndex + 3, itemStack);
+  for (let i = startIndex; i < startIndex + size; i++) {
+    inventory.setItem(i, itemStack);
+  }
 }
 
 /**
@@ -165,7 +165,7 @@ export function handleBarItems(
   }
 
   if (type === "_disabled") {
-    fillDisabledUiBar(inventory, startIndex, label);
+    fillDisabledUiBar(inventory, startIndex, size, label);
     return;
   }
 
