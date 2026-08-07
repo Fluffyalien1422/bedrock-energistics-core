@@ -96,10 +96,43 @@
     "offset": [6, -3]
   },
 
-  "container_slot_base": {
+  "container_slot_item": {
     "_doc": {
-      "summary": "A base container slot, which displays one item from the machine's container.",
-      "remarks": "This element only exists to be extended. Use 'container_slot_nobg' or 'container_slot_nobg_noclick' unless you need a slot with a custom container item.",
+      "summary": "A container slot that displays an item from the 'container_items' collection and allows the player to take from and place into it. Looks like a regular chest container slot.",
+      "remarks": "This element uses 'chest.chest_grid_item' as the container item. You can use props from that control as well, such as '$cell_overlay_ref'.",
+      "props": {
+        "$index": "The index of the item in the 'container_items' collection. Defaults to 0.",
+        "$slot_size": "The size of the slot. Defaults to [18, 18].",
+        "$slot_image_size": "The size of the slot background image. Defaults to [18, 18]. This is forwarded to the '$cell_image_size' prop of 'chest.chest_grid_item'."
+      }
+    },
+
+    "type": "stack_panel",
+
+    "$index|default": 0,
+    "$slot_size|default": [18, 18],
+    "$slot_image_size|default": [18, 18],
+
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+
+    "collection_name": "container_items",
+
+    "controls": [
+      {
+        "item@chest.chest_grid_item": {
+          "size": "$slot_size",
+          "$cell_image_size": "$slot_image_size",
+          "collection_index": "$index"
+        }
+      }
+    ]
+  },
+
+  "container_slot_custom": {
+    "_doc": {
+      "summary": "A container slot that takes a custom item control as '$container_item_ref'.",
+      "remarks": "This element is for advanced custom UIs. Use 'container_slot_item', 'container_slot_nobg', or 'container_slot_nobg_noclick' unless you need a slot with a custom container item.",
       "props": {
         "$index": "The index of the item in the 'container_items' collection. Defaults to 0.",
         "$container_item_ref": "The fully qualified name of the container item panel to use."
@@ -107,10 +140,12 @@
     },
 
     "type": "stack_panel",
+
+    "$index|default": 0,
+
     "anchor_from": "top_left",
     "anchor_to": "top_left",
 
-    "$index|default": 0,
     "collection_name": "container_items",
 
     "controls": [
@@ -123,7 +158,7 @@
     ]
   },
 
-  "container_slot_nobg@fluffyalien_energisticscore:common_v2.container_slot_base": {
+  "container_slot_nobg@fluffyalien_energisticscore:common_v2.container_slot_custom": {
     "_doc": {
       "summary": "A container slot with no background.",
       "remarks": "The player can take from and place into this slot. Use 'container_slot_nobg_noclick' for slots that only display information.",
@@ -135,7 +170,7 @@
     "$container_item_ref": "fluffyalien_energisticscore:common_v2.container_item_nobg"
   },
 
-  "container_slot_nobg_noclick@fluffyalien_energisticscore:common_v2.container_slot_base": {
+  "container_slot_nobg_noclick@fluffyalien_energisticscore:common_v2.container_slot_custom": {
     "_doc": {
       "summary": "A container slot with no background and no click functionality.",
       "remarks": "Use this for slots that display information rather than hold items the player interacts with, such as storage bar segments and progress indicators. Hover text still displays.",
@@ -157,10 +192,11 @@
     },
 
     "type": "input_panel",
-    "size": [16, 16],
-    "layer": 1,
 
     "$button_ref|default": "fluffyalien_energisticscore:common_v2.container_item_button_nobg",
+
+    "size": [16, 16],
+    "layer": 1,
 
     "focus_enabled": true,
     "focus_wrap_enabled": false,
@@ -217,6 +253,7 @@
     "default_focus_precedence": 1,
     "hover_control": "hover",
     "layer": 1,
+
     "bindings": [
       {
         "binding_type": "collection_details",
@@ -259,6 +296,7 @@
         "binding_condition": "once"
       }
     ],
+
     "button_mappings": [
       {
         "from_button_id": "button.menu_select",
