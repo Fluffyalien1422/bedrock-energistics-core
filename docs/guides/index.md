@@ -12,10 +12,13 @@ children:
   - ./persistent-entities.md
   - ./storage-type-containers.md
   - ./storage-types.md
+  - ./using-the-api.md
   - ./versioning.md
 ---
 
 # Guides
+
+New here? Start with [Getting Started](getting-started.md), then [Using the API](using-the-api.md).
 
 ## Index
 
@@ -30,4 +33,5 @@ children:
 - [Persistent Entities](persistent-entities.md)
 - [Storage Type Containers](storage-type-containers.md)
 - [Storage Types](storage-types.md)
+- [Using the API](using-the-api.md)
 - [Versioning](versioning.md)

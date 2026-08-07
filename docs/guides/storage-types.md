@@ -37,3 +37,37 @@ registerStorageType({
 ```
 
 If you are using a custom storage category, it should be namespaced to avoid conflicts with standard storage categories as well as storage categories from other add-ons.
+
+## Textures
+
+A storage type's `texture` is what its [storage bars](machine-ui.md) look like by default. The simplest option is one of the presets, which is what every standard storage type uses:
+
+```ts
+texture: "water";
+```
+
+See {@link StorageTypeTexturePreset} for the full list of presets.
+
+A storage bar is drawn out of items, one per fill level, so a custom texture is described rather than named. Give it the base ID your fill level items share, and Bedrock Energistics Core appends the level to it:
+
+```ts
+registerStorageType({
+  category: StandardStorageCategory.Fluid,
+  id: "example:custom_fluid",
+  name: "custom fluid",
+  texture: {
+    // Needs the items 'example:custom_fluid_bar0' (empty) through
+    // 'example:custom_fluid_bar16' (full), all of which must have the
+    // `fluffyalien_energisticscore:ui_item` tag.
+    baseId: "example:custom_fluid_bar",
+    // The formatting code to colour the bar's label with, without the '§'.
+    formattingCode: "b",
+  },
+});
+```
+
+One slot of a bar has 16 fill levels by default, which is what the presets use: their textures are 16 pixels tall and fill a pixel at a time. Set `segments` to use a coarser bar and fewer items. A bar four slots tall with `"segments": 4`, for instance, has 16 fill levels in total instead of 64, and needs five items rather than 17.
+
+See {@link StorageTypeTextureDescription} for the details of each property.
+
+A machine can override the texture of any of its own storage bars with `textureOverride`, without affecting the storage type itself. See [Machine UI](machine-ui.md).

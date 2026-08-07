@@ -10,17 +10,20 @@ To create a conduit, use the `fluffyalien_energisticscore:conduit` block custom 
 
 ```json
 {
-  "format_version": "1.26.0",
+  "format_version": "1.26.40",
   "minecraft:block": {
     "description": {
       "identifier": "example:energy_conduit"
     },
     "components": {
       "fluffyalien_energisticscore:conduit": {}, // Conduit component (required).
-      "tag:fluffyalien_energisticscore:conduit": {}, // Conduit tag (required).
-      "tag:fluffyalien_energisticscore:io.category.energy": {}, // I/O tag to tell
-      // Bedrock Energistics Core which networks this conduit should connect to.
-      // You can use multiple I/O tags as well.
+
+      "minecraft:tags": [
+        "fluffyalien_energisticscore:conduit", // Conduit tag (required).
+        "fluffyalien_energisticscore:io.category.energy" // I/O tag to tell
+        // Bedrock Energistics Core which networks this conduit should connect
+        // to. You can use multiple I/O tags as well.
+      ],
 
       // All Bedrock Energistics Core conduits and machines must be immovable.
       "minecraft:movable": {
@@ -40,10 +43,11 @@ The code above is an edited snippet from Bedrock Energistics. View the full code
 The {@link IoCapabilities} API allows you to read the I/O capabilities of a machine or conduit. This is extremely useful for making your conduits visually connect to other machines and conduits that have the same I/O.
 
 ```ts
-const io = IoCapabilities.fromMachine(other, face); // Create an `IoCapabilities`
+const io = IoCapabilities.fromBlock(other, face); // Create an `IoCapabilities`
 // object from a machine or conduit. `other` is the block we are getting the I/O
 // of and `face` is the face of that block we are checking (which would be the
-// reverse of the direction we are looking in).
+// reverse of the direction we are looking in). Pass "network_link" instead of a
+// face for a connection made through a network link.
 const shouldConnect = await io.acceptsAnyTypeOfCategory("energy", true);
 // The energy conduit we are creating connects to any storage type which has
 // the category `energy`. `acceptsAnyTypeOfCategory` checks if any of the types

@@ -5,7 +5,7 @@ title: Machine Allocation Priority
 # Machine Allocation Priority
 
 > [!note]
-> Remember to update the machine's networks using if any tags change. The simplest way to manually trigger a network update is with the [MachineNetwork.updateWithBlock](https://fluffyalien1422.github.io/bedrock-energistics-core/api/classes/API.MachineNetwork.html#updateWithBlock) function.
+> Remember to update the machine's networks if this tag changes, for example when a block permutation changes. The simplest way to trigger a network update manually is with the {@link MachineNetwork.updateWithBlock} function.
 
 A machine's priority during network allocation can be changed using the `fluffyalien_energisticscore:priority.{value}` tag. The default priority is `0`.
 

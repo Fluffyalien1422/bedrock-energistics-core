@@ -4,8 +4,17 @@ title: Machine I/O
 
 # Machine I/O
 
+A machine's I/O is declared with block tags, which go in the block's `minecraft:tags` component:
+
+```json
+"minecraft:tags": [
+  "fluffyalien_energisticscore:machine",
+  "fluffyalien_energisticscore:io.type.energy"
+]
+```
+
 > [!note]
-> Remember to update the machine's networks using if any tags change. The simplest way to manually trigger a network update is with the [MachineNetwork.updateWithBlock](https://fluffyalien1422.github.io/bedrock-energistics-core/api/classes/API.MachineNetwork.html#updateWithBlock) function.
+> Remember to update the machine's networks if any of these tags change, for example when a block permutation changes. The simplest way to trigger a network update manually is with the {@link MachineNetwork.updateWithBlock} function.
 
 ## Network Connection
 

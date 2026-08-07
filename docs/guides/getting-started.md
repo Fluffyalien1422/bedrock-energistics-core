@@ -47,7 +47,7 @@ This is the full block JSON:
 
 ```json
 {
-  "format_version": "1.26.0",
+  "format_version": "1.26.40",
   "minecraft:block": {
     "description": {
       "identifier": "example:passive_generator",
@@ -61,10 +61,12 @@ This is the full block JSON:
       // This is our own custom component to add functionality.
       "example:passive_generator": {},
 
-      // Machines must have this tag.
-      "tag:fluffyalien_energisticscore:machine": {},
-      // Tell Bedrock Energistics Core to connect our machines to energy networks.
-      "tag:fluffyalien_energisticscore:io.type.energy": {},
+      "minecraft:tags": [
+        // Machines must have this tag.
+        "fluffyalien_energisticscore:machine",
+        // Tell Bedrock Energistics Core to connect our machines to energy networks.
+        "fluffyalien_energisticscore:io.type.energy"
+      ],
 
       // All Bedrock Energistics Core machines and conduits must be immovable.
       "minecraft:movable": {
@@ -100,7 +102,7 @@ This is the full entity JSON:
 
 ```json
 {
-  "format_version": "1.26.0",
+  "format_version": "1.26.40",
   "minecraft:entity": {
     "description": {
       // By default, Bedrock Energistics Core will expect the machine entity to have the same
@@ -163,10 +165,6 @@ This is the full entity JSON:
           "deals_damage": "no"
         }
       },
-      "minecraft:pushable": {
-        "is_pushable": false,
-        "is_pushable_by_piston": false
-      },
       "minecraft:knockback_resistance": {
         "value": 1
       }
@@ -186,85 +184,39 @@ This is the full entity JSON:
 
 The UI backend is handled by Bedrock Energistics Core, but you will need to use JSON UI to design your machine's frontend UI. JSON UI is complicated, so we will not go over it in this guide. You can learn more about JSON UI [here](https://wiki.bedrock.dev/json-ui/json-ui-intro.html).
 
-Bedrock Energistics Core also provides some commonly used UI controls, which we will be using to make our UI. See [Machine UI](machine-ui.md) for more information on these.
+Bedrock Energistics Core provides the JSON UI elements needed to build a machine screen in the `fluffyalien_energisticscore:common_v2` namespace, which is what we will use here. See [Machine UI](machine-ui.md) for how machine UIs work and the [JSON UI Reference](../json-ui-ref.md) for every element these packs provide.
+
+> [!note]
+> The older `fluffyalien_energisticscore:common` namespace is deprecated and will be removed in a future update. Use `common_v2` for new UIs.
 
 Copy this into `RP/ui/example/passive_generator.json`:
 
 ```json
 {
   "namespace": "example:passive_generator",
-  "root": {
-    "type": "panel",
-    "controls": [
-      {
-        "container_gamepad_helpers@common.container_gamepad_helpers": {}
-      },
-      {
-        "flying_item_renderer@common.flying_item_renderer": {
-          "layer": 14
-        }
-      },
-      {
-        "selected_item_details_factory@common.selected_item_details_factory": {}
-      },
-      {
-        "item_lock_notification_factory@common.item_lock_notification_factory": {}
-      },
-      {
-        "root_panel@common.root_panel": {
-          "layer": 1,
-          "size": [180, 180],
-          "controls": [
-            {
-              "common_panel@common.common_panel": {}
-            },
-            {
-              "chest_panel": {
-                "type": "panel",
-                "layer": 5,
-                "offset": [0, -0.5],
-                "controls": [
-                  {
-                    "small_chest_panel_top_half@example:passive_generator.top_half": {}
-                  },
-                  {
-                    "inventory_panel_bottom_half_with_label@common.inventory_panel_bottom_half_with_label": {}
-                  },
-                  {
-                    "hotbar_grid@common.hotbar_grid_template": {}
-                  },
-                  {
-                    "inventory_take_progress_icon_button@common.inventory_take_progress_icon_button": {}
-                  }
-                ]
-              }
-            },
-            {
-              "inventory_selected_icon_button@common.inventory_selected_icon_button": {}
-            },
-            {
-              "gamepad_cursor@common.gamepad_cursor_button": {}
-            }
-          ]
-        }
-      }
-    ]
+
+  // 'screen_template' lays out the player inventory and hotbar in the bottom
+  // half of the screen and our machine's content in the top half.
+  "screen@fluffyalien_energisticscore:common_v2.screen_template": {
+    "$content_ref": "example:passive_generator.content"
   },
-  "top_half": {
-    "type": "panel",
-    "size": ["100%", "50% - 12px"],
-    "offset": [0, 7],
-    "anchor_to": "top_left",
-    "anchor_from": "top_left",
+
+  // 'content_template' is a panel already sized and positioned to fill the
+  // content area in the top half. We add our machine's controls to it.
+  "content@fluffyalien_energisticscore:common_v2.content_template": {
     "controls": [
       {
-        "title@fluffyalien_energisticscore:common.container_title": {
-          "text": "Passive Generator"
+        "title@fluffyalien_energisticscore:common_v2.container_title": {
+          // A translation key or a plain string.
+          "text": "tile.example:passive_generator.name"
         }
       },
       {
-        "energy_bar@fluffyalien_energisticscore:common.machine_storage_bar": {
-          "offset": [9, 12]
+        // A standard storage bar: four slots stacked vertically. Its first slot
+        // index is set with '$start_index', which defaults to 0, so this bar
+        // uses slots 0-3.
+        "energy_bar@fluffyalien_energisticscore:common_v2.machine_storage_bar": {
+          "offset": [8, 12]
         }
       }
     ]
@@ -272,7 +224,7 @@ Copy this into `RP/ui/example/passive_generator.json`:
 }
 ```
 
-Copy this into `RP/ui/chest_screen.json`:
+Machine screens are hooked up through vanilla's `small_chest_screen`. Copy this into `RP/ui/chest_screen.json`:
 
 ```json
 {
@@ -286,7 +238,7 @@ Copy this into `RP/ui/chest_screen.json`:
           {
             // The container title will be the block ID.
             "requires": "($new_container_title = 'example:passive_generator')",
-            "$screen_content": "example:passive_generator.root",
+            "$screen_content": "example:passive_generator.screen",
             "$screen_bg_content": "common.screen_background"
           }
         ]
@@ -302,6 +254,12 @@ Copy this into `RP/ui/_ui_defs.json`:
 {
   "ui_defs": ["ui/example/passive_generator.json"]
 }
+```
+
+Our title is a translation key, so add this to `RP/texts/en_US.lang`:
+
+```
+tile.example:passive_generator.name=Passive Generator
 ```
 
 ### Scripting the Machine
@@ -337,8 +295,9 @@ world.afterEvents.worldLoad.subscribe(() => {
           energyBar: {
             type: "storageBar",
             // This is the starting index in the inventory for this storage bar.
-            // It should match the `$start_index` variable used in the JSON UI
-            // (assuming the control extends `fluffyalien_energisticscore:common.machine_storage_bar`)
+            // It must match the `$start_index` variable used in the JSON UI
+            // (assuming the control extends
+            // `fluffyalien_energisticscore:common_v2.machine_storage_bar`).
             // If `$start_index` wasn't defined, then this should be 0.
             startIndex: 0,
             defaults: {
@@ -374,7 +333,9 @@ system.beforeEvents.startup.subscribe((e) => {
     "example:passive_generator",
     {
       onTick(e) {
-        // Generate energy every tick.
+        // Send our energy to the network. Call this on every block tick, even
+        // when generating `0`, since it also sends the machine's reserve
+        // storage (whatever the network could not take last time).
         bec.generate(e.block, "energy", ENERGY_GENERATION);
       },
     },
