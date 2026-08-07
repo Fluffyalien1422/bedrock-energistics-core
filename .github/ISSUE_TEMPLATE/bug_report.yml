@@ -61,7 +61,7 @@ body:
     id: minecraft-version
     attributes:
       label: Minecraft version
-      placeholder: 26.40
+      placeholder: "26.40"
     validations:
       required: true
 
