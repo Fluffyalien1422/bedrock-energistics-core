@@ -7,7 +7,7 @@
   "screen_template": {
     "_doc": {
       "summary": "A template for a machine UI screen. Lays out the player inventory and hotbar in the bottom half of the screen and the machine's own content in the top half.",
-      "remarks": "Extend this in your own namespace, then pass the fully qualified name of a panel containing your machine's content as '$content_ref'. Any panel will do, though 'content_template' is already sized and positioned to fit.",
+      "remarks": "Extend this then pass the fully qualified name of a panel containing your machine's content as '$content_ref'. Any panel will do, though 'content_template' is already sized and positioned to fit.",
       "props": {
         "$content_ref": "The fully qualified name of the panel containing the machine-specific content."
       }
@@ -73,7 +73,7 @@
   "content_template": {
     "_doc": {
       "summary": "A panel sized and positioned to fill the content area in the top half of a 'screen_template'.",
-      "remarks": "Extend this in your own namespace and add your controls, then pass its fully qualified name to 'screen_template' as '$content_ref'. This is a convenience, not a requirement, '$content_ref' accepts any panel."
+      "remarks": "Extend this and add your controls, then pass its fully qualified name to 'screen_template' as '$content_ref'. This is a convenience, not a requirement, '$content_ref' accepts any panel."
     },
 
     "type": "panel",
@@ -81,6 +81,19 @@
     "offset": [0, 7],
     "anchor_to": "top_left",
     "anchor_from": "top_left"
+  },
+
+  "container_title": {
+    "_doc": {
+      "summary": "A container title label, positioned to be used in a 'content_template' panel.",
+      "remarks": "Extend this and add a 'text' property to set the title. A translation key or plain text string can be used."
+    },
+
+    "type": "label",
+    "color": "$title_text_color",
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "offset": [6, -3]
   },
 
   "container_slot_base": {
