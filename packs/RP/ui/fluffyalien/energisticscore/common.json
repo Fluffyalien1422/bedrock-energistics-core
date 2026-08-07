@@ -45,6 +45,17 @@
     "$start_index": 0,
     "controls": [
       {
+        "border": {
+          "type": "image",
+          "texture": "textures/fluffyalien/energisticscore/ui/sbar_border_overlay_middle",
+          "size": [16, 64],
+          "tiled": true,
+          "anchor_from": "top_left",
+          "anchor_to": "top_left",
+          "layer": 9
+        }
+      },
+      {
         "segment1@fluffyalien_energisticscore:common.container_item_slot_nobg": {
           "$index": "$start_index"
         }
