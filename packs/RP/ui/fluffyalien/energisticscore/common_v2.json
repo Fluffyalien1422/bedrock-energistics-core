@@ -170,6 +170,18 @@
     "$container_item_ref": "fluffyalien_energisticscore:common_v2.container_item_nobg"
   },
 
+  "container_slot_nobg_nohover@fluffyalien_energisticscore:common_v2.container_slot_custom": {
+    "_doc": {
+      "summary": "A container slot with no background and no hover or click functionality.",
+      "remarks": "Use this for slots that display only an image with no tooltip. Hover text does not display.",
+      "props": {
+        "$index": "The index of the item in the 'container_items' collection. Defaults to 0."
+      }
+    },
+
+    "$container_item_ref": "fluffyalien_energisticscore:common_v2.container_item_nobg_nohover"
+  },
+
   "container_slot_nobg_noclick@fluffyalien_energisticscore:common_v2.container_slot_custom": {
     "_doc": {
       "summary": "A container slot with no background and no click functionality.",
@@ -219,6 +231,35 @@
           "tts_skip_message": true,
           "tts_inherit_siblings": true,
           "layer": 5
+        }
+      }
+    ]
+  },
+
+  "container_item_nobg_nohover": {
+    "_doc": {
+      "summary": "A container item with no background and no hover or click functionality. Used as the item ref for 'container_slot_nobg_nohover'.",
+      "remarks": "This is a building block for 'container_slot_nobg_nohover'. You only need it directly when composing a custom container slot."
+    },
+
+    "type": "input_panel",
+
+    "size": [16, 16],
+    "layer": 1,
+
+    "focus_enabled": true,
+    "focus_wrap_enabled": false,
+    "focus_magnet_enabled": true,
+    "tts_ignore_count": true,
+
+    "controls": [
+      {
+        "item_renderer@common.item_renderer": {
+          "size": [16, 16],
+          "offset": [0, 0],
+          "anchor_to": "center",
+          "anchor_from": "center",
+          "layer": 7
         }
       }
     ]
