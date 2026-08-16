@@ -1,4 +1,4 @@
-name: Deploy Docs
+name: Deploy Site
 
 on:
   workflow_dispatch:
@@ -21,9 +21,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          cache: "npm"
+      - name: Install Dependencies
+        run: npm ci
+      # Generates the JSON UI reference and the TypeDoc API reference into
+      # 'docs', alongside the static pages that are checked in there.
+      - name: Build Site
+        run: npm run docs
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Upload artifact
+      - name: Upload Artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: "docs"
