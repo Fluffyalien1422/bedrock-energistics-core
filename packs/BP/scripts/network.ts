@@ -184,31 +184,25 @@ export class MachineNetwork extends DestroyableObject {
         );
         continue;
       }
-      const tags = machine.getTags();
-
-      const priorityTags = tags
-        .filter((t) => t.startsWith("fluffyalien_energisticscore:priority."))
-        .map((t) => {
-          const number = Number(t.split(".")[1]);
-
-          if (!Number.isInteger(number)) {
-            logWarn(
-              `Priority tag '${t}' on machine with id '${machine.typeId}' is not a valid number. Defaulting to 0.`,
-            );
-            return 0;
-          }
-
-          return number;
-        });
-
-      if (priorityTags.length > 1) {
+      // Look up the machine definition once and carry it through to
+      // distribution so `distributeToGroup` doesn't have to look it up again.
+      const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
+      if (!machineDef) {
         logWarn(
-          `Found multiple priority tags on a machine ${machine.typeId}, the highest priority will be used.`,
+          `Machine with ID '${machine.typeId}' not found during allocation (allocate).`,
         );
+        continue;
       }
 
-      const priority =
-        priorityTags.length === 0 ? 0 : Math.max(...priorityTags);
+      // Check if the machine is listening for network stat events. This is
+      // independent of whether the machine consumes this network's type: any
+      // machine on the network may observe its allocations without taking part
+      // in them, so this must be checked before the consumer filter below.
+      if (machineDef.hasCallback("onNetworkAllocationCompleted")) {
+        networkStatListeners.push([machine, machineDef]);
+      }
+
+      const tags = machine.getTags();
 
       const allowsAny = tags.includes(
         "fluffyalien_energisticscore:consumer.any",
@@ -224,26 +218,37 @@ export class MachineNetwork extends DestroyableObject {
           `fluffyalien_energisticscore:consumer.category.${this.ioType.category}`,
         );
 
-      if (!consumesType) continue;
+      if (consumesType) {
+        const priorityTags = tags
+          .filter((t) => t.startsWith("fluffyalien_energisticscore:priority."))
+          .map((t) => {
+            const number = Number(t.split(".")[1]);
 
-      // Look up the machine definition once and carry it through to
-      // distribution so `distributeToGroup` doesn't have to look it up again.
-      const machineDef = InternalRegisteredMachine.getInternal(machine.typeId);
-      if (!machineDef) {
-        logWarn(
-          `Machine with ID '${machine.typeId}' not found during allocation (allocate).`,
-        );
-        continue;
-      }
+            if (!Number.isInteger(number)) {
+              logWarn(
+                `Priority tag '${t}' on machine with id '${machine.typeId}' is not a valid number. Defaulting to 0.`,
+              );
+              return 0;
+            }
 
-      if (!consumers.has(priority)) {
-        consumers.set(priority, []);
-      }
-      consumers.get(priority)!.push({ block: machine, definition: machineDef });
+            return number;
+          });
 
-      // Check if the machine is listening for network stat events.
-      if (machineDef.hasCallback("onNetworkAllocationCompleted")) {
-        networkStatListeners.push([machine, machineDef]);
+        if (priorityTags.length > 1) {
+          logWarn(
+            `Found multiple priority tags on a machine ${machine.typeId}, the highest priority will be used.`,
+          );
+        }
+
+        const priority =
+          priorityTags.length === 0 ? 0 : Math.max(...priorityTags);
+
+        if (!consumers.has(priority)) {
+          consumers.set(priority, []);
+        }
+        consumers
+          .get(priority)!
+          .push({ block: machine, definition: machineDef });
       }
 
       yield;
