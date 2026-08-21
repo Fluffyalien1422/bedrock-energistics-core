@@ -25,6 +25,7 @@ Every option is optional and is documented with a comment in the file. Remove an
 - [Getting Started](https://fluffyalien1422.github.io/bedrock-energistics-core/api/documents/Guides.Getting_Started.html)
 - [Guides and API reference](https://fluffyalien1422.github.io/bedrock-energistics-core/api/)
 - [Home page](https://fluffyalien1422.github.io/bedrock-energistics-core/)
+- [Changelog](https://github.com/Fluffyalien1422/bedrock-energistics-core/releases)
 
 ## Contributing
 

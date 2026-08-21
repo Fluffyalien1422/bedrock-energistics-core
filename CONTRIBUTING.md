@@ -24,8 +24,9 @@ Please read the [coding guidelines](CODING_GUIDELINES.md) as well before contrib
 
 ## Project Layout
 
-The repository holds two things that ship separately, plus the tooling around
-them. Which one you're editing decides a lot, so it's worth knowing up front:
+The repository holds the two halves of a release, plus the tooling around them.
+They share one version number and are released together, but they are separate
+packs at runtime, so which one you're editing still decides a lot:
 
 | Path                   | What it is                                                                                              |
 | ---------------------- | ------------------------------------------------------------------------------------------------------- |

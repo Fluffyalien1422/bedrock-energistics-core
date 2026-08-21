@@ -1,10 +1,15 @@
 {
   "//": [
-    "NOTE: remember to update the VERSION constant in the api as well!"
+    "NOTE: the add-on and this package share one version number and are released together.",
+    "When bumping it, update all of these to match:",
+    "- the VERSION constant in 'src/constants.ts'",
+    "- 'header.version' and the dependency version in '../packs/BP/manifest.json'",
+    "- 'header.version' and the dependency version in '../packs/RP/manifest.json'",
+    "- the VERSION constant in '../packs/BP/scripts/constants.ts'"
   ],
   "name": "bedrock-energistics-core-api",
   "description": "Bedrock Energistics Core public API",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "author": "Fluffyalien",
   "repository": {
     "type": "git",
