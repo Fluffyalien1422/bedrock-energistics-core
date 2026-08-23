@@ -17,9 +17,6 @@ Bedrock Energistics Core handles the parts every tech add-on would otherwise hav
 
 ## Requirements
 
-- Minecraft: Bedrock Edition, stable.
-- The add-on and the API package on the same version. Until v1.0 their minor versions have to match.
-
 Each release notes the Minecraft and `@minecraft/server` versions it supports. See [releases](https://github.com/Fluffyalien1422/bedrock-energistics-core/releases).
 
 ## Getting Started
