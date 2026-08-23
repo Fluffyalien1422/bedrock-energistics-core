@@ -9,11 +9,15 @@
       "summary": "A template for a machine UI screen. Lays out the player inventory and hotbar in the bottom half of the screen and the machine's own content in the top half.",
       "remarks": "Extend this then pass the fully qualified name of a panel containing your machine's content as '$content_ref'. Any panel will do, though 'content_template' is already sized and positioned to fit.",
       "props": {
-        "$content_ref": "The fully qualified name of the panel containing the machine-specific content."
+        "$content_ref": "The fully qualified name of the panel containing the machine-specific content.",
+        "$root_panel_size": "The size of the screen root panel. Defaults to [180, 180]."
       }
     },
 
     "type": "panel",
+
+    "$root_panel_size|default": [180, 180],
+
     "controls": [
       {
         "container_gamepad_helpers@common.container_gamepad_helpers": {}
@@ -32,7 +36,7 @@
       {
         "root_panel@common.root_panel": {
           "layer": 1,
-          "size": [180, 180],
+          "size": "$root_panel_size",
           "controls": [
             {
               "common_panel@common.common_panel": {}
