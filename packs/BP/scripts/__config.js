@@ -9,8 +9,8 @@
 export default {
   // Namespace for this add-on's custom commands. For example,
   // 'fluffyalien_energisticscore' makes the command
-  // '/fluffyalien_energisticscore:becdebugmode'. This is intended to be used
-  // when bundling in a modpack, as a single add-on cannot have multiple custom
-  // command namespaces.
+  // '/fluffyalien_energisticscore:becdebugmode'. This is intended to be changed
+  // when Bedrock Energistics Core is merged into a single add-on with other
+  // content, as one add-on cannot have multiple custom command namespaces.
   customCommandNamespace: "fluffyalien_energisticscore",
 };

@@ -4,9 +4,10 @@ Public API for Bedrock Energistics Core.
 
 ## Links
 
-- [Homepage](https://fluffyalien1422.github.io/bedrock-energistics-core)
-- [GitHub](https://github.com/Fluffyalien1422/bedrock-energistics-core)
-- [Guides](https://fluffyalien1422.github.io/bedrock-energistics-core/api/documents/Guides.html)
-- [API Reference](https://fluffyalien1422.github.io/bedrock-energistics-core/api/modules/API.html)
-- [JSON UI Reference](https://fluffyalien1422.github.io/bedrock-energistics-core/api/documents/JSON_UI_Reference.html)
-- [Changelog](https://github.com/Fluffyalien1422/bedrock-energistics-core/releases)
+- [Home page](https://fluffyalien1422.github.io/bedrock-energistics-core/)
+- [Getting Started](https://fluffyalien1422.github.io/bedrock-energistics-core/api/documents/Guides.Getting_Started.html)
+- [Guides and API reference](https://fluffyalien1422.github.io/bedrock-energistics-core/api/)
+- [npm package](https://www.npmjs.com/package/bedrock-energistics-core-api)
+- [GitHub Releases](https://github.com/Fluffyalien1422/bedrock-energistics-core/releases)
+- [CurseForge](https://www.curseforge.com/minecraft-bedrock/addons/bedrock-energistics-core)
+- [MCPEDL](https://mcpedl.com/bedrock-energistics-core/)
