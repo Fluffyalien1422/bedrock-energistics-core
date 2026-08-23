@@ -3,6 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bedrock Energistics Core</title>
+    <meta
+      name="description"
+      content="APIs for creating tech add-ons for Minecraft: Bedrock Edition. Handles networks, storage, and machine UI so that machines from separate add-ons work together."
+    />
+    <link
+      rel="icon"
+      href="https://raw.githubusercontent.com/Fluffyalien1422/bedrock-energistics-core/refs/heads/main/keyart/logo_nobg.png"
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Bedrock Energistics Core" />
+    <meta property="og:title" content="Bedrock Energistics Core" />
+    <meta
+      property="og:description"
+      content="APIs for creating tech add-ons for Minecraft: Bedrock Edition. Handles networks, storage, and machine UI so that machines from separate add-ons work together."
+    />
+    <meta
+      property="og:image"
+      content="https://raw.githubusercontent.com/Fluffyalien1422/bedrock-energistics-core/refs/heads/main/keyart/thumbnail.png"
+    />
+    <meta
+      property="og:url"
+      content="https://fluffyalien1422.github.io/bedrock-energistics-core/"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+
     <link rel="stylesheet" href="style.css" />
     <link
       rel="stylesheet"
@@ -14,38 +41,39 @@
       hljs.registerLanguage("js", js);
       hljs.highlightAll();
     </script>
-    <title>Bedrock Energistics Core</title>
   </head>
   <body>
     <nav class="top-nav">
       <div class="top-nav-group">
         <img
           src="https://raw.githubusercontent.com/Fluffyalien1422/bedrock-energistics-core/refs/heads/main/keyart/logo_nobg.png"
+          alt="Bedrock Energistics Core logo"
+          width="50"
+          height="50"
           class="top-nav-logo"
         />
         <span class="title">Bedrock Energistics Core</span>
       </div>
       <div class="top-nav-group">
-        <a
-          href="./api/index.html"
-          class="top-nav-link"
-          style="margin-right: 10px"
+        <a href="./api/index.html" class="top-nav-link top-nav-docs-link"
           >API Docs</a
         >
         <div class="top-nav-dropdown">
-          <span class="top-nav-dropdown-label">Links</span>
+          <button type="button" class="top-nav-dropdown-label">Links</button>
           <div
             class="links-dropdown top-nav-dropdown-content button-list-dropdown-content"
           >
             <a
-              href="https://x.com/Fluffyalien1422"
+              href="https://www.npmjs.com/package/bedrock-energistics-core-api"
               target="_blank"
+              rel="noopener noreferrer"
               class="top-nav-button-link"
-              >X</a
+              >npm</a
             >
             <a
               href="https://github.com/Fluffyalien1422/bedrock-energistics-core"
               target="_blank"
+              rel="noopener noreferrer"
               class="top-nav-button-link"
               >GitHub</a
             >
@@ -54,132 +82,162 @@
       </div>
     </nav>
     <main>
-      <section style="text-align: center">
+      <section class="centered">
         <h1>Bedrock Energistics Core</h1>
-        <p>
-          <span class="main-description-highlighted">Easy to use</span> and
-          <span class="main-description-highlighted">powerful</span> APIs for
-          creating
-          <span class="main-description-highlighted">compatible</span> Minecraft
-          Bedrock tech add-ons.
+        <p>APIs for creating tech add-ons for Minecraft: Bedrock Edition.</p>
+        <p class="main-description">
+          Bedrock Energistics Core handles the parts every tech add-on would
+          otherwise have to build for itself — networks, storage, machine UI —
+          so that machines from separate add-ons can be placed side by side and
+          work together.
         </p>
         <div class="buttons-container">
           <a href="./api/documents/Guides.Getting_Started.html" class="button"
             >Start Developing</a
           >
+        </div>
+        <hr class="hero-divider" />
+        <div class="buttons-container">
+          <a
+            href="https://github.com/Fluffyalien1422/bedrock-energistics-core/releases"
+            class="button"
+            >Releases and Changelogs</a
+          >
           <a
             href="https://www.curseforge.com/minecraft-bedrock/addons/bedrock-energistics-core"
             class="button"
-            >Download</a
+            >CurseForge</a
           >
-          <a
-            href="https://github.com/Fluffyalien1422/bedrock-energistics-core/blob/main/CONTRIBUTING.md"
-            class="button"
-            >Contribute</a
+          <a href="https://mcpedl.com/bedrock-energistics-core/" class="button"
+            >MCPEDL</a
           >
         </div>
-        <h2>Features</h2>
       </section>
 
-      <section class="feature-showcase-container">
-        <div class="feature-showcase" style="max-width: 400px">
-          <h3>Machine UI</h3>
-          <span
-            >Provides powerful machine UI APIs, while abstracting away the hard
-            parts.</span
-          >
-          <pre><code class="language-js">export const voidMinerMachine = {
+      <section>
+        <h2 class="centered">Features</h2>
+        <div class="feature-showcase-container">
+          <div class="feature-showcase feature-showcase-narrow">
+            <h3>Works Together</h3>
+            <p>
+              Machines using these APIs work with each other even if they're
+              from different add-ons.
+            </p>
+            <pre><code class="language-js">// Add-on A defines a storage type, then fills
+// the network with it.
+registerStorageType({
+  id: "example:steam",
+  category: StandardStorageCategory.Gas,
+  texture: "steam",
+  name: "steam",
+});
+
+generate(block, "example:steam", 10);</code></pre>
+            <pre><code class="language-js">// Add-on B consumes it. No shared code and no
+// dependency between them, just the same ID.
+const steam = getMachineStorage(block, "example:steam");
+
+if (steam >= STEAM_PER_OPERATION) {
+  setMachineStorage(
+    block,
+    "example:steam",
+    steam - STEAM_PER_OPERATION
+  );
+}</code></pre>
+          </div>
+          <div class="feature-showcase feature-showcase-wide">
+            <h3>Machine UI</h3>
+            <p>Easily create machine UI.</p>
+            <figure class="feature-showcase-figure">
+              <img
+                src="https://raw.githubusercontent.com/Fluffyalien1422/bedrock-energistics/refs/heads/main/keyart/screenshots/basic_refinery_screen.png"
+                alt="A Basic Refinery machine screen with energy and oil storage bars, a progress arrow, and an output slot"
+                width="540"
+                height="540"
+                class="feature-showcase-img"
+              />
+              <figcaption class="feature-showcase-caption">
+                Screenshot from
+                <a
+                  href="https://github.com/Fluffyalien1422/bedrock-energistics"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Bedrock Energistics</a
+                >.
+              </figcaption>
+            </figure>
+            <pre><code class="language-js">registerMachine({
   description: {
-    // ...
+    id: "example:basic_refinery",
     ui: {
       elements: {
+        // A storage bar takes four slots, so the
+        // next one starts four slots later.
         energyBar: {
           type: "storageBar",
           startIndex: 0,
-          defaults: {
-            type: "energy"
-          }
+          defaults: { type: "energy" },
         },
-        progressIndicator: {
+        oilBar: {
+          type: "storageBar",
+          startIndex: 4,
+          defaults: { type: "oil" },
+        },
+        progressArrow: {
           type: "progressIndicator",
           indicator: "arrow",
-          index: 4,
+          index: 8,
         },
         outputSlot: {
           type: "itemSlot",
           slotId: 0,
-          index: 5,
-          allowedItems: OUTPUT_ITEM_TYPES,
+          index: 9,
         },
       },
     },
   },
-  handlers: {
-    updateUi({ blockLocation }) {
-      const uid = blockLocationToUid(blockLocation);
-
-      return {
-        progressIndicators: {
-          progressIndicator: Math.floor(
-            (progressMap.get(uid) ?? 0) / 1.5
-          ),
-        },
-      };
-    },
-  },
   // ...
-};</code></pre>
-        </div>
-        <div class="feature-showcase" style="max-width: 560px">
-          <h3>Simple</h3>
-          <span
-            >Simple APIs for simple machines, while having more powerful APIs
-            for complex machines.</span
-          >
-          <pre><code>export const itemSpawnerComponent = {
-  onTick({ block }) {
-    const storedEnergy = getMachineStorage(block, "energy");
-    if (storedEnergy < ENERGY_CONSUMPTION) return;
-
-    const spawnLoc = Vector3Utils.add(block.location, VECTOR3_UP);
-    block.dimension.spawnItem(new ItemStack("example:item"), spawnLoc);
-
-    setMachineStorage(block, "energy", storedEnergy - ENERGY_CONSUMPTION);
-  },
-};</code></pre>
-          <pre><code>export const passiveGeneratorComponent = {
+});</code></pre>
+          </div>
+          <div class="feature-showcase feature-showcase-narrow">
+            <h3>Simple</h3>
+            <p>
+              Simple APIs for basic machines, while still having more powerful
+              APIs for more complicated machines.
+            </p>
+            <pre><code class="language-js">// A working generator, in three lines.
+export const passiveGeneratorComponent = {
   onTick({ block }) {
     generate(block, "energy", 2);
   },
 };</code></pre>
-        </div>
-        <div class="feature-showcase" style="max-width: 400px">
-          <h3>Storage Types</h3>
-          <span>Create storage types that can be shared between add-ons.</span>
-          <pre><code class="language-js">world.afterEvents.worldLoad.subscribe(() => {
-  // Use a predefined storage type:
-  useStandardStorageType(StandardStorageType.Oil);
+            <pre><code class="language-js">// And the full APIs when a machine needs them.
+export const itemSpawnerComponent = {
+  onTick({ block }) {
+    const energy = getMachineStorage(block, "energy");
+    if (energy &lt; ENERGY_CONSUMPTION) return;
 
-  // Or, create your own:
-  registerStorageType({
-    id: "example:custom_fluid",
-    category: StandardStorageCategory.Fluid,
-    texture: "blue",
-    name: "custom fluid"
-  });
-});</code></pre>
+    const spawnLoc = Vector3Utils.add(block.location, VECTOR3_UP);
+    block.dimension.spawnItem(new ItemStack("example:item"), spawnLoc);
+
+    setMachineStorage(block, "energy", energy - ENERGY_CONSUMPTION);
+  },
+};</code></pre>
+          </div>
         </div>
       </section>
-      <section style="text-align: center">
-        <h2 style="margin-bottom: 0">Marketplace Creators</h2>
+
+      <section class="centered">
+        <h2 class="section-heading">Marketplace Creators</h2>
         <p>Marketplace creators using Bedrock Energistics Core.</p>
         <div
           class="featured-content-container"
           id="featured-creators-container"
         ></div>
       </section>
-      <section style="text-align: center">
-        <h2 style="margin-bottom: 0">Featured Content</h2>
+
+      <section class="centered">
+        <h2 class="section-heading">Featured Content</h2>
         <p>
           Featured add-ons, worlds, and other content using Bedrock Energistics
           Core.
@@ -190,7 +248,20 @@
         ></div>
       </section>
     </main>
-    <div style="height: 100px"></div>
+
+    <footer class="site-footer">
+      <p>
+        Bedrock Energistics Core is licensed under the
+        <a
+          href="https://github.com/Fluffyalien1422/bedrock-energistics-core/blob/main/LICENSE"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="footer-link"
+          >ISC License</a
+        >. Not affiliated with Mojang or Microsoft.
+      </p>
+    </footer>
+
     <script src="./featured_definitions.js"></script>
     <script src="./featured.js"></script>
   </body>

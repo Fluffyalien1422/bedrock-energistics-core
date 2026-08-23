@@ -1,4 +1,11 @@
-const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
+const shuffle = (arr) => {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+};
 
 const shuffledCreators = shuffle(FEATURED_CREATORS);
 const featuredCreatorsContainer = document.getElementById(
@@ -10,10 +17,15 @@ for (const creator of shuffledCreators) {
   a.className = "featured-content";
   a.href = creator.url;
   a.target = "_blank";
+  a.rel = "noopener noreferrer";
 
   const img = document.createElement("img");
   img.className = "featured-content-img";
   img.src = creator.img;
+  img.alt = `${creator.name} logo`;
+  img.width = 50;
+  img.height = 50;
+  img.loading = "lazy";
 
   const name = document.createElement("span");
   name.className = "featured-content-name";
@@ -35,10 +47,15 @@ for (const addon of shuffledFeaturedAddons) {
   a.className = "featured-content";
   a.href = addon.url;
   a.target = "_blank";
+  a.rel = "noopener noreferrer";
 
   const img = document.createElement("img");
   img.className = "featured-content-img";
   img.src = addon.img;
+  img.alt = `${addon.name} icon`;
+  img.width = 50;
+  img.height = 50;
+  img.loading = "lazy";
 
   const subcontainer = document.createElement("div");
 

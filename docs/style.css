@@ -67,16 +67,26 @@ body {
   box-shadow: 0 0 10px var(--color-theme-light);
 }
 
-.top-nav-dropdown:hover > .top-nav-dropdown-content {
+.top-nav-dropdown:hover > .top-nav-dropdown-content,
+.top-nav-dropdown:focus-within > .top-nav-dropdown-content {
   opacity: 1;
   pointer-events: all;
 }
 
+/* A button so the dropdown can be opened by keyboard and by touch, styled back
+   down to look like the surrounding nav text. */
 .top-nav-dropdown-label {
   transition-duration: 0.4s;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
-.top-nav-dropdown:hover > .top-nav-dropdown-label {
+.top-nav-dropdown:hover > .top-nav-dropdown-label,
+.top-nav-dropdown:focus-within > .top-nav-dropdown-label {
   color: var(--color-theme-dark);
 }
 
@@ -95,13 +105,20 @@ body {
   margin: 5px 0;
 }
 
+:focus-visible {
+  outline: 2px solid var(--color-theme-light);
+  outline-offset: 2px;
+}
+
 .title {
   font-weight: bold;
 }
 
-.main-description-highlighted {
-  color: var(--color-theme-dark);
-  text-decoration: underline;
+.main-description {
+  max-width: 700px;
+  margin: 0 auto 20px;
+  padding: 0 10px;
+  box-sizing: border-box;
 }
 
 .button {
@@ -129,10 +146,22 @@ body {
   justify-content: center;
 }
 
+/* Separates the primary call to action from the download links below it. Sized
+   a little wider than the button row rather than the full page. */
+.hero-divider {
+  width: min(480px, calc(100% - 10px));
+  margin: 15px auto;
+  border: none;
+  border-top: 1px solid var(--color-background-accent);
+}
+
 .feature-showcase-container {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  /* Without this, every card in a row stretches to match the tallest one,
+     leaving a lot of dead space under the shorter ones. */
+  align-items: flex-start;
 }
 
 .feature-showcase {
@@ -144,6 +173,50 @@ body {
   margin: 5px;
   padding: 0 10px;
   border-radius: 10px;
+  box-sizing: border-box;
+  /* The card is a flex item too, so it needs the same escape from
+     min-width:auto that the <pre> inside it does. */
+  min-width: 0;
+}
+
+/* The descriptions are <p>, which would otherwise add a default 1em of space
+   either side of them. */
+.feature-showcase p {
+  margin: 0 0 10px;
+}
+
+/* <figure> carries a large default margin that would push the card out. */
+.feature-showcase-figure {
+  margin: 0;
+  text-align: center;
+}
+
+.feature-showcase-caption {
+  margin-top: 5px;
+  font-size: 0.8em;
+  color: var(--color-background-accent);
+}
+
+.feature-showcase-caption a {
+  color: inherit;
+}
+
+/* Minecraft UI is pixel art, so scale it with nearest-neighbour rather than
+   letting the browser blur it. */
+.feature-showcase-img {
+  /* Exactly half of the 540px source, so the pixel art scales cleanly. */
+  max-width: 270px;
+  height: auto;
+  image-rendering: pixelated;
+  border-radius: 5px;
+}
+
+.feature-showcase-narrow {
+  max-width: 400px;
+}
+
+.feature-showcase-wide {
+  max-width: 560px;
 }
 
 h1 {
@@ -161,6 +234,11 @@ h3 {
 pre {
   white-space: pre-wrap;
   width: 100%;
+  /* A <pre> is a flex item here, so it defaults to min-width:auto and refuses to
+     shrink below its longest unbreakable token, pushing the whole card past the
+     viewport on a narrow screen. Let it shrink and scroll instead. */
+  min-width: 0;
+  overflow-x: auto;
 }
 
 pre > code {
@@ -214,6 +292,31 @@ pre > code {
   padding: 1px 5px;
   border-radius: 5px;
   margin-left: 5px;
+}
+
+.centered {
+  text-align: center;
+}
+
+.section-heading {
+  margin-bottom: 0;
+}
+
+.top-nav-docs-link {
+  margin-right: 10px;
+}
+
+.site-footer {
+  margin-top: 60px;
+  padding: 20px 10px 40px;
+  border-top: 1px solid var(--color-background-accent);
+  text-align: center;
+  font-size: 0.9em;
+  color: var(--color-background-accent);
+}
+
+.footer-link {
+  color: var(--color-background-accent);
 }
 
 @media (min-width: 390px) {
