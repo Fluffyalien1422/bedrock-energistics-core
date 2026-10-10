@@ -5,11 +5,12 @@
     "- the VERSION constant in 'src/constants.ts'",
     "- 'header.version' and the dependency version in '../packs/BP/manifest.json'",
     "- 'header.version' and the dependency version in '../packs/RP/manifest.json'",
-    "- the VERSION constant in '../packs/BP/scripts/constants.ts'"
+    "- the VERSION constant in '../packs/BP/scripts/constants.ts'",
+    "- 'package-lock.json' (run 'npm install --package-lock-only' here)"
   ],
   "name": "bedrock-energistics-core-api",
   "description": "Bedrock Energistics Core public API",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "author": "Fluffyalien",
   "repository": {
     "type": "git",
