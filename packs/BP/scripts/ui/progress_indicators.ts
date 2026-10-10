@@ -8,6 +8,7 @@ import {
   UiProgressIndicatorElementDefinition,
   UiProgressIndicatorPreset,
 } from "@/public_api/src";
+import { fitItemNameTag } from "@/public_api/src/name_tag_internal";
 import { Container, ItemStack, Player } from "@minecraft/server";
 import { isUiItem } from "../data";
 import { logWarn } from "../log";
@@ -23,35 +24,16 @@ const PROGRESS_INDICATOR_PRESET_MAX_VALUES: Record<
 };
 
 /**
- * The longest name tag `ItemStack.nameTag` accepts. Setting a longer one
- * throws.
- */
-const MAX_NAME_TAG_LENGTH = 255;
-
-/**
  * Prefix for label name tags. It resets the styling the client applies to
  * custom-named items, as storage bar labels do.
  */
 const LABEL_PREFIX = "§r";
 
 /**
- * Turns a label into a name tag, truncating it (with a warning) if it would be
- * too long to set.
- */
-function labelToNameTag(label: string): string {
-  const nameTag = LABEL_PREFIX + label;
-  if (nameTag.length <= MAX_NAME_TAG_LENGTH) return nameTag;
-
-  logWarn(
-    `Progress indicator label is longer than ${(MAX_NAME_TAG_LENGTH - LABEL_PREFIX.length).toString()} characters and was truncated: '${label}'.`,
-  );
-  return nameTag.slice(0, MAX_NAME_TAG_LENGTH);
-}
-
-/**
  * Renders a progress indicator (e.g. an arrow or flame) at its frame
  * for `value`. Presets have a fixed frame count; custom indicators list their
  * frames. An out-of-range or non-integer value renders the error item.
+ * @param elementDescription Names the element in warnings.
  * @param label Hover text for the frame, set as its name tag. Not applied to
  * the error item.
  */
@@ -59,6 +41,7 @@ export function handleProgressIndicator(
   inventory: Container,
   element: UiProgressIndicatorElementDefinition,
   player: Player,
+  elementDescription: string,
   value = 0,
   label?: string,
 ): void {
@@ -116,7 +99,11 @@ export function handleProgressIndicator(
   }
 
   if (label !== undefined) {
-    item.nameTag = labelToNameTag(label);
+    item.nameTag = fitItemNameTag(
+      LABEL_PREFIX + label,
+      elementDescription,
+      logWarn,
+    );
   }
 
   inventory.setItem(element.index, item);

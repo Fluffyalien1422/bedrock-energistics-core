@@ -11,6 +11,7 @@ import {
   ItemStack,
   Player,
 } from "@minecraft/server";
+import { fitItemNameTag } from "@/public_api/src/name_tag_internal";
 import { isUiItem } from "../data";
 import { logWarn } from "../log";
 import { InternalRegisteredMachine } from "../machine_registry";
@@ -22,12 +23,14 @@ import { clearUiItemsFromPlayer } from "./ui_items";
  * button item is missing or has been swapped for a non-button item (the player
  * "took" it): the machine's `onButtonPressed` event fires and the button item
  * is restored. On init the button is simply placed.
+ * @param elementDescription Names the element in warnings.
  */
 export function handleButton(
   inventory: Container,
   machine: InternalRegisteredMachine,
   dimensionLocation: DimensionLocation,
   elementId: string,
+  elementDescription: string,
   index: number,
   entity: Entity,
   player: Player,
@@ -35,6 +38,12 @@ export function handleButton(
   init: boolean,
   buttonItemName?: string,
 ): void {
+  // undefined removes the name tag
+  const nameTag =
+    buttonItemName === undefined
+      ? undefined
+      : fitItemNameTag(buttonItemName, elementDescription, logWarn);
+
   if (init) {
     const item = tryCreateItemStack(buttonItemId);
     if (!item || !isUiItem(item)) {
@@ -48,7 +57,7 @@ export function handleButton(
       return;
     }
 
-    item.nameTag = buttonItemName;
+    item.nameTag = nameTag;
     inventory.setItem(index, item);
     return;
   }
@@ -77,7 +86,7 @@ export function handleButton(
 
   let btnItem = tryCreateItemStack(buttonItemId);
   if (btnItem && isUiItem(btnItem)) {
-    btnItem.nameTag = buttonItemName;
+    btnItem.nameTag = nameTag;
   } else {
     btnItem = new ItemStack("fluffyalien_energisticscore:ui_error");
   }

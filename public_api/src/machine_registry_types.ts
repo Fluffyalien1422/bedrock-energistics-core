@@ -23,6 +23,9 @@ export interface UiStorageBarElementUpdateOptions {
   /**
    * Use this property to override the label of the storage bar.
    * @beta
+   * @remarks
+   * The label is set as the bar's name tag, after a formatting prefix. A name
+   * tag longer than 255 characters is truncated.
    */
   label?: string;
   /**
@@ -192,6 +195,8 @@ export interface UiButtonElementUpdateOptions {
   /**
    * The name tag for the item.
    * @beta
+   * @remarks
+   * Names longer than 255 characters are truncated.
    */
   name?: string;
 }

@@ -7,6 +7,7 @@ import {
   StorageTypeTextureDescription,
   StorageTypeTexturePreset,
 } from "@/public_api/src";
+import { fitItemNameTag } from "@/public_api/src/name_tag_internal";
 import {
   Container,
   DimensionLocation,
@@ -57,12 +58,17 @@ function fillDisabledUiBar(
   inventory: Container,
   startIndex: number,
   size: number,
+  elementDescription: string,
   label?: string,
 ): void {
   const itemStack = new ItemStack(
     "fluffyalien_energisticscore:ui_disabled_storage_bar_segment",
   );
-  itemStack.nameTag = "§r" + (label ?? "Disabled");
+  itemStack.nameTag = fitItemNameTag(
+    "§r" + (label ?? "Disabled"),
+    elementDescription,
+    logWarn,
+  );
 
   for (let i = startIndex; i < startIndex + size; i++) {
     inventory.setItem(i, itemStack);
@@ -87,6 +93,7 @@ function fillUiBar(
   maxStorage: number,
   size: number,
   segmentsPerSlot: number,
+  elementDescription: string,
   label?: string,
 ): void {
   // How many pips are filled in total, across all slots of the bar.
@@ -94,10 +101,15 @@ function fillUiBar(
     amount / (maxStorage / (size * segmentsPerSlot)),
   );
 
+  // The label, the storage type's name and the colour code all come from
+  // add-ons, so any of them can make this too long to set.
   const formattingCodes = "§r§" + labelColorCode.split("").join("§");
-  const nameTag =
+  const nameTag = fitItemNameTag(
     formattingCodes +
-    (label ?? `${amount.toString()}/${maxStorage.toString()} ${name}`);
+      (label ?? `${amount.toString()}/${maxStorage.toString()} ${name}`),
+    elementDescription,
+    logWarn,
+  );
 
   for (let i = startIndex + (size - 1); i >= startIndex; i--) {
     const filledSegments = Math.min(segmentsPerSlot, remainingSegments);
@@ -134,12 +146,14 @@ function fillUiBar(
  * Renders a storage bar element: reclaims any real item a player slipped into
  * the bar's slots, then draws either the disabled bar or the type's filled bar.
  * The special type `"_disabled"` draws the greyed-out bar.
+ * @param elementDescription Names the element in warnings.
  */
 export function handleBarItems(
   location: DimensionLocation,
   inventory: Container,
   startIndex: number,
   player: Player,
+  elementDescription: string,
   size = 4,
   maxStorage: number,
   type = "_disabled",
@@ -165,7 +179,7 @@ export function handleBarItems(
   }
 
   if (type === "_disabled") {
-    fillDisabledUiBar(inventory, startIndex, size, label);
+    fillDisabledUiBar(inventory, startIndex, size, elementDescription, label);
     return;
   }
 
@@ -192,6 +206,7 @@ export function handleBarItems(
     usesCustomTexture
       ? (texture.segments ?? DEFAULT_BAR_SEGMENTS)
       : DEFAULT_BAR_SEGMENTS,
+    elementDescription,
     label,
   );
 }

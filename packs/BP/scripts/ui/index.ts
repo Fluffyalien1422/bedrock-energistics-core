@@ -140,6 +140,8 @@ async function renderEntityUi(
   if (!inventory) return;
 
   for (const [id, options] of definition.uiElements) {
+    const elementDescription = `the '${id}' element of '${definition.id}'`;
+
     switch (options.type) {
       case "storageBar": {
         const updateOptions = storageBars[id] as
@@ -150,6 +152,7 @@ async function renderEntityUi(
           inventory,
           options.startIndex,
           player,
+          elementDescription,
           options.size,
           updateOptions?.max ?? options.defaults?.max ?? definition.maxStorage,
           updateOptions?.type ?? options.defaults?.type,
@@ -170,6 +173,7 @@ async function renderEntityUi(
           inventory,
           options,
           player,
+          elementDescription,
           updateOptions?.value ?? options.defaults?.value,
           updateOptions?.label ?? options.defaults?.label,
         );
@@ -190,6 +194,7 @@ async function renderEntityUi(
           definition,
           block,
           id,
+          elementDescription,
           options.index,
           entity,
           player,

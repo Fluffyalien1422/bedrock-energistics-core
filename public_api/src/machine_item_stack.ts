@@ -1,6 +1,7 @@
 import { Enchantment, ItemStack } from "@minecraft/server";
 import { PublicErrorType } from "./error.js";
 import { logWarn, raisePublic } from "./log.js";
+import { fitItemNameTag } from "./name_tag_internal.js";
 
 // Only the lower bound is enforced. Checking the amount against the item's
 // maximum stack size would mean constructing an ItemStack to read `maxAmount`
@@ -25,6 +26,13 @@ function validateAmount(amount: number): void {
  * @beta
  */
 export interface NewMachineItemStackOptions {
+  /**
+   * The item's name tag.
+   * @beta
+   * @remarks
+   * Truncated to 255 characters when converted to an `ItemStack`, since a
+   * longer item name tag can't be set.
+   */
   nameTag?: string;
   damage?: number;
   lore?: string[];
@@ -150,7 +158,15 @@ export class MachineItemStack {
     }
     result.amount = amount;
 
-    result.nameTag = this.nameTag;
+    // an add-on can construct a stack with any name tag
+    result.nameTag =
+      this.nameTag === undefined
+        ? undefined
+        : fitItemNameTag(
+            this.nameTag,
+            `a MachineItemStack of '${this.typeId}'`,
+            logWarn,
+          );
 
     {
       const durabilityComponent = result.getComponent("durability");
