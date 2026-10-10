@@ -177,7 +177,7 @@
   "container_slot_nobg_nohover@fluffyalien_energisticscore:common_v2.container_slot_custom": {
     "_doc": {
       "summary": "A container slot with no background and no hover or click functionality.",
-      "remarks": "Use this for slots that display only an image with no tooltip. Hover text does not display.",
+      "remarks": "Use this for slots that display only an image with no tooltip. Hover text does not display, so progress indicator and storage bar labels are not shown.",
       "props": {
         "$index": "The index of the item in the 'container_items' collection. Defaults to 0."
       }
@@ -189,7 +189,7 @@
   "container_slot_nobg_noclick@fluffyalien_energisticscore:common_v2.container_slot_custom": {
     "_doc": {
       "summary": "A container slot with no background and no click functionality.",
-      "remarks": "Use this for slots that display information rather than hold items the player interacts with, such as storage bar segments and progress indicators. Hover text still displays.",
+      "remarks": "Use this for slots that display information rather than hold items the player interacts with, such as storage bar segments and progress indicators. Hover text still displays, including progress indicator and storage bar labels.",
       "props": {
         "$index": "The index of the item in the 'container_items' collection. Defaults to 0."
       }

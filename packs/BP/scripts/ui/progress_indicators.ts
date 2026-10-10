@@ -1,6 +1,7 @@
 /**
  * The progress indicator element: one container slot showing a frame of an
  * animation, e.g. a furnace's arrow or flame, for a value the machine reports.
+ * An optional label is shown as the frame's hover text.
  */
 
 import {
@@ -22,15 +23,44 @@ const PROGRESS_INDICATOR_PRESET_MAX_VALUES: Record<
 };
 
 /**
+ * The longest name tag `ItemStack.nameTag` accepts. Setting a longer one
+ * throws.
+ */
+const MAX_NAME_TAG_LENGTH = 255;
+
+/**
+ * Prefix for label name tags. It resets the styling the client applies to
+ * custom-named items, as storage bar labels do.
+ */
+const LABEL_PREFIX = "§r";
+
+/**
+ * Turns a label into a name tag, truncating it (with a warning) if it would be
+ * too long to set.
+ */
+function labelToNameTag(label: string): string {
+  const nameTag = LABEL_PREFIX + label;
+  if (nameTag.length <= MAX_NAME_TAG_LENGTH) return nameTag;
+
+  logWarn(
+    `Progress indicator label is longer than ${(MAX_NAME_TAG_LENGTH - LABEL_PREFIX.length).toString()} characters and was truncated: '${label}'.`,
+  );
+  return nameTag.slice(0, MAX_NAME_TAG_LENGTH);
+}
+
+/**
  * Renders a progress indicator (e.g. an arrow or flame) at its frame
  * for `value`. Presets have a fixed frame count; custom indicators list their
  * frames. An out-of-range or non-integer value renders the error item.
+ * @param label Hover text for the frame, set as its name tag. Not applied to
+ * the error item.
  */
 export function handleProgressIndicator(
   inventory: Container,
   element: UiProgressIndicatorElementDefinition,
   player: Player,
   value = 0,
+  label?: string,
 ): void {
   const indicator = element.indicator;
   const indicatorIsPreset = typeof indicator === "string";
@@ -53,8 +83,10 @@ export function handleProgressIndicator(
   }
 
   if (invalidValue) {
+    // String() rather than toString(): the value arrives over IPC as JSON, so
+    // it can be null (from NaN) despite its type.
     logWarn(
-      `Failed to update progress indicator for machine UI. Expected 'value' to be an integer between 0 and ${maxValue.toString()} (inclusive) but got ${value.toString()}.`,
+      `Failed to update progress indicator for machine UI. Expected 'value' to be an integer between 0 and ${maxValue.toString()} (inclusive) but got ${String(value)}.`,
     );
     inventory.setItem(
       element.index,
@@ -63,26 +95,28 @@ export function handleProgressIndicator(
     return;
   }
 
+  let item: ItemStack;
   if (indicatorIsPreset) {
-    inventory.setItem(
-      element.index,
-      new ItemStack(
-        `fluffyalien_energisticscore:ui_prog_${indicator}${value.toString()}`,
-      ),
+    item = new ItemStack(
+      `fluffyalien_energisticscore:ui_prog_${indicator}${value.toString()}`,
     );
-    return;
+  } else {
+    const customItem = tryCreateItemStack(indicator.frames[value]);
+    if (!customItem || !isUiItem(customItem)) {
+      logWarn(
+        `Failed to create progress indicator element. The item '${indicator.frames[value]}' does not have the 'fluffyalien_energisticscore:ui_item' tag or does not exist.`,
+      );
+      inventory.setItem(
+        element.index,
+        new ItemStack("fluffyalien_energisticscore:ui_error"),
+      );
+      return;
+    }
+    item = customItem;
   }
 
-  const item = tryCreateItemStack(indicator.frames[value]);
-  if (!item || !isUiItem(item)) {
-    logWarn(
-      `Failed to create progress indicator element. The item '${indicator.frames[value]}' does not have the 'fluffyalien_energisticscore:ui_item' tag or does not exist.`,
-    );
-    inventory.setItem(
-      element.index,
-      new ItemStack("fluffyalien_energisticscore:ui_error"),
-    );
-    return;
+  if (label !== undefined) {
+    item.nameTag = labelToNameTag(label);
   }
 
   inventory.setItem(element.index, item);

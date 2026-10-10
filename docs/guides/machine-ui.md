@@ -144,13 +144,25 @@ A bar's `size` is how many slots it occupies, defaulting to 4. `machine_storage_
 
 A progress indicator is one slot showing a frame of an animation, either one of the presets (the arrow and flame from the Minecraft furnace) or your own frames.
 
-The value returned from `updateUi` is a frame number, not a percentage. It must be an integer from 0 to the indicator's maximum, inclusive. Anything else logs a warning and draws the error item.
+The value returned from `updateUi` is a frame number, not a percentage. It must be an integer from 0 to the indicator's maximum, inclusive. A frame outside that range, or one that isn't an integer, logs a warning and draws the error item.
 
 Maximum values:
 
 - Arrow: 16
 - Flame: 13
 - Custom: one less than the number of frames
+
+### Labels
+
+A progress indicator can also have hover text. Return an object instead of a number, with the frame as `value` and the hover text as `label`. A number is shorthand for `{ value: number }`, and either field can be defaulted in the element definition. See {@link UiProgressIndicatorElementUpdateOptions}.
+
+```js
+progressIndicators: {
+  progress: { value: 8, label: "§eHalf done" },
+},
+```
+
+The label is set as the frame item's name tag, so it only shows on slots drawn with a control that displays hover text, such as `container_slot_nobg_noclick`. The `container_slot_nobg_nohover` control never shows it. Labels longer than 253 characters are truncated.
 
 ## Item Slots
 

@@ -13,6 +13,7 @@
 
 import {
   UiButtonElementUpdateOptions,
+  UiProgressIndicatorElementUpdateOptions,
   UiStorageBarElementUpdateOptions,
   MACHINE_ENTITY_NO_UPDATE_UI_TAG,
 } from "@/public_api/src";
@@ -67,6 +68,22 @@ async function updateEntityUi(
   } finally {
     entitiesUpdatingUi.delete(entity);
   }
+}
+
+/**
+ * Normalizes a progress indicator's `updateUi` value: a number is shorthand
+ * for `{ value }`.
+ * @remarks
+ * The result arrives over IPC as JSON, which turns `NaN` into `null`, so the
+ * value is checked at runtime rather than trusted to match its type. Anything
+ * that isn't a number or an object falls back to the element's defaults.
+ */
+function toProgressIndicatorUpdateOptions(
+  raw: unknown,
+): UiProgressIndicatorElementUpdateOptions | undefined {
+  if (typeof raw === "number") return { value: raw };
+  if (typeof raw === "object" && raw !== null) return raw;
+  return undefined;
 }
 
 /**
@@ -144,14 +161,20 @@ async function renderEntityUi(
       case "itemSlot":
         // handled synchronously by updateItemSlots
         break;
-      case "progressIndicator":
+      case "progressIndicator": {
+        const updateOptions = toProgressIndicatorUpdateOptions(
+          progressIndicators[id],
+        );
+
         handleProgressIndicator(
           inventory,
           options,
           player,
-          progressIndicators[id],
+          updateOptions?.value ?? options.defaults?.value,
+          updateOptions?.label ?? options.defaults?.label,
         );
         break;
+      }
       case "button": {
         const updateOptions = buttons[id] as
           UiButtonElementUpdateOptions | undefined;

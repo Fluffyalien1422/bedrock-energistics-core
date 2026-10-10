@@ -128,6 +128,33 @@ export interface UiProgressIndicatorDescription {
 }
 
 /**
+ * Dynamic configuration options for a progress indicator UI element.
+ * @beta
+ * @see {@link MachineDefinitionHandlers.updateUi}.
+ */
+export interface UiProgressIndicatorElementUpdateOptions {
+  /**
+   * The frame of the progress indicator to display. Must be an integer from 0
+   * to the indicator's maximum, inclusive.
+   * @beta
+   * @default 0
+   */
+  value?: number;
+  /**
+   * Hover text for the progress indicator, set as the frame item's name tag.
+   * Formatting codes are allowed.
+   * @beta
+   * @remarks
+   * Hover text only shows if the slot is drawn with a control that displays it,
+   * such as `container_slot_nobg_noclick`. The `container_slot_nobg_nohover`
+   * control never shows it.
+   *
+   * Labels longer than 253 characters are truncated.
+   */
+  label?: string;
+}
+
+/**
  * Options for defining a progress indicator UI element.
  * @beta
  */
@@ -143,6 +170,11 @@ export interface UiProgressIndicatorElementDefinition {
    * @beta
    */
   index: number;
+  /**
+   * Default values to fill in any `undefined` values returned by `updateUi`.
+   * @beta
+   */
+  defaults?: UiProgressIndicatorElementUpdateOptions;
 }
 
 /**
@@ -429,10 +461,15 @@ export interface MachineUpdateUiHandlerRes {
    */
   storageBars?: Record<string, UiStorageBarElementUpdateOptions>;
   /**
-   * Updates for progress indicator elements, keyed by element ID. The value indicates the frame of the progress indicator.
+   * Updates for progress indicator elements, keyed by element ID. The value is
+   * either the frame of the progress indicator, or options that also set its
+   * label. A number is shorthand for `{ value: number }`.
    * @beta
    */
-  progressIndicators?: Record<string, number>;
+  progressIndicators?: Record<
+    string,
+    number | UiProgressIndicatorElementUpdateOptions
+  >;
   /**
    * Updates for button elements, keyed by element ID.
    * @beta
