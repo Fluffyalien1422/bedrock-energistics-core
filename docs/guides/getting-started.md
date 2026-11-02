@@ -98,11 +98,14 @@ This is the full block JSON:
 
 We need to create an entity for our machine UI. This entity will not be persistent, it will only be spawned on interact and will despawn soon after. Although, it is possible to create [persistent machine entities](persistent-entities.md).
 
+> [!warning]
+> The machine entity's collision box must be bigger than the collision box of the block it sits in. As of Minecraft 1.26.60, a block takes interaction priority over an entity in the same position unless the entity's collision box is bigger, so an entity that matches the block exactly can no longer be interacted with. A full block is 1x1, so 1.1x1.1 works for any machine block.
+
 This is the full entity JSON:
 
 ```json
 {
-  "format_version": "1.26.40",
+  "format_version": "1.26.60",
   "minecraft:entity": {
     "description": {
       // By default, Bedrock Energistics Core will expect the machine entity to have the same
@@ -134,7 +137,8 @@ This is the full entity JSON:
       // We want our entity to automatically despawn after some time.
       // This is not required, but recommended.
       "minecraft:timer": {
-        "time": 60,
+        // As of entity format version 1.26.60, 'time' takes a { min, max } range.
+        "time": { "min": 60, "max": 60 },
         "time_down_event": {
           "event": "example:despawn"
         }
@@ -146,10 +150,11 @@ This is the full entity JSON:
         }
       },
 
-      // 1x1 collision box so the UI can easily be opened.
+      // Bigger than the block's collision box, otherwise the block takes
+      // interaction priority and the UI cannot be opened.
       "minecraft:collision_box": {
-        "width": 1,
-        "height": 1
+        "width": 1.1,
+        "height": 1.1
       },
 
       // Other components to make our entity invulnerable and immovable.
